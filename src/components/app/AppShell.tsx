@@ -56,7 +56,10 @@ export default function AppShell({ activeTab }: { activeTab: AppTab }) {
               {mobileNavOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
             </button>
             <a href="/" className="flex items-center gap-2 font-extrabold text-ink">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-forest text-sm font-extrabold text-lime">L</span>
+              <picture>
+                <source srcSet="/brand/logo-mark.webp" type="image/webp" />
+                <img src="/brand/logo-mark.png" alt="" width="36" height="36" className="h-8 w-8" />
+              </picture>
               <span className="hidden sm:inline">Landscape Estimate Pro</span>
             </a>
           </div>
