@@ -1,0 +1,59 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import ProjectCalculatorIsland from "../../components/calculator/ProjectCalculatorIsland.tsx";
+
+const faqs = [
+  {
+    question: "What counts as \"overhead\" in this calculator?",
+    answer:
+      "Overhead is the cost of running your business that isn't tied to one specific job — insurance, vehicle payments, office/admin time, and similar fixed costs. Most contractors express it as a percentage of direct job cost (materials + labor + equipment + delivery + other) and apply it to every estimate.",
+  },
+  {
+    question: "Why is the required price higher than cost plus a markup would suggest?",
+    answer:
+      "Because this calculator solves for margin (profit ÷ selling price), not markup (profit ÷ cost). A 35% markup on a $2,850 true cost only produces a 25.9% margin. Solving for a true 35% margin requires a higher price: cost ÷ (1 − margin).",
+  },
+  {
+    question: "Does this calculator save my numbers?",
+    answer:
+      "No — this free calculator recalculates fresh each time and doesn't save anything between visits. Landscape Estimate Pro (the $99 lifetime upgrade) saves your materials, labor, equipment, and every estimate to your device.",
+  },
+  {
+    question: "Is this the same as a landscaping estimate calculator?",
+    answer:
+      "Yes, functionally — this cost calculator and our estimate calculator use the same math. This page is aimed at estimating job cost quickly; the estimate calculator page frames the same tool around building a full project estimate.",
+  },
+];
+---
+
+<ToolPageLayout
+  title="Landscaping Cost Calculator — Free True Cost & Pricing Tool"
+  description="Free landscaping cost calculator. Enter materials, labor, equipment, delivery, overhead and target margin to get your true project cost and the price required to hit your margin."
+  eyebrow="#1 free landscaping cost calculator"
+  h1="Landscaping Cost Calculator"
+  intro="Enter what a project actually costs your business. This calculator adds overhead into your true cost, then solves for the selling price required to hit your target margin — not just a markup guess."
+  breadcrumbLabel="Landscaping Cost Calculator"
+  currentHref="/landscaping-cost-calculator/"
+  faqs={faqs}
+>
+  <ProjectCalculatorIsland client:load />
+
+  <Fragment slot="extra">
+    <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">What affects a landscaping project's true cost?</h2>
+    <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {[
+        { title: "Materials", desc: "Mulch, soil, gravel, plants, pavers, edging — priced at what your supplier actually charges you, not a list price." },
+        { title: "Labor", desc: "Loaded crew cost per person-hour, including wages, payroll tax, and benefits — not just take-home pay." },
+        { title: "Equipment", desc: "Owned or rented equipment time: skid steers, dump trailers, compactors, billed by the hour, day, or job." },
+        { title: "Delivery", desc: "Hauling materials to the site and debris away from it — easy to forget, and it adds up fast on bulky jobs." },
+        { title: "Overhead", desc: "Insurance, vehicles, admin time, and other costs that exist whether or not this specific job runs." },
+        { title: "Target margin", desc: "The profit share of your selling price you're protecting — set deliberately, not left to chance." },
+      ].map((item) => (
+        <div class="rounded-2xl border border-border bg-paper p-5">
+          <h3 class="font-bold text-ink">{item.title}</h3>
+          <p class="mt-1.5 text-sm text-muted">{item.desc}</p>
+        </div>
+      ))}
+    </div>
+  </Fragment>
+</ToolPageLayout>

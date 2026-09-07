@@ -1,0 +1,49 @@
+---
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface Props {
+  faqs: FaqItem[];
+  title?: string;
+  emitSchema?: boolean;
+}
+
+const { faqs, title = "Frequently asked questions", emitSchema = true } = Astro.props;
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+};
+---
+
+{emitSchema && <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />}
+
+<section aria-labelledby="faq-heading">
+  <h2 id="faq-heading" class="text-2xl font-extrabold text-ink sm:text-3xl">{title}</h2>
+  <div class="mt-6 divide-y divide-border rounded-2xl border border-border bg-white">
+    {faqs.map((faq) => (
+      <details class="group px-5 py-4 sm:px-6">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink marker:content-none">
+          <span>{faq.question}</span>
+          <svg
+            class="h-5 w-5 shrink-0 text-muted transition-transform group-open:rotate-180"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </summary>
+        <p class="mt-3 text-sm leading-relaxed text-muted">{faq.answer}</p>
+      </details>
+    ))}
+  </div>
+</section>

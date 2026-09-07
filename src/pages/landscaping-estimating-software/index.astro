@@ -1,0 +1,125 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import TrustBadges from "../../components/TrustBadges.astro";
+import FaqAccordion from "../../components/FaqAccordion.astro";
+import PurchaseButton from "../../components/PurchaseButton.tsx";
+import EstimatePreviewCard from "../../components/EstimatePreviewCard.astro";
+import { SITE_URL } from "../../data/site";
+
+const title = "Landscape Estimating Software — Without Another Monthly Subscription";
+const description =
+  "Landscape estimating software built from your own materials, labor, equipment and production rates. $99 lifetime, no account, local-first. Not aerial takeoff — real job costing.";
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Landscape Estimate Pro",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Any (runs in browser)",
+  url: `${SITE_URL}/landscaping-estimating-software/`,
+  offers: { "@type": "Offer", price: "99", priceCurrency: "USD", availability: "https://schema.org/InStock" },
+  description,
+};
+
+const faqs = [
+  {
+    question: "Does this measure my project from photos or satellite imagery?",
+    answer:
+      "No. This is manual-measurement estimating and job-costing software — you supply your own quantities from a site visit or plan, and the software turns them into an accurate cost and price. There's no aerial or photo takeoff feature.",
+  },
+  {
+    question: "How is this different from generic landscaping business software?",
+    answer:
+      "Generic \"landscaping software\" often means CRM, scheduling, dispatch, and routing. Landscape Estimate Pro does one thing: estimating, pricing, and job costing. No CRM, no scheduling, no payroll.",
+  },
+  {
+    question: "What happens after I buy — is there a subscription?",
+    answer: "No. $99 once, lifetime access. No monthly bill, no per-seat pricing, no feature paywall behind a subscription tier.",
+  },
+  {
+    question: "Can I see whether a completed job actually hit my target margin?",
+    answer:
+      "Yes — Pro's estimate-vs-actual tracking compares your estimated labor, materials, and cost against what the job actually took, and shows expected margin vs. actual margin.",
+  },
+];
+---
+
+<Layout title={title} description={description}>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+  </Fragment>
+
+  <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Landscaping Estimating Software", href: "/landscaping-estimating-software/" }]} />
+
+  <section class="mx-auto grid max-w-content gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_24rem] lg:items-center lg:gap-14 lg:px-8 lg:py-16">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">Landscape estimating software</p>
+      <h1 class="mt-2 text-[clamp(1.9rem,4.5vw,3rem)] font-extrabold leading-[1.08] text-ink">
+        Landscape estimating software, without another monthly subscription.
+      </h1>
+      <p class="mt-4 max-w-xl text-lg text-muted">
+        Build estimates from your own materials, labor, equipment, and production rates — then see whether the
+        completed project actually hit your margin.
+      </p>
+      <div class="mt-7">
+        <PurchaseButton client:load />
+      </div>
+      <div class="mt-6"><TrustBadges /></div>
+    </div>
+    <div>
+      <EstimatePreviewCard />
+    </div>
+  </section>
+
+  <section class="border-t border-border bg-white py-16">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">Built for estimating, not general business management</h2>
+      <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {[
+          { title: "Production-rate labor", desc: "Estimate crew hours from your own production rates — the software never assumes a universal number." },
+          { title: "Reusable assemblies", desc: "Bundle materials, labor, and equipment into one service you can drop into any project." },
+          { title: "Job costing", desc: "See direct cost, overhead allocation, and true cost for every project, every time." },
+          { title: "Service Rate Health", desc: "Instantly see which standard services are priced below your target margin." },
+          { title: "Cost-impact scenarios", desc: "See what a material, labor, or equipment price change does to your saved estimates." },
+          { title: "Estimate vs. actual", desc: "Compare what you quoted to what the job actually cost once it's done." },
+        ].map((item) => (
+          <div class="rounded-2xl border border-border bg-paper p-5">
+            <h3 class="font-bold text-ink">{item.title}</h3>
+            <p class="mt-1.5 text-sm text-muted">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="border-t border-border bg-paper py-16">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">What this is not</h2>
+      <p class="mt-3 max-w-2xl text-muted">
+        Landscape Estimate Pro stays focused on estimating, pricing, and job costing. It is not a CRM, scheduling
+        or dispatch tool, payment processor, aerial/satellite measurement tool, or design/engineering software for
+        irrigation, drainage, grading, or retaining walls. That focus is deliberate — it's what keeps the product
+        simple, fast, and easy to support.
+      </p>
+    </div>
+  </section>
+
+  <section class="border-t border-border bg-forest py-14 text-white">
+    <div class="mx-auto flex max-w-content flex-col items-start gap-5 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+      <div>
+        <h2 class="text-2xl font-extrabold sm:text-3xl">Get Landscape Estimate Pro — $99 Lifetime</h2>
+        <p class="mt-2 max-w-xl text-white/75">One payment. No subscription. No account. Your data stays on your device.</p>
+      </div>
+      <a href="/pricing/" class="inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]">
+        See Pricing
+      </a>
+    </div>
+  </section>
+
+  <section class="border-t border-border bg-white py-16">
+    <div class="mx-auto max-w-narrow px-4 sm:px-6 lg:px-8">
+      <FaqAccordion faqs={faqs} />
+    </div>
+  </section>
+</Layout>

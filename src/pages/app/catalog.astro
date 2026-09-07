@@ -1,0 +1,8 @@
+---
+import AppPageLayout from "../../layouts/AppPageLayout.astro";
+import AppShell from "../../components/app/AppShell.tsx";
+---
+
+<AppPageLayout title="Catalog">
+  <AppShell activeTab="catalog" client:only="react" />
+</AppPageLayout>

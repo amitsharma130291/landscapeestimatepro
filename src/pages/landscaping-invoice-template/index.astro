@@ -1,0 +1,47 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import InvoiceBuilderIsland from "../../components/calculator/InvoiceBuilderIsland.tsx";
+
+const faqs = [
+  {
+    question: "Does this calculate sales tax automatically?",
+    answer:
+      "No — enter your own tax percentage and the total updates automatically. Tax rules vary by state and by whether labor is taxable, so this template keeps tax as a field you control rather than guessing at it.",
+  },
+  {
+    question: "Is this full accounting software?",
+    answer:
+      "No, and it's not meant to be. This is a simple, printable invoice for a completed landscaping job. Landscape Estimate Pro focuses on estimating and job costing, not bookkeeping or payment processing.",
+  },
+  {
+    question: "Can I reuse the services from my estimate on the invoice?",
+    answer:
+      "In the free template, you re-enter them. Pro lets you convert a saved estimate directly into a completed-job record for estimate-vs-actual tracking.",
+  },
+];
+---
+
+<ToolPageLayout
+  title="Landscaping Invoice Template — Free Printable Invoice Builder"
+  description="Free landscaping invoice template. Bill a completed job with an itemized invoice, your own tax rate, and a total — print or save as a PDF."
+  eyebrow="Free interactive template"
+  h1="Landscaping Invoice Template"
+  intro="Bill a completed landscaping job with a simple, itemized invoice — your business, the customer, services rendered, tax, and a total."
+  breadcrumbLabel="Landscaping Invoice Template"
+  currentHref="/landscaping-invoice-template/"
+  faqs={faqs}
+  webApplicationSchema={false}
+>
+  <InvoiceBuilderIsland client:load />
+
+  <Fragment slot="extra">
+    <div class="rounded-2xl border border-border bg-paper p-6">
+      <h2 class="text-xl font-bold text-ink">Estimating and invoicing, without the accounting bloat</h2>
+      <p class="mt-2 text-sm text-muted">
+        Landscape Estimate Pro focuses on the estimating and job-costing problem — what a job costs you and what to
+        charge — rather than becoming full accounting software. Use whatever bookkeeping tool you already have for
+        payments and taxes.
+      </p>
+    </div>
+  </Fragment>
+</ToolPageLayout>

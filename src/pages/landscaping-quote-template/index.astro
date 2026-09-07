@@ -1,0 +1,45 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import EstimateBuilderIsland from "../../components/calculator/EstimateBuilderIsland.tsx";
+
+const faqs = [
+  {
+    question: "What's the difference between a quote and an estimate?",
+    answer:
+      "In practice, most landscape contractors use the two interchangeably as a customer-facing price before the job starts. This template is built for sending to the customer; use the estimate template if you want a more cost-oriented internal working document.",
+  },
+  {
+    question: "Can I add a validity period or deposit terms?",
+    answer: "Yes — use the notes field for terms like \"valid for 30 days\" or deposit requirements before scheduling.",
+  },
+  {
+    question: "How do I make sure my quote is actually profitable?",
+    answer:
+      "Run your numbers through the landscaping cost calculator first so your quote price reflects your true cost and target margin, not just a guess.",
+  },
+];
+---
+
+<ToolPageLayout
+  title="Landscaping Quote Template — Free Customer-Facing Quote Builder"
+  description="Free landscaping quote template. Build a clean, customer-facing quote with your services and pricing, then print or save it as a PDF."
+  eyebrow="Free interactive template"
+  h1="Landscaping Quote Template"
+  intro="A customer-facing quote you can send before the job is booked — your business, the customer, the services, and a total price. Fill it in, print it, or save it as a PDF."
+  breadcrumbLabel="Landscaping Quote Template"
+  currentHref="/landscaping-quote-template/"
+  faqs={faqs}
+  webApplicationSchema={false}
+>
+  <EstimateBuilderIsland variant="quote" client:load />
+
+  <Fragment slot="extra">
+    <div class="rounded-2xl border border-border bg-paper p-6">
+      <h2 class="text-xl font-bold text-ink">Know your price is right before you send it</h2>
+      <p class="mt-2 text-sm text-muted">
+        Use the <a href="/landscaping-cost-calculator/" class="font-semibold text-forest underline">landscaping cost calculator</a>
+        to check your true cost and required margin before you commit to a quoted number.
+      </p>
+    </div>
+  </Fragment>
+</ToolPageLayout>

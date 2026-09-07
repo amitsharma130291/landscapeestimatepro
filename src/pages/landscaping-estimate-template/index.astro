@@ -1,0 +1,50 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import EstimateBuilderIsland from "../../components/calculator/EstimateBuilderIsland.tsx";
+
+const faqs = [
+  {
+    question: "Is this a downloadable Excel template?",
+    answer:
+      "No — it's an interactive estimate builder you fill in directly in your browser, then print or save as a PDF. There's nothing to download or install, and no spreadsheet formulas to break.",
+  },
+  {
+    question: "Can I customize the services and pricing?",
+    answer: "Yes. Add or remove line items freely, and enter your own quantities, units, and prices for each service.",
+  },
+  {
+    question: "How is this different from the quote template?",
+    answer:
+      "They share the same line-item builder. This estimate template is framed around your internal costing process; the quote template is framed as the customer-facing document you send to win the job.",
+  },
+  {
+    question: "Can I save my materials and labor costs so I don't retype them every time?",
+    answer:
+      "Not in the free template — it starts fresh each visit. Landscape Estimate Pro saves your materials, labor, equipment and reusable service assemblies so every future estimate calculates itself.",
+  },
+];
+---
+
+<ToolPageLayout
+  title="Landscaping Estimate Template — Free Interactive Estimate Builder"
+  description="Free landscaping estimate template. Fill in your business, customer, project and services, then print or save your estimate as a PDF — no spreadsheet required."
+  eyebrow="Free interactive template"
+  h1="Landscaping Estimate Template"
+  intro="A clean, customer-ready estimate you fill in directly — business details, customer, project, line-item services, and a total. Print it or save it as a PDF when you're done."
+  breadcrumbLabel="Landscaping Estimate Template"
+  currentHref="/landscaping-estimate-template/"
+  faqs={faqs}
+  webApplicationSchema={false}
+>
+  <EstimateBuilderIsland variant="estimate" client:load />
+
+  <Fragment slot="extra">
+    <div class="rounded-2xl border border-lime-surface bg-mint p-6">
+      <h2 class="text-xl font-bold text-mint-ink">Save your materials, labor and equipment costs so every future estimate calculates automatically.</h2>
+      <p class="mt-2 text-sm text-mint-ink/80">That's what Landscape Estimate Pro does — reusable catalogs, service assemblies, and saved estimates for a one-time $99.</p>
+      <a href="/pricing/" class="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-forest px-5 text-sm font-bold text-white hover:bg-forest-light">
+        Get Landscape Estimate Pro
+      </a>
+    </div>
+  </Fragment>
+</ToolPageLayout>

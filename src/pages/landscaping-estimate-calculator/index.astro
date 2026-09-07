@@ -1,0 +1,58 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import ProjectCalculatorIsland from "../../components/calculator/ProjectCalculatorIsland.tsx";
+
+const faqs = [
+  {
+    question: "How is an estimate calculator different from a cost calculator?",
+    answer:
+      "They run the same math. This page frames the tool around producing one project's full estimate — true cost plus the required selling price — rather than just a cost check.",
+  },
+  {
+    question: "Can I calculate more than one project at a time?",
+    answer:
+      "The free version calculates one project. Landscape Estimate Pro saves unlimited projects and estimates, plus reusable service assemblies so you don't re-enter the same materials and labor every time.",
+  },
+  {
+    question: "Does it factor in my production rates?",
+    answer:
+      "This free calculator takes a total labor cost you've already worked out. Pro adds production-rate labor calculation — enter a quantity (e.g. 8 yd³ of mulch) and your own production rate (e.g. 2.5 yd³ per person-hour), and it calculates person-hours and labor cost for you.",
+  },
+  {
+    question: "What's the difference between required price and display price?",
+    answer:
+      "The required selling price is calculated to the cent. The display price rounds that up or down to a clean whole-dollar number for the customer-facing quote — both are shown so you can see exactly how the rounding works.",
+  },
+];
+---
+
+<ToolPageLayout
+  title="Landscaping Estimate Calculator — Free True Cost & Price Tool"
+  description="Free landscaping estimate calculator. Turn one project's materials, labor, equipment and overhead into a true cost and the selling price required to hit your target margin."
+  eyebrow="Free estimate calculator"
+  h1="Landscaping Estimate Calculator"
+  intro="Build one project's estimate from the ground up: direct cost, overhead allocation, true cost, and the selling price required to hit your target margin."
+  breadcrumbLabel="Landscaping Estimate Calculator"
+  currentHref="/landscaping-estimate-calculator/"
+  faqs={faqs}
+>
+  <ProjectCalculatorIsland client:load />
+
+  <Fragment slot="extra">
+    <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">How this estimate calculator works</h2>
+    <ol class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {[
+        { step: "1", title: "Add direct costs", desc: "Materials, labor, equipment, delivery, and any other job-specific cost." },
+        { step: "2", title: "Apply overhead", desc: "Your overhead percentage is added on top to reach a true project cost." },
+        { step: "3", title: "Set your target margin", desc: "Margin, not markup — the profit share of the final price, not of cost." },
+        { step: "4", title: "Get your price", desc: "The required selling price updates instantly, to the cent and rounded." },
+      ].map((item) => (
+        <li class="list-none rounded-2xl border border-border bg-paper p-5">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-forest text-sm font-bold text-lime">{item.step}</span>
+          <h3 class="mt-3 font-bold text-ink">{item.title}</h3>
+          <p class="mt-1.5 text-sm text-muted">{item.desc}</p>
+        </li>
+      ))}
+    </ol>
+  </Fragment>
+</ToolPageLayout>

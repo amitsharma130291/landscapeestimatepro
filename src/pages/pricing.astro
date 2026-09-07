@@ -1,0 +1,106 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import FaqAccordion from "../components/FaqAccordion.astro";
+import PurchaseButton from "../components/PurchaseButton.tsx";
+import { PRICE_DISPLAY, SITE_URL } from "../data/site";
+
+const title = "Pricing — Landscape Estimate Pro ($99 Lifetime)";
+const description =
+  "Landscape Estimate Pro is $99, one time. Unlimited estimates, full Pro estimating and job-costing features, local-first storage. No subscription, no account.";
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: "Landscape Estimate Pro",
+  description,
+  offers: {
+    "@type": "Offer",
+    price: "99",
+    priceCurrency: "USD",
+    availability: "https://schema.org/InStock",
+    url: `${SITE_URL}/pricing/`,
+  },
+};
+
+const faqs = [
+  {
+    question: "Is this a monthly subscription?",
+    answer: "No. It's a one-time $99 payment for lifetime access — no recurring bill, ever.",
+  },
+  {
+    question: "Do I need an account to buy or use it?",
+    answer: "No account or login is required for checkout or for using the product afterward.",
+  },
+  {
+    question: "What happens to my data?",
+    answer:
+      "Everything you enter — materials, labor rates, equipment, assemblies, and estimates — stays on your device in your browser's local storage. Nothing is uploaded to a server. Use JSON export/import to back up your workspace or move it to another device.",
+  },
+  {
+    question: "Is there a free trial?",
+    answer:
+      "The free calculators and templates on this site (cost calculator, estimate/quote/invoice templates, price list) are free to use with no time limit. Pro is a single $99 purchase for the saved-catalog, assemblies, Service Rate Health, and estimate-vs-actual features.",
+  },
+  {
+    question: "Do you offer refunds?",
+    answer: "Yes — see our refund policy for details.",
+  },
+];
+---
+
+<Layout title={title} description={description}>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+  </Fragment>
+
+  <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Pricing", href: "/pricing/" }]} />
+
+  <section class="mx-auto max-w-content px-4 py-12 text-center sm:px-6 lg:px-8">
+    <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">Pricing</p>
+    <h1 class="mt-2 text-[clamp(2rem,4.5vw,3rem)] font-extrabold text-ink">One price. Yours for good.</h1>
+    <p class="mx-auto mt-3 max-w-xl text-muted">
+      No tiers, no trial that expires, no discount countdown. Just one honest number for lifetime access.
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-content px-4 pb-16 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-lg rounded-3xl border border-forest bg-forest p-8 text-white shadow-xl sm:p-10">
+      <h2 class="text-lg font-bold text-lime">Landscape Estimate Pro</h2>
+      <p class="mt-2 text-6xl font-extrabold">{PRICE_DISPLAY}</p>
+      <p class="text-white/70">one-time payment, lifetime access</p>
+
+      <ul class="mt-7 space-y-3 text-sm">
+        {[
+          "One-time payment — no subscription, ever",
+          "Unlimited estimates and saved projects",
+          "All Pro estimating and job-costing features",
+          "Saved material, labor and equipment catalogs",
+          "Reusable service assemblies and project templates",
+          "Service Rate Health and required-price solver",
+          "Material, labor and equipment cost-impact scenarios",
+          "Estimate-vs-actual tracking",
+          "Branded customer estimates, CSV export, JSON backup",
+          "Local-first storage — nothing leaves your device",
+        ].map((item) => (
+          <li class="flex items-start gap-2.5">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-lime" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+            {item}
+          </li>
+        ))}
+      </ul>
+
+      <div class="mt-8">
+        <PurchaseButton client:load />
+      </div>
+    </div>
+  </section>
+
+  <section class="border-t border-border bg-white py-16">
+    <div class="mx-auto max-w-narrow px-4 sm:px-6 lg:px-8">
+      <FaqAccordion faqs={faqs} />
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,405 @@
+---
+import Layout from "../layouts/Layout.astro";
+import TrustBadges from "../components/TrustBadges.astro";
+import EstimatePreviewCard from "../components/EstimatePreviewCard.astro";
+import ToolCardGrid from "../components/ToolCardGrid.astro";
+import FaqAccordion from "../components/FaqAccordion.astro";
+import ProjectCalculatorIsland from "../components/calculator/ProjectCalculatorIsland.tsx";
+import { calculateMargin, calculatePriceFromMarkup, calculateQuotePricing, formatCurrency, formatPercent } from "../lib/calc";
+import { evaluateRateHealth } from "../lib/estimateMath";
+import { PRICE_DISPLAY, SITE_URL } from "../data/site";
+
+const title = "Landscape Estimate Pro — Know Your True Cost, Quote With Confidence";
+const description =
+  "Landscape estimating and job-costing software for small landscape contractors. Turn materials, labor, equipment and overhead into a profitable estimate. $99 lifetime, no account, no subscription.";
+
+// Reference project used consistently across the hero, underpricing, and markup sections.
+const targetMargin = 35;
+const pricing = calculateQuotePricing(2849.7, targetMargin, "dollar");
+const trueCost = pricing.trueCostRounded; // $2,850
+const currentQuote = 3850;
+const currentMargin = calculateMargin(currentQuote, trueCost);
+const underpricedBy = pricing.displayPrice - currentQuote;
+
+const markupPrice = calculatePriceFromMarkup(trueCost, targetMargin);
+const markupMargin = calculateMargin(markupPrice, trueCost);
+
+const rateHealth = evaluateRateHealth(48, 67.5, targetMargin);
+
+const productSchema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Landscape Estimate Pro",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Any (runs in browser)",
+  url: SITE_URL,
+  offers: {
+    "@type": "Offer",
+    price: "99",
+    priceCurrency: "USD",
+    availability: "https://schema.org/InStock",
+  },
+  description,
+};
+
+const faqs = [
+  {
+    question: "Is this a monthly subscription?",
+    answer:
+      "No. Landscape Estimate Pro is a one-time $99 payment for lifetime access. There's no recurring bill, no seat fees, and no feature paywall that unlocks with a subscription.",
+  },
+  {
+    question: "Do I need an account?",
+    answer:
+      "No account or login is required for the free calculators or for Pro. You use the tool directly in your browser.",
+  },
+  {
+    question: "Where is my data stored?",
+    answer:
+      "Locally, on your own device, in your browser's storage. Your materials, labor rates, equipment, and estimates are never uploaded to a server. Use the built-in JSON export to back up or move your workspace to another device.",
+  },
+  {
+    question: "Is this intended for lawn-care scheduling?",
+    answer:
+      "No. Landscape Estimate Pro is focused on one-off installation and construction project estimating and job costing — mulch, planting, edging, hardscape, grading, and similar work. It is not a scheduling, dispatch, or recurring-mowing route tool.",
+  },
+  {
+    question: "Does it calculate landscape measurements from aerial images?",
+    answer:
+      "No. You supply your own measurements and quantities — from a site visit, a plan, or a tape measure. There's no aerial or satellite takeoff feature. The software focuses on turning quantities you already know into an accurate cost and price.",
+  },
+  {
+    question: "Can I use my own labor, material, and production rates?",
+    answer:
+      "Yes — every rate is yours. You set your loaded labor rate, your material and equipment costs, and your own production rates (e.g. yards of mulch per person-hour). The software never assumes a universal productivity number for your crew.",
+  },
+  {
+    question: "What is the difference between markup and margin?",
+    answer:
+      "Markup is profit divided by cost. Margin is profit divided by selling price. A 35% markup on a $2,850 true cost gives a $3,847.50 price — but that price is only a 25.9% margin. To actually hit a 35% margin, the selling price needs to be $4,384.62. Landscape Estimate Pro always prices off your target margin, not markup.",
+  },
+  {
+    question: "Can I export or back up my estimates?",
+    answer:
+      "Yes. Pro includes CSV export for line items (useful for spreadsheets or accounting) and full JSON workspace backup/restore, so you can move your materials, equipment, assemblies, templates, and estimates to a new device.",
+  },
+];
+---
+
+<Layout title={title} description={description}>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(productSchema)} />
+  </Fragment>
+
+  <!-- 2. Hero -->
+  <section class="bg-forest text-white">
+    <div class="mx-auto grid max-w-content gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1fr_26rem] lg:items-center lg:gap-12 lg:px-8 lg:py-24">
+      <div>
+        <p class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-lime">
+          <span class="h-3 w-0.5 bg-lime" aria-hidden="true"></span>
+          Built for landscape contractors
+        </p>
+        <h1 class="mt-4 text-[clamp(2.25rem,5.5vw,3.75rem)] font-extrabold leading-[1.05]">
+          Know your true cost.<br />
+          <span class="text-lime">Quote with confidence.</span>
+        </h1>
+        <p class="mt-5 max-w-xl text-[clamp(1rem,1.6vw,1.15rem)] text-white/80">
+          Turn materials, crew labor, equipment and overhead into a profitable customer estimate — in minutes, not spreadsheets.
+        </p>
+
+        <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <a
+            href="#calculator"
+            class="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
+          >
+            Build a Free Estimate
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </a>
+          <a href="#how-it-works" class="inline-flex min-h-[52px] items-center justify-center px-2 text-base font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
+            See How It Works
+          </a>
+        </div>
+
+        <div class="mt-7">
+          <TrustBadges variant="dark" />
+        </div>
+      </div>
+
+      <div>
+        <EstimatePreviewCard />
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Proof strip -->
+  <section class="border-b border-border-dark bg-forest-dark py-8 text-white">
+    <div class="mx-auto grid max-w-content grid-cols-2 gap-6 px-4 sm:px-6 lg:grid-cols-4 lg:px-8">
+      <div>
+        <p class="text-2xl font-extrabold">10 min</p>
+        <p class="mt-0.5 text-sm text-white/60">to a confident quote</p>
+      </div>
+      <div>
+        <p class="text-2xl font-extrabold">100%</p>
+        <p class="mt-0.5 text-sm text-white/60">local-first — your data stays on your device</p>
+      </div>
+      <div>
+        <p class="text-2xl font-extrabold">{PRICE_DISPLAY}</p>
+        <p class="mt-0.5 text-sm text-white/60">lifetime access, one time</p>
+      </div>
+      <div>
+        <p class="text-2xl font-extrabold">$0</p>
+        <p class="mt-0.5 text-sm text-white/60">monthly subscription</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Free landscaping cost calculator -->
+  <section id="calculator" class="scroll-mt-20 bg-paper py-16 sm:py-20">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">Free landscaping cost calculator</p>
+      <h2 class="mt-2 max-w-2xl text-[clamp(1.75rem,4vw,2.5rem)] font-extrabold leading-tight text-ink">
+        Start with the numbers you already know.
+      </h2>
+      <p class="mt-3 max-w-2xl text-muted">
+        Enter your materials, labor, equipment, delivery, and overhead. We'll calculate your true cost and the price required to hit your target margin — updated instantly as you type.
+      </p>
+      <div class="mt-8">
+        <ProjectCalculatorIsland client:load />
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Free-to-Pro transition -->
+  <section id="pro-features" class="scroll-mt-20 border-t border-border bg-white py-16 sm:py-20">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <div class="max-w-2xl">
+        <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">Free vs. Pro</p>
+        <h2 class="mt-2 text-[clamp(1.75rem,4vw,2.5rem)] font-extrabold leading-tight text-ink">
+          The free calculator handles one job. Pro remembers everything.
+        </h2>
+        <p class="mt-3 text-muted">
+          The calculator above is great for a single project. Landscape Estimate Pro saves your business assumptions once and reuses them on every estimate from then on.
+        </p>
+      </div>
+
+      <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { title: "Saved catalogs", desc: "Reusable material and equipment costs — set a price once." },
+          { title: "Service assemblies", desc: "Bundle materials, labor and equipment into one reusable service." },
+          { title: "Production-rate labor", desc: "Estimate crew hours from your own production rates, not guesses." },
+          { title: "Saved projects & estimates", desc: "Duplicate, rename, and archive past jobs instead of starting over." },
+          { title: "Estimate vs. actual", desc: "See how a completed job's real cost compared to what you quoted." },
+          { title: "Service Rate Health", desc: "Instantly see which of your standard services are underpriced." },
+          { title: "Cost-impact analysis", desc: "See what a material, labor, or equipment price change does to your open estimates." },
+          { title: "Branded PDF, CSV & backup", desc: "Customer-facing estimates, spreadsheet export, and full JSON backup/restore." },
+        ].map((item) => (
+          <div class="rounded-2xl border border-border bg-paper p-5">
+            <h3 class="font-bold text-ink">{item.title}</h3>
+            <p class="mt-1.5 text-sm text-muted">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Underpricing section -->
+  <section class="border-t border-border bg-forest py-16 text-white sm:py-20">
+    <div class="mx-auto grid max-w-content gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wider text-lime">Profitability starts before the job</p>
+        <h2 class="mt-2 text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold leading-[1.1]">Stop guessing what to charge.</h2>
+        <p class="mt-4 max-w-md text-white/75">
+          See exactly what a landscape project costs your business — and the price required to hit your margin.
+        </p>
+        <p class="mt-4 max-w-md text-sm font-semibold text-lime">
+          One underpriced $4,000 job can cost more than the software.
+        </p>
+        <a
+          href="#calculator"
+          class="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-xl bg-lime px-6 py-3 text-sm font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
+        >
+          Calculate a profitable price
+        </a>
+      </div>
+
+      <div class="rounded-2xl border border-white/15 bg-white/5 p-5 sm:p-6">
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+          <p class="text-xs font-bold uppercase tracking-wider text-white/60">Profit check</p>
+          <p class="text-xs text-white/50">Smith Residence</p>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs text-white/60">Your current quote</p>
+            <p class="mt-1 text-2xl font-extrabold tabular-nums text-white/50 line-through decoration-2">
+              {formatCurrency(currentQuote)}
+            </p>
+            <p class="mt-0.5 text-xs text-white/60">{formatPercent(currentMargin)} margin</p>
+          </div>
+          <div>
+            <p class="text-xs text-white/60">Required price</p>
+            <p class="mt-1 text-2xl font-extrabold tabular-nums text-lime">{formatCurrency(pricing.displayPrice)}</p>
+            <p class="mt-0.5 text-xs text-white/60">{targetMargin}% target margin</p>
+          </div>
+        </div>
+        <div class="mt-5 rounded-xl bg-white/10 p-4">
+          <p class="text-xs text-white/60">Underpriced by</p>
+          <p class="mt-1 text-xl font-extrabold tabular-nums">{formatCurrency(underpricedBy)}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Markup vs margin -->
+  <section class="border-t border-border bg-white py-16 sm:py-20">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">The math contractors need</p>
+      <h2 id="markup-vs-margin" class="mt-2 scroll-mt-24 text-[clamp(1.75rem,4vw,2.5rem)] font-extrabold leading-tight text-ink">
+        Markup is not margin.
+      </h2>
+      <p class="mt-3 max-w-2xl text-muted">
+        A {targetMargin}% markup on true cost produces a lower price than a true {targetMargin}% margin — and a smaller
+        profit share than you think.
+      </p>
+
+      <div class="mt-8 grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
+        <div class="rounded-2xl border border-border bg-paper p-5">
+          <p class="text-xs font-bold uppercase tracking-wider text-muted">True cost</p>
+          <p class="mt-1 text-2xl font-extrabold tabular-nums text-ink">{formatCurrency(trueCost)}</p>
+        </div>
+        <span class="hidden text-xl font-bold text-muted sm:block" aria-hidden="true">÷</span>
+        <div class="rounded-2xl border border-border bg-paper p-5">
+          <p class="text-xs font-bold uppercase tracking-wider text-muted">1 − margin</p>
+          <p class="mt-1 text-2xl font-extrabold tabular-nums text-ink">0.65</p>
+        </div>
+        <span class="hidden text-xl font-bold text-muted sm:block" aria-hidden="true">=</span>
+        <div class="rounded-2xl border border-lime-surface bg-forest p-5 text-white">
+          <p class="text-xs font-bold uppercase tracking-wider text-lime">Selling price</p>
+          <p class="mt-1 text-2xl font-extrabold tabular-nums">{formatCurrency(pricing.requiredSellingPrice, { cents: true })}</p>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-xl border border-border p-4">
+          <p class="text-sm text-muted">
+            A {targetMargin}% <strong class="text-ink">markup</strong> on {formatCurrency(trueCost)} produces a
+            <strong class="text-ink"> {formatCurrency(markupPrice, { cents: true })}</strong> price.
+          </p>
+        </div>
+        <div class="rounded-xl border border-border p-4">
+          <p class="text-sm text-muted">
+            But that price only creates a <strong class="text-ink">{formatPercent(markupMargin)} margin</strong> — a true
+            {" "}{targetMargin}% margin requires the full <strong class="text-ink">{formatCurrency(pricing.requiredSellingPrice, { cents: true })}</strong>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Service Rate Health -->
+  <section id="how-it-works" class="scroll-mt-20 border-t border-border bg-paper py-16 sm:py-20">
+    <div class="mx-auto grid max-w-content gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">Pro dashboard preview</p>
+        <h2 class="mt-2 text-[clamp(1.75rem,4vw,2.5rem)] font-extrabold leading-tight text-ink">
+          Know which services are underpriced.
+        </h2>
+        <p class="mt-4 max-w-md text-muted">
+          Service Rate Health compares what you currently charge for each standard service against the rate required
+          to hit your target margin — so a quiet pricing mistake doesn't repeat on every job.
+        </p>
+        <ol class="mt-6 space-y-3 text-sm text-muted">
+          <li class="flex gap-3"><span class="font-bold text-forest">1.</span> Save your true cost per service in your catalog.</li>
+          <li class="flex gap-3"><span class="font-bold text-forest">2.</span> Set the rate you currently charge.</li>
+          <li class="flex gap-3"><span class="font-bold text-forest">3.</span> Pro flags any service below your target margin — and shows the required rate.</li>
+        </ol>
+      </div>
+
+      <div class="rounded-2xl border border-border bg-white p-5 shadow-lg sm:p-6">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-ink">Service Rate Health</h3>
+          <span class="rounded-full bg-amber-light px-3 py-1 text-xs font-bold text-amber">Needs attention</span>
+        </div>
+        <p class="mt-4 text-sm font-semibold text-ink">Shrub installation</p>
+        <div class="mt-2 h-2.5 w-full rounded-full bg-paper-dim">
+          <div class="h-2.5 rounded-full bg-amber" style="width: 91%"></div>
+        </div>
+        <div class="mt-4 grid grid-cols-3 gap-3 text-center">
+          <div>
+            <p class="text-[11px] uppercase tracking-wider text-muted">Current rate</p>
+            <p class="mt-1 font-bold tabular-nums text-ink">{formatCurrency(rateHealth.currentRate, { cents: true })}</p>
+          </div>
+          <div>
+            <p class="text-[11px] uppercase tracking-wider text-muted">True cost</p>
+            <p class="mt-1 font-bold tabular-nums text-ink">{formatCurrency(rateHealth.trueCostPerUnit, { cents: true })}</p>
+          </div>
+          <div>
+            <p class="text-[11px] uppercase tracking-wider text-muted">Required</p>
+            <p class="mt-1 font-bold tabular-nums text-ink">{formatCurrency(rateHealth.requiredRate, { cents: true })}</p>
+          </div>
+        </div>
+        <p class="mt-4 rounded-xl bg-amber-light p-3 text-sm text-ink">
+          Your shrub installation rate is <strong>{formatCurrency(rateHealth.gapPerUnit, { cents: true })}/unit below</strong> the price needed to hit your target margin.
+        </p>
+        <a href="/pricing/" class="mt-4 flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-forest px-5 text-sm font-bold text-white hover:bg-forest-light">
+          Open Service Rate Health
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. SEO tool cards -->
+  <section class="border-t border-border bg-white py-16 sm:py-20">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <ToolCardGrid
+        heading="Useful free tools. A natural path to Pro."
+        intro="Every tool below runs the same estimating math Pro is built on."
+      />
+    </div>
+  </section>
+
+  <!-- 10. Pricing -->
+  <section class="border-t border-border bg-paper py-16 sm:py-20">
+    <div class="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
+      <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">Pricing</p>
+      <h2 class="mt-2 text-[clamp(1.75rem,4vw,2.5rem)] font-extrabold text-ink">One price. Yours for good.</h2>
+    </div>
+    <div class="mx-auto mt-8 max-w-lg rounded-3xl border border-forest bg-forest p-8 text-white shadow-xl">
+      <h3 class="text-lg font-bold text-lime">Landscape Estimate Pro</h3>
+      <p class="mt-2 text-5xl font-extrabold">{PRICE_DISPLAY}</p>
+      <p class="text-white/70">one-time payment, lifetime access</p>
+      <ul class="mt-6 space-y-2.5 text-sm">
+        {[
+          "Unlimited estimates and projects",
+          "All Pro estimating and job-costing features",
+          "Service Rate Health and cost-impact analysis",
+          "Local-first storage — nothing leaves your device",
+        ].map((item) => (
+          <li class="flex items-start gap-2.5">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-lime" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+            {item}
+          </li>
+        ))}
+      </ul>
+      <a
+        href="/pricing/"
+        class="mt-7 flex min-h-[52px] items-center justify-center rounded-xl bg-lime px-6 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
+      >
+        Get Landscape Estimate Pro
+      </a>
+    </div>
+  </section>
+
+  <!-- 11. FAQ -->
+  <section class="border-t border-border bg-white py-16 sm:py-20">
+    <div class="mx-auto max-w-narrow px-4 sm:px-6 lg:px-8">
+      <FaqAccordion faqs={faqs} />
+    </div>
+  </section>
+</Layout>

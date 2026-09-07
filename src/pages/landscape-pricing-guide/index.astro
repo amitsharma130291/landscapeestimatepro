@@ -1,0 +1,137 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import ProjectCalculatorIsland from "../../components/calculator/ProjectCalculatorIsland.tsx";
+import { calculateMargin, calculatePriceFromMarkup, calculateQuotePricing, formatCurrency, formatPercent } from "../../lib/calc";
+
+const pricing = calculateQuotePricing(2849.7, 35, "dollar");
+const trueCost = pricing.trueCostRounded;
+const markupPrice = calculatePriceFromMarkup(trueCost, 35);
+const markupMargin = calculateMargin(markupPrice, trueCost);
+
+const faqs = [
+  {
+    question: "What's a reasonable overhead percentage for a small landscaping business?",
+    answer:
+      "It depends entirely on your fixed costs — insurance, vehicles, admin time, and similar expenses relative to your job volume. There's no single correct number; calculate your own from your actual annual overhead divided by your annual direct job costs, and revisit it periodically.",
+  },
+  {
+    question: "Should I price by markup or by margin?",
+    answer:
+      "Price by margin if you want a specific, predictable profit share of your selling price. Pricing by markup alone tends to under-deliver on that goal, since markup is calculated against a smaller base (cost) than margin is (price).",
+  },
+  {
+    question: "How do I figure out my own production rates?",
+    answer:
+      "Track actual time spent on a service across several real jobs, then divide the quantity completed by the person-hours it took. Landscape Estimate Pro's estimate-vs-actual and labor variance tracking is built specifically to help with this over time.",
+  },
+  {
+    question: "What should my minimum project price be?",
+    answer:
+      "At least enough to cover the true cost (materials, labor, equipment, overhead) of your smallest typical job at your target margin — otherwise small jobs quietly lose money even though they look busy on the calendar.",
+  },
+];
+---
+
+<ToolPageLayout
+  title="Landscape Pricing Guide — Labor, Materials, Overhead & Margin"
+  description="A practical guide to pricing landscaping work: labor, materials, overhead, markup vs. margin, equipment costs, minimum charges, and production rates — with a built-in calculator."
+  eyebrow="Guide"
+  h1="Landscape Pricing Guide"
+  intro="How labor, materials, overhead, and margin combine into a price that actually protects your business — plus a calculator to run your own numbers."
+  breadcrumbLabel="Landscape Pricing Guide"
+  currentHref="/landscape-pricing-guide/"
+  faqs={faqs}
+  webApplicationSchema={false}
+>
+  <div class="prose-guide max-w-none space-y-12">
+    <section>
+      <h2 class="text-xl font-extrabold text-ink">Labor</h2>
+      <p class="mt-3 max-w-3xl text-muted">
+        Labor cost should reflect your fully loaded rate per person-hour — wages plus payroll tax, workers' comp, and
+        benefits — not just take-home pay. You can calculate labor two ways: directly (crew size × hours × loaded
+        rate), or from a production rate (quantity of work ÷ units per person-hour). Production rates are more
+        powerful once you have a few completed jobs to base them on, because they scale automatically with project
+        size.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-extrabold text-ink">Materials</h2>
+      <p class="mt-3 max-w-3xl text-muted">
+        Use what your supplier actually charges you, not a list price — including any delivery or handling fees
+        rolled into the unit cost. Track materials in the units you actually order in (yards, tons, each, linear
+        feet) so quantities transfer cleanly from a takeoff to a price.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-extrabold text-ink">Overhead</h2>
+      <p class="mt-3 max-w-3xl text-muted">
+        Overhead is the cost of running your business that isn't tied to any one job — insurance, vehicle payments,
+        office and admin time, tools that aren't billed per job, and similar fixed costs. Most contractors express
+        it as a percentage of direct job cost and add it to every estimate so it's never silently absorbed by
+        thinner margins.
+      </p>
+    </section>
+
+    <section id="markup-vs-margin" class="scroll-mt-24">
+      <h2 class="text-xl font-extrabold text-ink">Markup vs. margin</h2>
+      <p class="mt-3 max-w-3xl text-muted">
+        Markup is profit divided by cost. Margin is profit divided by selling price. They sound similar but produce
+        different prices for the same target percentage — and the gap gets larger as the percentage grows.
+      </p>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-2xl border border-border bg-paper p-5">
+          <p class="text-sm font-bold uppercase tracking-wider text-muted">35% markup</p>
+          <p class="mt-2 text-sm text-ink">
+            {formatCurrency(trueCost)} true cost × 1.35 = <strong>{formatCurrency(markupPrice, { cents: true })}</strong>
+          </p>
+          <p class="mt-1 text-sm text-muted">That price is only a {formatPercent(markupMargin)} margin.</p>
+        </div>
+        <div class="rounded-2xl border border-lime-surface bg-mint p-5">
+          <p class="text-sm font-bold uppercase tracking-wider text-mint-ink">35% margin</p>
+          <p class="mt-2 text-sm text-mint-ink">
+            {formatCurrency(trueCost)} true cost ÷ 0.65 = <strong>{formatCurrency(pricing.requiredSellingPrice, { cents: true })}</strong>
+          </p>
+          <p class="mt-1 text-sm text-mint-ink/80">A true {formatPercent(35, 0)} margin, exactly.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-extrabold text-ink">Equipment</h2>
+      <p class="mt-3 max-w-3xl text-muted">
+        Cost owned or rented equipment the way you actually pay for it — per hour, per day, or per job — and include
+        it in direct cost the same as materials and labor. It's easy to under-price equipment-heavy work (grading,
+        hardscape) by treating equipment as a rounding error instead of a real line item.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-extrabold text-ink">Minimum charge</h2>
+      <p class="mt-3 max-w-3xl text-muted">
+        A flat minimum project price protects small jobs from losing money to fixed costs like a service call,
+        setup time, or a delivery minimum. Check your minimum the same way you'd check any price: against the true
+        cost of your smallest typical job at your target margin, not a round number picked years ago.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-extrabold text-ink">Production rates</h2>
+      <p class="mt-3 max-w-3xl text-muted">
+        A production rate (units of work per person-hour) turns a quantity into a labor estimate without re-deriving
+        crew hours from scratch every time. Your production rate is yours — it depends on your crew, your
+        equipment, and the site conditions you typically work in, and it's worth revisiting once you have
+        completed-job data to compare against your original assumption.
+      </p>
+    </section>
+  </div>
+
+  <div class="mt-14 border-t border-border pt-12">
+    <h2 class="text-2xl font-extrabold text-ink">Run your own numbers</h2>
+    <p class="mt-2 max-w-2xl text-muted">Use the calculator below to turn your own costs into a true cost and a required selling price.</p>
+    <div class="mt-6">
+      <ProjectCalculatorIsland client:load />
+    </div>
+  </div>
+</ToolPageLayout>

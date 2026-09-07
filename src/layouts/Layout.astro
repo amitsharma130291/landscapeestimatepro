@@ -1,0 +1,106 @@
+---
+import "../styles/global.css";
+import PublicHeader from "../components/PublicHeader.astro";
+import PublicFooter from "../components/PublicFooter.astro";
+import { SITE_NAME } from "../data/site";
+
+export interface Props {
+  title: string;
+  description: string;
+  noIndex?: boolean;
+  ogImage?: string;
+}
+
+const { title, description, noIndex = false, ogImage = "/og-default.png" } = Astro.props;
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
+const GA_ID = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: Astro.site?.toString(),
+  description:
+    "Landscape estimating and job-costing software for small landscape contractors. $99 lifetime, no account, local-first.",
+};
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE_NAME,
+  url: Astro.site?.toString(),
+};
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+
+    <title>{title}</title>
+
+    <link rel="canonical" href={canonicalUrl} />
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:image" content={new URL(ogImage, Astro.site).toString()} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#0E2A1E" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    {!noIndex && (
+      <>
+        <script type="application/ld+json" is:inline set:html={JSON.stringify(websiteSchema)} />
+        <script type="application/ld+json" is:inline set:html={JSON.stringify(organizationSchema)} />
+      </>
+    )}
+
+    {GA_ID && (
+      <>
+        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>
+        <script is:inline define:vars={{ GA_ID }}>
+          window.dataLayer = window.dataLayer || [];
+          function gtag() { dataLayer.push(arguments); }
+          gtag("js", new Date());
+          gtag("config", GA_ID, { page_path: window.location.pathname });
+        </script>
+      </>
+    )}
+
+    <slot name="head" />
+  </head>
+
+  <body class="flex min-h-screen flex-col bg-paper font-sans text-ink antialiased">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-forest focus:px-4 focus:py-2 focus:text-white">
+      Skip to content
+    </a>
+    <PublicHeader />
+    <main id="main-content" class="flex-1">
+      <slot />
+    </main>
+    <PublicFooter />
+    <script>
+      import { initAnalyticsDelegation } from "../lib/analytics";
+      initAnalyticsDelegation();
+    </script>
+  </body>
+</html>

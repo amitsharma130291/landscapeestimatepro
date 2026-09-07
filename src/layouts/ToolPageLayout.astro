@@ -1,0 +1,90 @@
+---
+import Layout from "./Layout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import FaqAccordion, { type FaqItem } from "../components/FaqAccordion.astro";
+import ToolCardGrid from "../components/ToolCardGrid.astro";
+import TrustBadges from "../components/TrustBadges.astro";
+import { SITE_URL } from "../data/site";
+
+export interface Props {
+  title: string;
+  description: string;
+  eyebrow: string;
+  h1: string;
+  intro: string;
+  breadcrumbLabel: string;
+  faqs: FaqItem[];
+  currentHref: string;
+  webApplicationSchema?: boolean;
+}
+
+const { title, description, eyebrow, h1, intro, breadcrumbLabel, faqs, currentHref, webApplicationSchema = true } =
+  Astro.props;
+
+const schema = webApplicationSchema
+  ? {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      name: h1,
+      url: new URL(currentHref, SITE_URL).toString(),
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Any (runs in browser)",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      description,
+    }
+  : null;
+---
+
+<Layout title={title} description={description}>
+  <Fragment slot="head">
+    {schema && <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />}
+  </Fragment>
+
+  <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: breadcrumbLabel, href: currentHref }]} />
+
+  <section class="mx-auto max-w-content px-4 pb-8 pt-6 sm:px-6 lg:px-8">
+    <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">{eyebrow}</p>
+    <h1 class="mt-2 max-w-3xl text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold leading-[1.1] text-ink">{h1}</h1>
+    <p class="mt-4 max-w-2xl text-base text-muted sm:text-lg">{intro}</p>
+    <div class="mt-5">
+      <TrustBadges />
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-content px-4 pb-16 sm:px-6 lg:px-8">
+    <slot />
+  </section>
+
+  <section class="border-y border-border bg-white py-16">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <slot name="extra" />
+    </div>
+  </section>
+
+  <section class="bg-forest py-14 text-white">
+    <div class="mx-auto flex max-w-content flex-col items-start gap-5 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+      <div>
+        <h2 class="text-2xl font-extrabold sm:text-3xl">Run the numbers once. Reuse them forever.</h2>
+        <p class="mt-2 max-w-xl text-white/75">
+          Pro saves your materials, equipment, labor and production rates so every future estimate calculates itself — plus Service Rate Health, estimate-vs-actual tracking, and branded customer estimates.
+        </p>
+      </div>
+      <a
+        href="/pricing/"
+        class="inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
+      >
+        Get Pro — $99 Lifetime
+      </a>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-content px-4 py-16 sm:px-6 lg:px-8">
+    <ToolCardGrid heading="More free tools" exclude={[currentHref]} />
+  </section>
+
+  <section class="border-t border-border bg-white py-16">
+    <div class="mx-auto max-w-narrow px-4 sm:px-6 lg:px-8">
+      <FaqAccordion faqs={faqs} />
+    </div>
+  </section>
+</Layout>

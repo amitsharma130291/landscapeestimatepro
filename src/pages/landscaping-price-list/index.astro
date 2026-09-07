@@ -1,0 +1,35 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import PriceListBuilderIsland from "../../components/calculator/PriceListBuilderIsland.tsx";
+
+const faqs = [
+  {
+    question: "Should every landscaper charge the same prices?",
+    answer:
+      "No. Your true cost of materials, labor, and overhead is specific to your business and your market. This tool lets you build your own price list rather than copying a generic rate sheet.",
+  },
+  {
+    question: "How do I know if a price on my list is actually profitable?",
+    answer:
+      "You'd need your true cost per service to check that — this free tool just organizes the prices you charge. Landscape Estimate Pro's Service Rate Health compares each rate against your real cost and target margin automatically.",
+  },
+  {
+    question: "Can I print this price list for customers?",
+    answer: "Yes — use the print button to produce a clean, printable price sheet.",
+  },
+];
+---
+
+<ToolPageLayout
+  title="Landscaping Price List — Free Price Book Builder"
+  description="Build a landscaping price list for your services — mulch, planting, edging, and more — then check whether those prices are actually profitable."
+  eyebrow="Free interactive tool"
+  h1="Landscaping Price List"
+  intro="Build a per-service price book for your business — service, rate, and unit — plus your minimum project price. Print it for customers or keep it as your internal reference."
+  breadcrumbLabel="Landscaping Price List"
+  currentHref="/landscaping-price-list/"
+  faqs={faqs}
+  webApplicationSchema={false}
+>
+  <PriceListBuilderIsland client:load />
+</ToolPageLayout>

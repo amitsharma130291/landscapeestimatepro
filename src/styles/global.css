@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+/*
+ * Field Ledger design system — deep forest green as the dominant brand color,
+ * acid-lime reserved for primary actions and positive financial states, warm
+ * near-white surfaces for readability, charcoal-green ink for text.
+ *
+ * Two accent tokens exist for the same reason concreteestimatepro split its
+ * orange token: a single lime value can't satisfy both a dark hero surface
+ * (needs a bright, saturated lime) and a light surface (needs a deeper,
+ * higher-contrast lime-green so text/icons stay AA against white).
+ */
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+  --color-forest: #0e2a1e;
+  --color-forest-light: #16382a;
+  --color-forest-dark: #081c13;
+
+  --color-lime: #c6f135;         /* on dark surfaces: hero CTA, headline accent */
+  --color-lime-ink: #16321a;      /* text color placed on top of --color-lime */
+  --color-lime-surface: #8fae1c;  /* on light surfaces: links/icons, AA against white */
+
+  --color-mint: #e3f5e6;          /* light success chip background */
+  --color-mint-ink: #1c6b3c;      /* text on mint chips */
+
+  --color-ink: #142019;           /* charcoal-green primary text */
+  --color-muted: #5b6b62;         /* gray-green secondary text */
+  --color-muted-light: #8a988f;
+
+  --color-paper: #f6f8f5;         /* very light neutral surface */
+  --color-paper-dim: #eef1ec;
+  --color-border: #dbe3dc;
+  --color-border-dark: #2a3d30;   /* borders on dark forest surfaces */
+
+  --color-amber: #a8720b;
+  --color-amber-light: #fbf0da;
+  --color-red: #b8332a;
+  --color-red-light: #fbeae8;
+
+  --container-content: 72rem; /* 1152px */
+  --container-narrow: 48rem;  /* 768px */
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-lime-surface);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--color-lime);
+    color: var(--color-lime-ink);
+  }
+
+  /* Inputs at 16px avoid iOS Safari's auto-zoom on focus. */
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}

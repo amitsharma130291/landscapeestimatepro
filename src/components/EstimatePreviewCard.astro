@@ -1,0 +1,90 @@
+---
+import { calculateProjectCost, calculateQuotePricing, formatCurrency } from "../lib/calc";
+
+// The Smith Residence reference project used throughout the marketing site —
+// consistent numbers everywhere (hero, underpricing, markup-vs-margin).
+const inputs = {
+  materialsCost: 1250,
+  laborCost: 768,
+  equipmentCost: 180,
+  deliveryCost: 180,
+  otherCost: 100,
+  overheadPercent: 15,
+};
+
+const cost = calculateProjectCost(inputs);
+const pricing = calculateQuotePricing(cost.trueCost, 35, "dollar");
+
+const lineItems = [
+  { label: "Materials", value: inputs.materialsCost },
+  { label: "Labor", value: inputs.laborCost },
+  { label: "Equipment", value: inputs.equipmentCost },
+  { label: "Delivery", value: inputs.deliveryCost },
+  { label: "Other", value: inputs.otherCost },
+];
+const maxValue = Math.max(...lineItems.map((l) => l.value));
+---
+
+<div class="w-full rounded-2xl border border-border bg-white p-5 shadow-xl sm:p-6">
+  <div class="flex items-center justify-between border-b border-border pb-3">
+    <div>
+      <p class="text-[11px] font-bold uppercase tracking-wider text-muted">Smith Residence / Estimate</p>
+    </div>
+    <span class="flex items-center gap-1.5 text-xs font-medium text-lime-surface">
+      <span class="h-1.5 w-1.5 rounded-full bg-lime-surface" aria-hidden="true"></span>
+      Saved locally
+    </span>
+  </div>
+
+  <div class="mt-4 flex items-baseline justify-between">
+    <div>
+      <p class="text-[11px] font-bold uppercase tracking-wider text-muted">Project total</p>
+      <p class="text-4xl font-extrabold tabular-nums text-ink">{formatCurrency(pricing.displayPrice)}</p>
+    </div>
+    <span class="rounded-full bg-mint px-3 py-1 text-xs font-bold text-mint-ink">35% margin</span>
+  </div>
+
+  <ul class="mt-5 space-y-3">
+    {lineItems.map((item) => (
+      <li>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-muted">{item.label}</span>
+          <span class="font-semibold tabular-nums text-ink">{formatCurrency(item.value)}</span>
+        </div>
+        <div class="mt-1 h-1.5 w-full rounded-full bg-paper-dim">
+          <div
+            class="h-1.5 rounded-full bg-lime-surface"
+            style={`width: ${Math.max(6, (item.value / maxValue) * 100)}%`}
+          >
+          </div>
+        </div>
+      </li>
+    ))}
+  </ul>
+
+  <div class="mt-5 flex items-center justify-between text-sm">
+    <span class="text-muted">Overhead allocation (15%)</span>
+    <span class="font-semibold tabular-nums text-ink">{formatCurrency(cost.overheadAmount)}</span>
+  </div>
+
+  <div class="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-paper-dim p-4">
+    <div>
+      <p class="text-[11px] font-bold uppercase tracking-wider text-muted">True cost</p>
+      <p class="mt-0.5 text-xl font-extrabold tabular-nums text-ink">{formatCurrency(pricing.trueCostRounded)}</p>
+    </div>
+    <div class="text-right">
+      <p class="text-[11px] font-bold uppercase tracking-wider text-muted">Selling price</p>
+      <p class="mt-0.5 text-xl font-extrabold tabular-nums text-ink">{formatCurrency(pricing.requiredSellingPrice, { cents: true })}</p>
+    </div>
+  </div>
+
+  <a
+    href="/landscaping-cost-calculator/"
+    class="mt-5 flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-forest px-5 text-sm font-bold text-white transition-colors hover:bg-forest-light"
+  >
+    Create customer estimate
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+    </svg>
+  </a>
+</div>
