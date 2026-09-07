@@ -60,7 +60,9 @@ export default function AppShell({ activeTab }: { activeTab: AppTab }) {
                 <source srcSet="/brand/logo-mark.webp" type="image/webp" />
                 <img src="/brand/logo-mark.png" alt="" width="36" height="36" className="h-8 w-8" />
               </picture>
-              <span className="hidden sm:inline">Landscape Estimate Pro</span>
+              <span className="hidden sm:inline">
+                Landscape Estimate <span className="text-lime-surface">Pro</span>
+              </span>
             </a>
           </div>
           <a href="/" className="flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-forest">
