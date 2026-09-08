@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useWorkspace } from "../../../lib/workspaceContext";
 import { formatUnitLabel } from "../../../lib/calc";
 import { Button, Card, NumberInput, Select, TextInput } from "../../ui/primitives";
+import { CostImpactBanner, useCostImpactAlert } from "../CostImpactBanner";
 import type { EquipmentRateType, MaterialUnit } from "../../../lib/types";
 
 const MATERIAL_UNITS: MaterialUnit[] = ["each", "sqft", "linear-ft", "yd3", "ton", "bag", "pallet", "hour", "job", "custom"];
@@ -11,9 +12,12 @@ const EQUIPMENT_RATE_TYPES: EquipmentRateType[] = ["hour", "day", "job", "custom
 export default function CatalogTab() {
   const { workspace, addMaterial, updateMaterial, removeMaterial, addEquipment, updateEquipment, removeEquipment } = useWorkspace();
   const idPrefix = useId();
+  const costImpact = useCostImpactAlert();
 
   return (
     <div className="space-y-8">
+      <CostImpactBanner result={costImpact.result} onDismiss={costImpact.dismiss} />
+
       <Card padded={false}>
         <div className="flex items-center justify-between p-5 pb-0 sm:p-6 sm:pb-0">
           <h2 className="text-lg font-bold text-ink">Materials</h2>
@@ -49,6 +53,8 @@ export default function CatalogTab() {
                       id={`${idPrefix}-mat-cost-${index}`}
                       value={material.unitCost}
                       onValueChange={(v) => updateMaterial(material.id, { unitCost: v === "" ? 0 : v })}
+                      onFocus={() => costImpact.startTracking("material", material.id, material.unitCost, workspace)}
+                      onBlur={() => costImpact.finishTracking(material.unitCost, workspace, material.name)}
                       className="w-28"
                     />
                   </td>
@@ -117,6 +123,8 @@ export default function CatalogTab() {
                       id={`${idPrefix}-eq-rate-${index}`}
                       value={item.rate}
                       onValueChange={(v) => updateEquipment(item.id, { rate: v === "" ? 0 : v })}
+                      onFocus={() => costImpact.startTracking("equipment", item.id, item.rate, workspace)}
+                      onBlur={() => costImpact.finishTracking(item.rate, workspace, item.name)}
                       className="w-28"
                     />
                   </td>

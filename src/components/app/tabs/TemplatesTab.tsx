@@ -14,7 +14,6 @@ export default function TemplatesTab() {
     addAssembly,
     updateAssembly,
     removeAssembly,
-    addTemplate,
     removeTemplate,
   } = useWorkspace();
   const idPrefix = useId();
@@ -231,29 +230,27 @@ export default function TemplatesTab() {
       </section>
 
       <section>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-ink">Project templates</h2>
-            <p className="mt-1 text-sm text-muted">Save a common job type (e.g. "mulch refresh") as a starting point for new estimates.</p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => addTemplate({ name: "New project template", serviceLines: [], equipmentLines: [], deliveryCost: business.defaultDeliveryCost, extraCosts: [] })}
-          >
-            <Plus size={16} aria-hidden="true" /> Add template
-          </Button>
+        <div>
+          <h2 className="text-lg font-bold text-ink">Project templates</h2>
+          <p className="mt-1 text-sm text-muted">
+            Save a common job type as a starting point for new estimates — open a project on the Estimates tab and
+            use "Save as template," then start a new estimate from it any time.
+          </p>
         </div>
         {templates.length === 0 ? (
           <div className="mt-4">
-            <EmptyState title="No project templates yet" description="Create a template so you don't rebuild the same job type from scratch every time." />
+            <EmptyState title="No project templates yet" description="Build an estimate you'll reuse often, then save it as a template from the estimate editor." />
           </div>
         ) : (
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             {templates.map((template) => (
               <li key={template.id} className="flex items-center justify-between rounded-xl border border-border bg-white p-4">
-                <span className="font-semibold text-ink">{template.name}</span>
+                <div>
+                  <span className="font-semibold text-ink">{template.name}</span>
+                  <p className="text-xs text-muted">
+                    {template.serviceLines.length} service{template.serviceLines.length === 1 ? "" : "s"}
+                  </p>
+                </div>
                 <button type="button" onClick={() => removeTemplate(template.id)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${template.name}`}>
                   <Trash2 size={16} aria-hidden="true" />
                 </button>

@@ -8,13 +8,25 @@ import { calculateMargin, calculateProjectCost, calculateRequiredSellingPrice, s
 import type {
   Assembly,
   AssemblyCostResult,
+  BusinessSettings,
   Equipment,
   Material,
   Project,
   ProjectEstimateResult,
+  ProjectTemplate,
   RateHealthResult,
   RateHealthStatus,
 } from "./types";
+
+function average(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return values.reduce((sum, v) => sum + v, 0) / values.length;
+}
+
+function percentDiff(actual: number, estimated: number): number | null {
+  if (estimated <= 0) return null;
+  return ((actual - estimated) / estimated) * 100;
+}
 
 function safeD(n: number): Decimal {
   if (!Number.isFinite(n) || n < 0) return new Decimal(0);
@@ -324,5 +336,192 @@ export function evaluateActualVsEstimate(
     actualMargin,
     costVariance,
     costVariancePercent,
+  };
+}
+
+// -- Historical variance & profitability (brief killer features #20-22) -----
+
+export interface AssemblyVarianceResult {
+  assemblyId: string;
+  assemblyName: string;
+  unit: string;
+  completedCount: number;
+  avgEstimatedQuantity: number;
+  avgActualQuantity: number;
+  materialVariancePercent: number | null;
+  avgActualLaborHours: number;
+  /** Hours the estimate implied, given the assembly's current production
+   * rate applied to the ORIGINALLY ESTIMATED quantity — i.e. "what we
+   * expected labor to be," compared against what it actually took. */
+  avgEstimatedLaborHours: number;
+  laborVariancePercent: number | null;
+}
+
+/** Groups every completed project's per-service actuals by assembly, so a
+ * contractor can see e.g. "shrub installs run 17% more labor than planned"
+ * across their job history — not just one project at a time. Assemblies with
+ * no completed jobs yet are omitted (nothing to report). */
+export function calculateAssemblyVariance(
+  projects: Project[],
+  assemblies: Assembly[]
+): AssemblyVarianceResult[] {
+  const byAssembly = new Map<string, { estQty: number[]; actQty: number[]; actHours: number[]; estHours: number[] }>();
+
+  for (const project of projects) {
+    const lineActuals = project.actual?.serviceLineActuals;
+    if (!lineActuals) continue;
+    for (const line of lineActuals) {
+      const assembly = assemblies.find((a) => a.id === line.assemblyId);
+      if (!assembly) continue;
+      const bucket = byAssembly.get(line.assemblyId) ?? { estQty: [], actQty: [], actHours: [], estHours: [] };
+      bucket.estQty.push(safe(line.estimatedQuantity));
+      bucket.actQty.push(safe(line.actualQuantity));
+      bucket.actHours.push(safe(line.actualLaborHours));
+      bucket.estHours.push(safe(line.estimatedQuantity) * safe(assembly.laborPersonHoursPerUnit));
+      byAssembly.set(line.assemblyId, bucket);
+    }
+  }
+
+  const results: AssemblyVarianceResult[] = [];
+  for (const [assemblyId, bucket] of byAssembly) {
+    const assembly = assemblies.find((a) => a.id === assemblyId);
+    if (!assembly) continue;
+    const avgEstimatedQuantity = average(bucket.estQty) ?? 0;
+    const avgActualQuantity = average(bucket.actQty) ?? 0;
+    const avgActualLaborHours = average(bucket.actHours) ?? 0;
+    const avgEstimatedLaborHours = average(bucket.estHours) ?? 0;
+    results.push({
+      assemblyId,
+      assemblyName: assembly.name,
+      unit: assembly.unit,
+      completedCount: bucket.estQty.length,
+      avgEstimatedQuantity,
+      avgActualQuantity,
+      materialVariancePercent: percentDiff(avgActualQuantity, avgEstimatedQuantity),
+      avgActualLaborHours,
+      avgEstimatedLaborHours,
+      laborVariancePercent: percentDiff(avgActualLaborHours, avgEstimatedLaborHours),
+    });
+  }
+  return results;
+}
+
+export interface ProfitabilitySummary {
+  completedCount: number;
+  avgExpectedMargin: number | null;
+  avgActualMargin: number | null;
+}
+
+/** Aggregate expected-vs-actual margin across every completed job. This is a
+ * whole-project rollup rather than a per-service-type breakdown: a project's
+ * margin is computed for the project as a whole (materials+labor+equipment
+ * from every service line together), so splitting profit by individual
+ * service within a multi-service project isn't something the pricing model
+ * supports without attributing overhead/margin per line — deliberately not
+ * done here rather than faking precision the data doesn't have. */
+export function calculateProfitabilitySummary(
+  projects: Project[],
+  assemblies: Assembly[],
+  materials: Material[],
+  equipment: Equipment[],
+  loadedLaborRate: number
+): ProfitabilitySummary {
+  const completed = projects.filter((p) => p.actual);
+  const expectedMargins: number[] = [];
+  const actualMargins: number[] = [];
+
+  for (const project of completed) {
+    const estimate = evaluateProject(project, assemblies, materials, equipment, loadedLaborRate);
+    const actualDirectCost =
+      project.actual!.actualMaterialsCost +
+      project.actual!.actualLaborPersonHours * loadedLaborRate +
+      project.actual!.actualEquipmentCost +
+      project.actual!.actualDeliveryCost +
+      project.actual!.actualOtherCost;
+    // A won job sold at whatever was quoted (if locked in), not necessarily
+    // at today's live-recalculated price.
+    const estimateForComparison = { ...estimate, displayPrice: project.quotedPrice ?? estimate.displayPrice };
+    const comparison = evaluateActualVsEstimate(estimateForComparison, actualDirectCost, project.overheadPercent);
+    if (comparison.expectedMargin !== null) expectedMargins.push(comparison.expectedMargin);
+    if (comparison.actualMargin !== null) actualMargins.push(comparison.actualMargin);
+  }
+
+  return {
+    completedCount: completed.length,
+    avgExpectedMargin: average(expectedMargins),
+    avgActualMargin: average(actualMargins),
+  };
+}
+
+// -- Cost-impact scenarios (brief killer features #16-18) -------------------
+
+export type CostImpactKind = "material" | "equipment" | "labor";
+
+/** A labor-rate change affects every assembly that bills any labor at all;
+ * a material/equipment change affects only assemblies that actually use
+ * that specific item. */
+export function findAffectedAssemblies(
+  assemblies: Assembly[],
+  kind: CostImpactKind,
+  itemId?: string
+): Assembly[] {
+  if (kind === "labor") return assemblies.filter((a) => a.laborPersonHoursPerUnit > 0);
+  if (kind === "material") return assemblies.filter((a) => a.materials.some((m) => m.materialId === itemId));
+  return assemblies.filter((a) => a.equipment.some((e) => e.equipmentId === itemId));
+}
+
+export interface CostImpactWorkspace {
+  assemblies: Assembly[];
+  templates: ProjectTemplate[];
+  projects: Project[];
+  materials: Material[];
+  equipment: Equipment[];
+  business: BusinessSettings;
+}
+
+export interface CostImpactSnapshot {
+  affectedAssemblyIds: string[];
+  affectedTemplateIds: string[];
+  affectedProjectIds: string[];
+  belowTargetProjectIds: string[];
+}
+
+/** Captures which assemblies/templates/open estimates a rate change touches,
+ * and which of those open estimates are currently below their own target
+ * margin — call once before a rate edit and once after to see exactly what
+ * changed (brief killer features #16-18: "6 estimates now below target"). */
+export function snapshotCostImpact(
+  kind: CostImpactKind,
+  itemId: string | undefined,
+  workspace: CostImpactWorkspace
+): CostImpactSnapshot {
+  const affected = findAffectedAssemblies(workspace.assemblies, kind, itemId);
+  const affectedIds = new Set(affected.map((a) => a.id));
+
+  const affectedTemplateIds = workspace.templates
+    .filter((t) => t.serviceLines.some((l) => affectedIds.has(l.assemblyId)))
+    .map((t) => t.id);
+
+  const openProjects = workspace.projects.filter(
+    (p) => p.status !== "archived" && p.serviceLines.some((l) => affectedIds.has(l.assemblyId))
+  );
+
+  // Only a project with a price already quoted to the customer can
+  // meaningfully be "below target" — a plain draft always re-solves its own
+  // price to hit target, so it's never behind by construction.
+  const belowTargetProjectIds = openProjects
+    .filter((p) => {
+      if (p.quotedPrice === undefined) return false;
+      const result = evaluateProject(p, workspace.assemblies, workspace.materials, workspace.equipment, workspace.business.loadedLaborRate);
+      const marginAtQuotedPrice = calculateMargin(p.quotedPrice, result.trueCost);
+      return marginAtQuotedPrice !== null && marginAtQuotedPrice < p.targetMarginPercent;
+    })
+    .map((p) => p.id);
+
+  return {
+    affectedAssemblyIds: [...affectedIds],
+    affectedTemplateIds,
+    affectedProjectIds: openProjects.map((p) => p.id),
+    belowTargetProjectIds,
   };
 }

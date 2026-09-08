@@ -1,12 +1,39 @@
 import { useId, useRef, useState } from "react";
-import { Download, Upload, RotateCcw } from "lucide-react";
+import { Download, Upload, RotateCcw, Image as ImageIcon, X } from "lucide-react";
 import { useWorkspace } from "../../../lib/workspaceContext";
 import { exportWorkspaceJson, parseWorkspaceJson } from "../../../lib/persistence";
 import { createSampleWorkspace } from "../../../lib/sampleData";
-import { Button, Card, Field, NumberInput } from "../../ui/primitives";
+import { Button, Card, Field, NumberInput, TextInput } from "../../ui/primitives";
+import { CostImpactBanner, useCostImpactAlert } from "../CostImpactBanner";
 
 function n(value: number | ""): number {
   return value === "" ? 0 : value;
+}
+
+/** Downscales an uploaded logo to a small square-ish PNG data URL (no
+ * backend to store files, so it lives inline in the workspace — keeping it
+ * small matters since everything round-trips through localStorage/JSON). */
+function resizeImageToDataUrl(file: File, maxDimension = 240): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read that file."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("That doesn't look like an image."));
+      img.onload = () => {
+        const ratio = Math.min(1, maxDimension / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Could not process that image."));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.src = String(reader.result ?? "");
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function SettingsTab() {
@@ -14,7 +41,20 @@ export default function SettingsTab() {
   const { business } = workspace;
   const idPrefix = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const costImpact = useCostImpactAlert();
+
+  async function handleLogoFile(file: File) {
+    setLogoError(null);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file);
+      updateBusiness({ businessLogoDataUrl: dataUrl });
+    } catch (err) {
+      setLogoError(err instanceof Error ? err.message : "Could not process that image.");
+    }
+  }
 
   function handleExport() {
     const json = exportWorkspaceJson(workspace);
@@ -52,6 +92,62 @@ export default function SettingsTab() {
 
   return (
     <div className="max-w-2xl space-y-6">
+      <CostImpactBanner result={costImpact.result} onDismiss={costImpact.dismiss} />
+
+      <Card>
+        <h2 className="text-lg font-bold text-ink">Business profile</h2>
+        <p className="mt-1 text-sm text-muted">Shown on branded, customer-facing estimates.</p>
+        <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <Field label="Business name" htmlFor={`${idPrefix}-business-name`}>
+              <TextInput
+                id={`${idPrefix}-business-name`}
+                value={business.businessName ?? ""}
+                onChange={(e) => updateBusiness({ businessName: e.target.value })}
+                placeholder="Greenscape Landscaping"
+              />
+            </Field>
+          </div>
+          <div>
+            <span className="mb-1.5 block text-sm font-semibold text-ink">Logo</span>
+            <div className="flex items-center gap-3">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-border bg-paper">
+                {business.businessLogoDataUrl ? (
+                  <img src={business.businessLogoDataUrl} alt="Business logo" className="h-full w-full rounded-lg object-contain p-1" />
+                ) : (
+                  <ImageIcon size={22} className="text-muted-light" aria-hidden="true" />
+                )}
+              </div>
+              <Button type="button" variant="ghost" size="sm" onClick={() => logoInputRef.current?.click()}>
+                <Upload size={16} aria-hidden="true" /> Upload
+              </Button>
+              {business.businessLogoDataUrl && (
+                <button
+                  type="button"
+                  onClick={() => updateBusiness({ businessLogoDataUrl: undefined })}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red"
+                  aria-label="Remove logo"
+                >
+                  <X size={16} aria-hidden="true" />
+                </button>
+              )}
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleLogoFile(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+            {logoError && <p className="mt-1.5 text-xs font-medium text-red">{logoError}</p>}
+          </div>
+        </div>
+      </Card>
+
       <Card>
         <h2 className="text-lg font-bold text-ink">Business assumptions</h2>
         <p className="mt-1 text-sm text-muted">
@@ -65,6 +161,8 @@ export default function SettingsTab() {
                 id={`${idPrefix}-labor`}
                 value={business.loadedLaborRate}
                 onValueChange={(v) => updateBusiness({ loadedLaborRate: n(v) })}
+                onFocus={() => costImpact.startTracking("labor", undefined, business.loadedLaborRate, workspace)}
+                onBlur={() => costImpact.finishTracking(business.loadedLaborRate, workspace, "Loaded labor rate")}
                 className="pl-7"
               />
             </div>

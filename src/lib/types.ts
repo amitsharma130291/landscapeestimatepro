@@ -40,6 +40,8 @@ export interface BusinessSettings {
   defaultDeliveryCost: number;
   minimumProjectPrice: number;
   roundDisplayTo: "dollar" | "cent";
+  businessName?: string;
+  businessLogoDataUrl?: string; // small logo, stored inline (no backend) for branded estimates
 }
 
 export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
@@ -173,6 +175,26 @@ export interface Project {
   targetMarginPercent: number;
   notes?: string;
   actual?: ProjectActuals;
+  /** The price actually communicated to the customer, captured once (when
+   * the project first moves out of "draft") and never silently recomputed
+   * afterward — a draft's price re-solves live as costs change, but a
+   * quoted price shouldn't drift out from under a customer who already has
+   * it in hand. This is what makes "is this open estimate now below target
+   * margin" a meaningful question after a cost change, rather than
+   * tautologically always "no" (calc.ts always re-solves a draft's price to
+   * hit its own target). */
+  quotedPrice?: number;
+}
+
+/** Per-service-line actual, recorded when a job wraps up — this is what makes
+ * historical material/labor variance possible (brief killer features #20/21):
+ * comparing what a service was estimated to need vs. what it actually took,
+ * broken down by assembly rather than lumped into one project-wide number. */
+export interface ServiceLineActual {
+  assemblyId: string;
+  estimatedQuantity: number;
+  actualQuantity: number;
+  actualLaborHours: number;
 }
 
 export interface ProjectActuals {
@@ -183,6 +205,7 @@ export interface ProjectActuals {
   actualOtherCost: number;
   finalSellingPrice: number;
   completedAt: string;
+  serviceLineActuals?: ServiceLineActual[];
 }
 
 export interface ProjectEstimateResult {

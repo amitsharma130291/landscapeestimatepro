@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   buildProjectCsvRows,
   calculateAssemblyCost,
+  calculateAssemblyVariance,
+  calculateProfitabilitySummary,
   evaluateActualVsEstimate,
   evaluateMinimumJob,
   evaluateProject,
   evaluateRateHealth,
+  snapshotCostImpact,
 } from "./estimateMath";
-import type { Assembly, Equipment, Material, Project } from "./types";
+import { DEFAULT_BUSINESS_SETTINGS } from "./types";
+import type { Assembly, Equipment, Material, Project, ProjectTemplate } from "./types";
 
 const materials: Material[] = [
   { id: "mulch", name: "Mulch", unitCost: 42, unit: "yd3" },
@@ -183,5 +187,216 @@ describe("evaluateActualVsEstimate", () => {
     expect(result.actualMargin).not.toBeNull();
     expect(result.actualMargin as number).toBeLessThan(result.expectedMargin as number);
     expect(result.costVariance).toBeGreaterThan(0);
+  });
+});
+
+describe("calculateAssemblyVariance — brief reference examples", () => {
+  function completedProjectWithLine(assemblyId: string, estimatedQuantity: number, actualQuantity: number, actualLaborHours: number, index: number): Project {
+    return {
+      id: `proj-${assemblyId}-${index}`,
+      name: `Job ${index}`,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      status: "won",
+      serviceLines: [{ id: "line-1", assemblyId, quantity: estimatedQuantity }],
+      equipmentLines: [],
+      deliveryCost: 0,
+      extraCosts: [],
+      overheadPercent: 15,
+      targetMarginPercent: 35,
+      actual: {
+        actualLaborPersonHours: actualLaborHours,
+        actualMaterialsCost: 0,
+        actualEquipmentCost: 0,
+        actualDeliveryCost: 0,
+        actualOtherCost: 0,
+        finalSellingPrice: 0,
+        completedAt: "2026-02-01T00:00:00.000Z",
+        serviceLineActuals: [{ assemblyId, estimatedQuantity, actualQuantity, actualLaborHours }],
+      },
+    };
+  }
+
+  it("matches the brief's shrub-installation labor variance: 9.2 est hrs -> 10.8 actual -> +17.4%", () => {
+    const shrubAssembly: Assembly = {
+      id: "shrub-install",
+      name: "Shrub Installation",
+      unit: "each",
+      materials: [],
+      laborPersonHoursPerUnit: 0.46, // 20 units * 0.46 = 9.2 estimated hours
+      equipment: [],
+      otherCostPerUnit: 0,
+    };
+    const projects = Array.from({ length: 18 }, (_, i) => completedProjectWithLine("shrub-install", 20, 20, 10.8, i));
+
+    const [result] = calculateAssemblyVariance(projects, [shrubAssembly]);
+    expect(result.completedCount).toBe(18);
+    expect(result.avgEstimatedLaborHours).toBeCloseTo(9.2, 10);
+    expect(result.avgActualLaborHours).toBeCloseTo(10.8, 10);
+    expect(result.laborVariancePercent).toBeCloseTo(17.4, 1);
+  });
+
+  it("matches the brief's mulch material variance: 7.8 yd3 est -> 8.7 actual -> +11.5%", () => {
+    const mulchAssembly: Assembly = {
+      id: "mulch-install",
+      name: "Mulch Installation",
+      unit: "yd3",
+      materials: [],
+      laborPersonHoursPerUnit: 0.4,
+      equipment: [],
+      otherCostPerUnit: 0,
+    };
+    const projects = Array.from({ length: 24 }, (_, i) => completedProjectWithLine("mulch-install", 7.8, 8.7, 3, i));
+
+    const [result] = calculateAssemblyVariance(projects, [mulchAssembly]);
+    expect(result.completedCount).toBe(24);
+    expect(result.avgEstimatedQuantity).toBeCloseTo(7.8, 10);
+    expect(result.avgActualQuantity).toBeCloseTo(8.7, 10);
+    expect(result.materialVariancePercent).toBeCloseTo(11.5, 1);
+  });
+
+  it("omits assemblies with no completed jobs", () => {
+    const assembly: Assembly = {
+      id: "unused",
+      name: "Unused Service",
+      unit: "each",
+      materials: [],
+      laborPersonHoursPerUnit: 0.1,
+      equipment: [],
+      otherCostPerUnit: 0,
+    };
+    expect(calculateAssemblyVariance([], [assembly])).toEqual([]);
+  });
+});
+
+describe("calculateProfitabilitySummary", () => {
+  it("returns nulls and a zero count when nothing is completed", () => {
+    const summary = calculateProfitabilitySummary([], [], [], [], 32);
+    expect(summary.completedCount).toBe(0);
+    expect(summary.avgExpectedMargin).toBeNull();
+    expect(summary.avgActualMargin).toBeNull();
+  });
+
+  it("averages expected vs actual margin across completed jobs", () => {
+    const mulchAssembly: Assembly = {
+      id: "mulch-install",
+      name: "Mulch Installation",
+      unit: "yd3",
+      materials: [{ materialId: "mulch", quantityPerUnit: 1 }],
+      laborPersonHoursPerUnit: 0.4,
+      equipment: [],
+      otherCostPerUnit: 0,
+    };
+    const project: Project = {
+      id: "p1",
+      name: "Job 1",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      status: "won",
+      serviceLines: [{ id: "l1", assemblyId: "mulch-install", quantity: 8 }],
+      equipmentLines: [],
+      deliveryCost: 0,
+      extraCosts: [],
+      overheadPercent: 15,
+      targetMarginPercent: 35,
+      actual: {
+        actualLaborPersonHours: 4,
+        actualMaterialsCost: 400,
+        actualEquipmentCost: 0,
+        actualDeliveryCost: 0,
+        actualOtherCost: 0,
+        finalSellingPrice: 0,
+        completedAt: "2026-02-01T00:00:00.000Z",
+      },
+    };
+    const summary = calculateProfitabilitySummary([project], [mulchAssembly], materials, [], 32);
+    expect(summary.completedCount).toBe(1);
+    expect(summary.avgExpectedMargin).not.toBeNull();
+    expect(summary.avgActualMargin).not.toBeNull();
+  });
+});
+
+describe("snapshotCostImpact — brief killer features #16-18", () => {
+  const mulchAssembly: Assembly = {
+    id: "mulch-install",
+    name: "Mulch Installation",
+    unit: "yd3",
+    materials: [{ materialId: "mulch", quantityPerUnit: 1 }],
+    laborPersonHoursPerUnit: 0.4,
+    equipment: [],
+    otherCostPerUnit: 0,
+    currentRate: 95,
+  };
+  const edgingAssembly: Assembly = {
+    id: "edging",
+    name: "Edging",
+    unit: "linear-ft",
+    materials: [],
+    laborPersonHoursPerUnit: 0.025,
+    equipment: [],
+    otherCostPerUnit: 0.4,
+    currentRate: 2.25,
+  };
+  const assemblies = [mulchAssembly, edgingAssembly];
+  const template: ProjectTemplate = {
+    id: "tmpl-1",
+    name: "Mulch refresh",
+    serviceLines: [{ assemblyId: "mulch-install", quantity: 8 }],
+    equipmentLines: [],
+    deliveryCost: 0,
+    extraCosts: [],
+  };
+  const lowMarginProject: Project = {
+    id: "proj-1",
+    name: "Low margin job",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    status: "sent",
+    serviceLines: [{ id: "l1", assemblyId: "mulch-install", quantity: 8 }],
+    equipmentLines: [],
+    deliveryCost: 0,
+    extraCosts: [],
+    overheadPercent: 15,
+    targetMarginPercent: 35,
+    // Quoted back when mulch was cheap; a price increase after quoting is
+    // exactly the scenario killer feature #16 describes.
+    quotedPrice: 400,
+  };
+  const workspace = {
+    assemblies,
+    templates: [template],
+    projects: [lowMarginProject],
+    materials,
+    equipment,
+    business: DEFAULT_BUSINESS_SETTINGS,
+  };
+
+  it("finds only assemblies that use the changed material", () => {
+    const snapshot = snapshotCostImpact("material", "mulch", workspace);
+    expect(snapshot.affectedAssemblyIds).toEqual(["mulch-install"]);
+    expect(snapshot.affectedTemplateIds).toEqual(["tmpl-1"]);
+    expect(snapshot.affectedProjectIds).toEqual(["proj-1"]);
+  });
+
+  it("a labor-rate change affects every assembly that bills labor", () => {
+    const snapshot = snapshotCostImpact("labor", undefined, workspace);
+    expect(snapshot.affectedAssemblyIds.sort()).toEqual(["edging", "mulch-install"]);
+  });
+
+  it("flags open estimates currently below their own target margin", () => {
+    const snapshot = snapshotCostImpact("material", "mulch", workspace);
+    expect(snapshot.belowTargetProjectIds).toEqual(["proj-1"]);
+  });
+
+  it("excludes archived projects from the affected count", () => {
+    const archived = { ...lowMarginProject, id: "proj-archived", status: "archived" as const };
+    const snapshot = snapshotCostImpact("material", "mulch", { ...workspace, projects: [archived] });
+    expect(snapshot.affectedProjectIds).toEqual([]);
+  });
+
+  it("returns nothing for an equipment id no assembly references", () => {
+    const snapshot = snapshotCostImpact("equipment", "does-not-exist", workspace);
+    expect(snapshot.affectedAssemblyIds).toEqual([]);
+    expect(snapshot.affectedProjectIds).toEqual([]);
   });
 });

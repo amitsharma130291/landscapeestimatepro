@@ -93,4 +93,24 @@
 @media print {
   .no-print { display: none !important; }
   body { background: white; }
+
+  /* Branded customer estimate: print ONLY that document, nothing else on the
+   * page (sidebar chrome, the internal cost/margin editor) — regardless of
+   * how deeply it's nested in the app shell's DOM. `visibility` (not
+   * `display`) is required here: a hidden ancestor can't be un-hidden by a
+   * `display` override on its descendant, but `visibility: visible` on a
+   * descendant does override an ancestor's `visibility: hidden`. Scoped to a
+   * body class so it never affects any other page's normal print behavior. */
+  body.printing-customer-estimate * {
+    visibility: hidden;
+  }
+  body.printing-customer-estimate #customer-estimate-print-root,
+  body.printing-customer-estimate #customer-estimate-print-root * {
+    visibility: visible;
+  }
+  body.printing-customer-estimate #customer-estimate-print-root {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
 }

@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
-import { Copy, Download, Plus, Printer, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Copy, Download, FileStack, Plus, Printer, Trash2 } from "lucide-react";
 import { useWorkspace } from "../../../lib/workspaceContext";
 import { buildProjectCsvRows, evaluateProject } from "../../../lib/estimateMath";
 import { buildCsv, downloadCsv } from "../../../lib/csv";
 import { formatCurrency, formatPercent } from "../../../lib/calc";
 import { Badge, Button, Card, EmptyState, NumberInput, Select, TextInput } from "../../ui/primitives";
+import CustomerEstimateView from "../CustomerEstimateView";
 import type { Project, ProjectExtraCost, ProjectServiceLine } from "../../../lib/types";
 
 const STATUS_TONE: Record<Project["status"], "neutral" | "mint" | "amber" | "red"> = {
@@ -17,8 +18,9 @@ const STATUS_TONE: Record<Project["status"], "neutral" | "mint" | "amber" | "red
 
 export default function EstimatesTab() {
   const { workspace, addProject, removeProject, duplicateProject } = useWorkspace();
-  const { projects, assemblies, materials, equipment, business } = workspace;
+  const { projects, assemblies, materials, equipment, business, templates } = workspace;
   const [openProjectId, setOpenProjectId] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState("");
 
   const openProject = projects.find((p) => p.id === openProjectId) ?? null;
 
@@ -26,28 +28,50 @@ export default function EstimatesTab() {
     return <ProjectEditor project={openProject} onClose={() => setOpenProjectId(null)} />;
   }
 
+  function createProject(fromTemplateId?: string) {
+    const template = fromTemplateId ? templates.find((t) => t.id === fromTemplateId) : undefined;
+    const created = addProject({
+      name: template ? template.name : "New Project",
+      status: "draft",
+      serviceLines: template
+        ? template.serviceLines.map((l) => ({ id: crypto.randomUUID(), assemblyId: l.assemblyId, quantity: l.quantity }))
+        : [],
+      equipmentLines: template ? template.equipmentLines : [],
+      deliveryCost: template ? template.deliveryCost : business.defaultDeliveryCost,
+      extraCosts: template ? template.extraCosts : [],
+      overheadPercent: business.overheadPercent,
+      targetMarginPercent: business.targetMarginPercent,
+    });
+    setOpenProjectId(created.id);
+  }
+
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">{projects.length} saved project{projects.length === 1 ? "" : "s"}</p>
-        <Button
-          type="button"
-          onClick={() => {
-            const created = addProject({
-              name: "New Project",
-              status: "draft",
-              serviceLines: [],
-              equipmentLines: [],
-              deliveryCost: business.defaultDeliveryCost,
-              extraCosts: [],
-              overheadPercent: business.overheadPercent,
-              targetMarginPercent: business.targetMarginPercent,
-            });
-            setOpenProjectId(created.id);
-          }}
-        >
-          <Plus size={18} aria-hidden="true" /> New estimate
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {templates.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Select
+                aria-label="Start from a saved template"
+                value={templateId}
+                onChange={(e) => setTemplateId(e.target.value)}
+                className="w-48"
+              >
+                <option value="">Start from template…</option>
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </Select>
+              <Button type="button" variant="ghost" disabled={!templateId} onClick={() => createProject(templateId)}>
+                Use
+              </Button>
+            </div>
+          )}
+          <Button type="button" onClick={() => createProject()}>
+            <Plus size={18} aria-hidden="true" /> New estimate
+          </Button>
+        </div>
       </div>
 
       {projects.length === 0 ? (
@@ -68,8 +92,12 @@ export default function EstimatesTab() {
                     </div>
                     <Badge tone={STATUS_TONE[project.status]}>{project.status}</Badge>
                   </div>
-                  <p className="mt-3 text-2xl font-extrabold tabular-nums text-ink">{formatCurrency(result.displayPrice)}</p>
-                  <p className="text-xs text-muted">{formatPercent(result.expectedMargin)} expected margin</p>
+                  <p className="mt-3 text-2xl font-extrabold tabular-nums text-ink">
+                    {formatCurrency(project.quotedPrice ?? result.displayPrice)}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {project.quotedPrice !== undefined ? "quoted price" : `${formatPercent(result.expectedMargin)} expected margin`}
+                  </p>
                   <div className="mt-4 flex flex-1 items-end justify-between gap-2">
                     <Button type="button" size="sm" onClick={() => setOpenProjectId(project.id)}>
                       Open
@@ -106,16 +134,45 @@ export default function EstimatesTab() {
 }
 
 function ProjectEditor({ project, onClose }: { project: Project; onClose: () => void }) {
-  const { workspace, updateProject } = useWorkspace();
+  const { workspace, updateProject, addTemplate } = useWorkspace();
   const { assemblies, materials, equipment, business } = workspace;
+  const [printingCustomer, setPrintingCustomer] = useState(false);
 
   const result = useMemo(
     () => evaluateProject(project, assemblies, materials, equipment, business.loadedLaborRate),
     [project, assemblies, materials, equipment, business.loadedLaborRate]
   );
 
+  useEffect(() => {
+    if (!printingCustomer) return;
+    document.body.classList.add("printing-customer-estimate");
+    const timer = setTimeout(() => window.print(), 50);
+    const cleanup = () => {
+      document.body.classList.remove("printing-customer-estimate");
+      setPrintingCustomer(false);
+    };
+    window.addEventListener("afterprint", cleanup, { once: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("afterprint", cleanup);
+    };
+  }, [printingCustomer]);
+
   function patch(p: Partial<Project>) {
     updateProject(project.id, p);
+  }
+
+  function handleSaveAsTemplate() {
+    const name = window.prompt("Name this template (e.g. \"Mulch refresh\"):", project.name);
+    if (!name) return;
+    addTemplate({
+      name,
+      serviceLines: project.serviceLines.map((l) => ({ assemblyId: l.assemblyId, quantity: l.quantity })),
+      equipmentLines: project.equipmentLines,
+      deliveryCost: project.deliveryCost,
+      extraCosts: project.extraCosts,
+    });
+    window.alert(`Saved "${name}" to Assemblies & Templates.`);
   }
 
   function updateServiceLine(id: string, next: Partial<ProjectServiceLine>) {
@@ -143,14 +200,21 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
           ← Back to estimates
         </button>
         <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={handleSaveAsTemplate}>
+            <FileStack size={16} aria-hidden="true" /> Save as template
+          </Button>
           <Button type="button" variant="ghost" size="sm" onClick={handleExportCsv}>
             <Download size={16} aria-hidden="true" /> Export CSV
           </Button>
-          <Button type="button" variant="secondary" size="sm" onClick={() => window.print()}>
-            <Printer size={16} aria-hidden="true" /> Print estimate
+          <Button type="button" variant="secondary" size="sm" onClick={() => setPrintingCustomer(true)}>
+            <Printer size={16} aria-hidden="true" /> Print customer estimate
           </Button>
         </div>
       </div>
+
+      {printingCustomer && (
+        <CustomerEstimateView business={business} project={project} assemblies={assemblies} displayPrice={result.displayPrice} />
+      )}
 
       <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
@@ -166,7 +230,21 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-ink" htmlFor="project-status">Status</label>
-                <Select id="project-status" value={project.status} onChange={(e) => patch({ status: e.target.value as Project["status"] })}>
+                <Select
+                  id="project-status"
+                  value={project.status}
+                  onChange={(e) => {
+                    const nextStatus = e.target.value as Project["status"];
+                    // Lock in the quoted price the first time a project leaves "draft" —
+                    // from then on it's what the customer has in hand, not a number that
+                    // silently drifts if catalog costs change later.
+                    if (nextStatus !== "draft" && project.quotedPrice === undefined) {
+                      patch({ status: nextStatus, quotedPrice: result.displayPrice });
+                    } else {
+                      patch({ status: nextStatus });
+                    }
+                  }}
+                >
                   <option value="draft">Draft</option>
                   <option value="sent">Sent</option>
                   <option value="won">Won</option>
@@ -175,6 +253,27 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
                 </Select>
               </div>
             </div>
+            {project.quotedPrice !== undefined && (
+              <div className="mt-4 flex items-center justify-between rounded-lg bg-paper-dim px-3.5 py-2.5 text-sm">
+                <span className="text-muted">
+                  Quoted at <strong className="text-ink">{formatCurrency(project.quotedPrice, { cents: true })}</strong>
+                  {project.quotedPrice !== result.displayPrice && (
+                    <span className="ml-1.5 text-amber">— current cost now implies {formatCurrency(result.displayPrice)}</span>
+                  )}
+                </span>
+                <button
+                  type="button"
+                  className="font-semibold text-forest hover:underline"
+                  onClick={() => {
+                    if (window.confirm("Re-quote this project at today's calculated price?")) {
+                      patch({ quotedPrice: result.displayPrice });
+                    }
+                  }}
+                >
+                  Re-quote
+                </button>
+              </div>
+            )}
           </Card>
 
           <Card padded={false}>
