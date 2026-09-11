@@ -27,7 +27,13 @@ function cents(n: number): MoneyCents {
   return n as MoneyCents;
 }
 
-const business: BusinessSettings = { ...DEFAULT_BUSINESS_SETTINGS, loadedLaborRateCents: cents(3200) };
+// minimumProjectPriceCents is zeroed so this file's profitability/actuals
+// assertions aren't silently confounded by DEFAULT_BUSINESS_SETTINGS' own
+// $500 floor (LEP-115) — that enforcement mechanism gets its own dedicated
+// tests in minimumPrice.test.ts. Calls below that pass DEFAULT_BUSINESS_SETTINGS
+// directly (not this `business`) always supply an explicit
+// actualQuotedPriceOverrideCents, which bypasses the floor either way.
+const business: BusinessSettings = { ...DEFAULT_BUSINESS_SETTINGS, loadedLaborRateCents: cents(3200), minimumProjectPriceCents: ZERO_CENTS };
 
 function baseProject(overrides?: Partial<Project>): Project {
   return {

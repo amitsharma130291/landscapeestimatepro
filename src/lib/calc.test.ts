@@ -16,6 +16,7 @@ import {
   marginFromMarkup,
   markupFromMargin,
   percentToFraction,
+  resolvePersonHoursPerUnit,
   ROUNDING_INCREMENTS,
   safe,
 } from "./calc";
@@ -110,6 +111,41 @@ describe("calculateLabor — production-rate mode (quantity ÷ rate, NEVER quant
     const result = calculateLabor({ mode: "production", quantity: 8, productionRate: 0, loadedRateCents: cents(3200) });
     expect(result.personHours).toBe(0);
     expect(result.laborCostCents).toBe(0);
+  });
+});
+
+describe("LEP-088 resolvePersonHoursPerUnit — labor-mode switching never corrupts or loses the other mode's stored value", () => {
+  it("switching TO production-rate with no rate entered yet returns null — the caller must leave the existing person-hours-per-unit untouched, never overwrite it with a fabricated number", () => {
+    const resolved = resolvePersonHoursPerUnit("production-rate", undefined, 0.4);
+    expect(resolved).toBeNull();
+  });
+
+  it("switching BACK to person-hours-per-unit always returns exactly what was already stored there, regardless of any production-rate value sitting alongside it", () => {
+    expect(resolvePersonHoursPerUnit("person-hours-per-unit", 4, 0.4)).toBe(0.4);
+    expect(resolvePersonHoursPerUnit("person-hours-per-unit", undefined, 0.4)).toBe(0.4);
+  });
+
+  it("round-trip: production-rate -> person-hours-per-unit -> production-rate reproduces the exact original rate (exact reciprocal, no drift)", () => {
+    const productionRate = 2.5;
+    const resolvedHours = resolvePersonHoursPerUnit("production-rate", productionRate, undefined);
+    expect(resolvedHours).toBe(0.4); // 1 / 2.5
+    // Switching to person-hours-per-unit mode just passes that resolved
+    // value straight through (it's already the number cost math reads).
+    expect(resolvePersonHoursPerUnit("person-hours-per-unit", productionRate, resolvedHours!)).toBe(0.4);
+    // Switching straight back to production-rate re-derives 2.5 exactly —
+    // the two modes are true reciprocals, not lossy approximations.
+    expect(new Decimal(1).dividedBy(resolvedHours!).toNumber()).toBe(2.5);
+  });
+
+  it("an invalid or zero production rate returns null rather than Infinity/NaN leaking into stored state", () => {
+    expect(resolvePersonHoursPerUnit("production-rate", 0, 0.4)).toBeNull();
+    expect(resolvePersonHoursPerUnit("production-rate", -1, 0.4)).toBeNull();
+    expect(resolvePersonHoursPerUnit("production-rate", NaN, 0.4)).toBeNull();
+  });
+
+  it("a negative or non-finite person-hours-per-unit is rejected, never silently coerced", () => {
+    expect(resolvePersonHoursPerUnit("person-hours-per-unit", 4, -1)).toBeNull();
+    expect(resolvePersonHoursPerUnit("person-hours-per-unit", 4, undefined)).toBeNull();
   });
 });
 

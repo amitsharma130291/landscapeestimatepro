@@ -191,7 +191,12 @@ test.describe("LEP-027 — Price List Builder print", () => {
   });
 
   test("100-service multi-page price list: readable headers, no missing rows", async ({ page }) => {
-    test.setTimeout(120000);
+    // 288 sequential fill() calls (3 fields x 96 rows) against a real
+    // browser is inherently slow and machine-load-dependent — measured at
+    // 2.3-2.6 minutes even running alone with nothing else competing for
+    // CPU, so the previous 120s budget was already too tight regardless of
+    // suite-wide parallelism. Widened, not the assertions themselves.
+    test.setTimeout(240000);
     await page.goto("/landscaping-price-list/");
     for (let i = 4; i < 100; i++) {
       await page.getByRole("button", { name: "Add service" }).click();

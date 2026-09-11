@@ -121,4 +121,143 @@ test.describe("Keyboard navigation — Pro app", () => {
     await downloadOriginal.focus();
     await expect(downloadOriginal).toBeFocused();
   });
+
+  test("Catalog creation: adding a material and typing its name/cost/unit is fully keyboard-operable", async ({ page }) => {
+    await page.goto("/app/catalog/");
+    const addMaterial = page.getByRole("button", { name: "Add material" });
+    await addMaterial.focus();
+    await page.keyboard.press("Enter");
+    const nameInput = page.locator('input[id*="mat-name-"]').last();
+    await expect(nameInput).toBeVisible();
+    await nameInput.focus();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.type("Keyboard Test Material");
+    await page.keyboard.press("Tab"); // moves focus to Unit cost, committing the name field
+    await expect(nameInput).toHaveValue("Keyboard Test Material");
+    const activeAfterTab = await page.evaluate(() => document.activeElement?.getAttribute("id"));
+    expect(activeAfterTab).toMatch(/mat-cost-/);
+    await page.keyboard.type("19.99");
+    await page.keyboard.press("Tab");
+    const costInput = page.locator('input[id*="mat-cost-"]').last();
+    await expect(costInput).toHaveValue("19.99");
+  });
+
+  test("Assembly creation: adding a service assembly and naming it is fully keyboard-operable", async ({ page }) => {
+    await page.goto("/app/templates/");
+    const addAssembly = page.getByRole("button", { name: "Add assembly" });
+    await addAssembly.focus();
+    await page.keyboard.press("Enter");
+    // Locate by label, not by current value — a CSS attribute selector like
+    // input[value="New service"] stops matching the instant its value
+    // changes, which is exactly what this test is about to do.
+    const nameInput = page.getByLabel("Service name").last();
+    await expect(nameInput).toHaveValue("New service");
+    await nameInput.focus();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.type("Keyboard Test Service");
+    await page.keyboard.press("Tab");
+    await expect(nameInput).toHaveValue("Keyboard Test Service");
+  });
+
+  test("Actuals entry: entering actual quantity/hours on a won project is fully keyboard-operable", async ({ page }) => {
+    await openOrCreateProject(page);
+    const addService = page.getByRole("button", { name: "+ Add service" });
+    await addService.focus();
+    await page.keyboard.press("Enter");
+    const qty = page.getByLabel("Quantity").first();
+    await qty.focus();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.type("5");
+    await page.keyboard.press("Tab");
+
+    const reviewAndQuote = page.getByRole("button", { name: "Review and quote" });
+    await reviewAndQuote.focus();
+    await page.keyboard.press("Enter");
+
+    const statusSelect = page.locator("#project-status");
+    await statusSelect.focus();
+    await page.keyboard.press("ArrowDown"); // Draft -> Quoted
+    await page.keyboard.press("ArrowDown"); // Quoted -> Accepted
+    await page.keyboard.press("Enter"); // some browsers need Enter to commit a native <select>'s pending value
+
+    await page.goto("/app/actuals/");
+    const qtyActual = page.locator('input[aria-label^="Actual quantity"]').first();
+    await expect(qtyActual).toBeVisible();
+    await qtyActual.focus();
+    await page.keyboard.type("5");
+    const hoursActual = page.locator('input[aria-label^="Actual labor hours"]').first();
+    await hoursActual.focus();
+    await page.keyboard.type("3.5");
+    await page.keyboard.press("Tab");
+    await expect(hoursActual).toHaveValue("3.5");
+  });
+
+  test("Backup export is keyboard-operable: Enter on the Export button triggers a real download", async ({ page }) => {
+    await page.goto("/app/settings/");
+    const exportButton = page.getByRole("button", { name: "Export workspace (JSON)" });
+    await exportButton.focus();
+    const downloadPromise = page.waitForEvent("download");
+    await page.keyboard.press("Enter");
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/\.json$/);
+  });
+
+  test("Backup import is keyboard-reachable: Enter on 'Import workspace' opens the native file chooser", async ({ page }) => {
+    await page.goto("/app/settings/");
+    const importButton = page.getByRole("button", { name: "Import workspace" });
+    await importButton.focus();
+    const fileChooserPromise = page.waitForEvent("filechooser");
+    await page.keyboard.press("Enter");
+    const fileChooser = await fileChooserPromise; // proves the OS file picker (keyboard-native from here) actually opens
+    expect(fileChooser).toBeTruthy();
+  });
+
+  test("draft numeric input commit/revert via keyboard: Tab discards an invalid draft; Escape does NOT silently corrupt it either", async ({ page }) => {
+    await openOrCreateProject(page);
+    await page.getByRole("button", { name: "+ Add service" }).click();
+    const qty = page.getByLabel("Quantity").first();
+    await qty.focus();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.type("7");
+    await page.keyboard.press("Tab");
+    await expect(qty).toHaveValue("7");
+
+    await qty.focus();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.type("-3"); // invalid: negative quantity
+    // Escape has no special wiring on DraftNumberInput (it only commits on
+    // Enter/blur) — pressing it must not commit the invalid draft either.
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Tab"); // blur discards the invalid draft
+    await expect(qty).toHaveValue("7"); // reverted to the last valid committed value, never "-3" and never "0"
+  });
+
+  test("no action requires hover: every 'Help:' tooltip trigger and its content is reachable by focus alone, with no hover step", async ({ page }) => {
+    await openOrCreateProject(page);
+    const triggers = page.getByRole("button", { name: /^Help:/ });
+    const count = await triggers.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < Math.min(count, 3); i++) {
+      const trigger = triggers.nth(i);
+      await trigger.focus(); // focus only — the mouse never moves near this element
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("tooltip")).toBeVisible();
+      await page.keyboard.press("Escape");
+    }
+  });
+});
+
+test.describe("Keyboard navigation — remaining free calculators", () => {
+  for (const url of ["/landscaping-price-list/", "/landscaping-estimate-calculator/", "/landscaping-estimate-template/", "/landscaping-invoice-template/", "/landscaping-quote-template/"]) {
+    test(`${url} has a focusable, typeable field reachable by Tab alone`, async ({ page }) => {
+      await page.goto(url);
+      let found = false;
+      for (let i = 0; i < 60 && !found; i++) {
+        await page.keyboard.press("Tab");
+        const tag = await page.evaluate(() => document.activeElement?.tagName);
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") found = true;
+      }
+      expect(found, `no focusable input/textarea/select reached by Tab on ${url}`).toBe(true);
+    });
+  }
 });

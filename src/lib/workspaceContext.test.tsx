@@ -108,3 +108,75 @@ describe("workspaceContext — lastBackupAt shares BackupReminderBanner's storag
     expect(window.localStorage.getItem(LAST_BACKUP_KEY)).toBe(displayed);
   });
 });
+
+// LEP-127 — duplicating an estimate must produce a fully independent record:
+// a distinct id, no shared quote-revision history, and editing one must
+// never affect the other.
+function DuplicateProbe() {
+  const { workspace, addProject, duplicateProject, updateProject } = useWorkspace();
+  // duplicateProject unshifts the copy to the FRONT of the array, so array
+  // position alone can't distinguish original from copy after duplicating —
+  // identify each by its name instead (the copy is always suffixed).
+  const project = workspace?.projects.find((p) => !p.name.endsWith("(copy)"));
+  const duplicate = workspace?.projects.find((p) => p.name.endsWith("(copy)"));
+  return (
+    <div>
+      <button
+        onClick={() =>
+          addProject({
+            name: "Original Job",
+            status: "draft",
+            serviceLines: [],
+            equipmentLines: [],
+            laborLines: [],
+            deliveryCostCents: 0 as never,
+            extraCosts: [],
+            overheadPercent: 15,
+            targetMarginPercent: 35,
+            taxRatePercent: 0,
+            quoteRevisions: [],
+          })
+        }
+      >
+        add
+      </button>
+      <button onClick={() => project && duplicateProject(project.id)}>duplicate</button>
+      <button onClick={() => project && updateProject(project.id, { name: "Renamed Original" })}>rename original</button>
+      <span data-testid="count">{workspace?.projects.length ?? 0}</span>
+      <span data-testid="original-id">{project?.id ?? ""}</span>
+      <span data-testid="original-name">{project?.name ?? ""}</span>
+      <span data-testid="duplicate-id">{duplicate?.id ?? ""}</span>
+      <span data-testid="duplicate-name">{duplicate?.name ?? ""}</span>
+      <span data-testid="duplicate-status">{duplicate?.status ?? ""}</span>
+      <span data-testid="duplicate-revisions">{duplicate?.quoteRevisions.length ?? -1}</span>
+    </div>
+  );
+}
+
+describe("workspaceContext — duplicateProject produces a fully independent record", () => {
+  it("gives the duplicate a distinct id, resets its status/revision history, and never mutates the original when either is edited", async () => {
+    render(
+      <WorkspaceProvider>
+        <DuplicateProbe />
+      </WorkspaceProvider>
+    );
+    fireEvent.click(screen.getByText("add"));
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
+    const originalId = screen.getByTestId("original-id").textContent;
+
+    fireEvent.click(screen.getByText("duplicate"));
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("2"));
+
+    const duplicateId = screen.getByTestId("duplicate-id").textContent;
+    expect(duplicateId).not.toBe("");
+    expect(duplicateId).not.toBe(originalId); // distinct identity, never a shared/reused id
+    expect(screen.getByTestId("duplicate-name")).toHaveTextContent("Original Job (copy)");
+    expect(screen.getByTestId("duplicate-status")).toHaveTextContent("draft");
+    expect(screen.getByTestId("duplicate-revisions")).toHaveTextContent("0"); // no inherited quote history
+
+    // Editing the ORIGINAL must never touch the duplicate.
+    fireEvent.click(screen.getByText("rename original"));
+    await waitFor(() => expect(screen.getByTestId("original-name")).toHaveTextContent("Renamed Original"));
+    expect(screen.getByTestId("duplicate-name")).toHaveTextContent("Original Job (copy)");
+  });
+});

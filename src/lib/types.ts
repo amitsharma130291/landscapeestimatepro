@@ -86,6 +86,22 @@ export interface BusinessSettings {
   representativeMinimumJobTrueCostCents?: MoneyCents;
   businessName?: string;
   businessLogoDataUrl?: string; // small logo, stored inline (no backend) for branded estimates
+  /** Full business identity/contact fields (DEF-14) — every one optional so a
+   * contractor who hasn't filled them in yet never gets a blank-punctuation
+   * artifact on a customer document; see customerDocument.ts's address-line
+   * joiner for how these combine safely. No US-only shape is assumed —
+   * `businessStateRegion`/`businessPostalCode`/`businessCountry` are free
+   * text, not a fixed enum, so any country's own address convention fits. */
+  businessAddressLine1?: string;
+  businessAddressLine2?: string;
+  businessCity?: string;
+  businessStateRegion?: string;
+  businessPostalCode?: string;
+  businessCountry?: string;
+  businessPhone?: string;
+  businessEmail?: string;
+  businessWebsite?: string;
+  businessLicenseNumber?: string;
 }
 
 export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
@@ -394,9 +410,18 @@ export interface QuoteRevision {
    * directly, inside calculateQuotePricingCents. */
   exactRequiredPriceCents: MoneyCents;
   roundedRecommendedPriceCents: MoneyCents;
-  /** What was actually charged. Defaults to roundedRecommendedPriceCents; set
-   * explicitly when the contractor overrides it. This is the figure every
-   * historical calculation elsewhere in the app must use. */
+  /** The business's minimumProjectPriceCents AS CONFIGURED at the moment this
+   * revision was locked (LEP-115) — frozen so a later change to the business
+   * minimum never alters what an already-quoted revision says the floor was.
+   * `undefined` only on a revision created before this field existed; treat
+   * as 0 (no floor was ever recorded) wherever it's read. */
+  configuredMinimumProjectPriceCents?: MoneyCents;
+  /** What was actually charged. Defaults to
+   * max(roundedRecommendedPriceCents, configuredMinimumProjectPriceCents);
+   * set explicitly when the contractor overrides it (an override is a
+   * recorded historical fact and is never itself clamped to the minimum).
+   * This is the figure every historical calculation elsewhere in the app
+   * must use. */
   actualQuotedPriceCents: MoneyCents;
   /** Sum of taxable lines' allocated cents only — see revenueAllocation. */
   taxableSubtotalCents: MoneyCents;
@@ -412,6 +437,12 @@ export interface QuoteRevision {
    * historicalCostBasisStatus for what's actually known vs. approximate. */
   isLegacyMigration?: boolean;
   historicalCostBasisStatus: "known" | "unknown";
+  /** The project's customerDetailMode, frozen at the moment this revision was
+   * locked — a later change to the project's own live setting never alters
+   * how an already-quoted revision presents to the customer. Undefined on a
+   * revision created before DEF-13 (treated as "detailed" everywhere it's
+   * read, matching the pre-existing qty/unit-only display). */
+  customerDetailMode?: CustomerDetailMode;
   /** actualQuotedPriceCents allocated exactly across every revenue-bearing
    * line (service lines, equipment lines, labor lines, delivery, extra
    * costs), using a deterministic largest-remainder method — see
@@ -438,10 +469,18 @@ export interface RevenueAllocationLine {
   allocatedSellingPriceCents: MoneyCents;
 }
 
+/** How much line-level detail the customer-facing document shows (DEF-13).
+ * Purely presentational — never affects internal calculations or the quoted
+ * total, which every mode reconciles to exactly. */
+export type CustomerDetailMode = "project-total" | "service-totals" | "detailed";
+
 export interface Project {
   id: string;
   name: string;
   customerName?: string;
+  /** Defaults to "detailed" when unset (a brand-new or pre-DEF-13 project) —
+   * see buildCustomerDocument()'s own default handling. */
+  customerDetailMode?: CustomerDetailMode;
   createdAt: string;
   updatedAt: string;
   status: "draft" | "sent" | "won" | "lost" | "archived";
@@ -515,14 +554,31 @@ export interface ProjectEstimateResult {
    * guess at. See calc.ts calculateRequiredPriceCents. */
   requiredSellingPriceCents: MoneyCents | null;
   /** requiredSellingPriceCents' UNROUNDED source, rounded UP to the
-   * business's rounding increment — the live-draft equivalent of
-   * QuoteRevision.roundedRecommendedPriceCents. A DRAFT project has no
-   * actualQuotedPriceCents yet (nothing has been quoted); once it does, quote
-   * revisions are the source of truth, not this live figure. */
+   * business's rounding increment, THEN floored to the business's configured
+   * minimum project price (LEP-115: `max(calculated, minimum)`) — the
+   * live-draft equivalent of QuoteRevision.actualQuotedPriceCents (not
+   * roundedRecommendedPriceCents, which stays available separately as
+   * `preMinimumPriceCents` below for "calculated required price" display). A
+   * DRAFT project has no actualQuotedPriceCents yet (nothing has been
+   * quoted); once it does, quote revisions are the source of truth, not this
+   * live figure. */
   displayPriceCents: MoneyCents | null;
-  /** Margin actually achieved at displayPriceCents (pre-tax), recomputed from
-   * the rounded price against the exact true cost — not assumed to equal
-   * target. */
+  /** displayPriceCents BEFORE the minimum-price floor was applied — i.e. the
+   * system's raw calculated/recommended price. Equal to displayPriceCents
+   * whenever the minimum wasn't the binding constraint. Never used for
+   * further math — reporting only, so the UI can show both figures. */
+  preMinimumPriceCents: MoneyCents | null;
+  /** Non-null (and equal to the business's minimumProjectPriceCents) only
+   * when the configured minimum was STRICTLY GREATER than the calculated
+   * price and therefore determined displayPriceCents — i.e. the floor
+   * actually changed the outcome. Null at exact equality (the calculated
+   * price already satisfies the minimum on its own) and null when no floor
+   * applied at all. Lets the UI "clearly indicate when the configured
+   * minimum has been applied" (LEP-115). */
+  minimumPriceAppliedCents: MoneyCents | null;
+  /** Margin actually achieved at displayPriceCents (pre-tax, POST-minimum),
+   * recomputed from the final price against the exact true cost — not
+   * assumed to equal target. */
   expectedMargin: PercentValue | null;
   /** Sum of taxable lines' allocated cents — computed via the SAME exact
    * largest-remainder allocation a locked QuoteRevision uses (see

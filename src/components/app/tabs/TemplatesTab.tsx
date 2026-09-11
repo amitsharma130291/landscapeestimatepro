@@ -205,6 +205,7 @@ export default function TemplatesTab() {
                                   updateAssembly(assembly.id, { materials: next });
                                 }}
                                 className="flex-1"
+                                aria-label="Material"
                               >
                                 {materials.map((m) => (
                                   <option key={m.id} value={m.id}>{m.name}</option>
@@ -276,6 +277,7 @@ export default function TemplatesTab() {
                                   updateAssembly(assembly.id, { equipment: next });
                                 }}
                                 className="flex-1"
+                                aria-label="Equipment"
                               >
                                 {equipment.map((eq) => (
                                   <option key={eq.id} value={eq.id}>{eq.name}</option>

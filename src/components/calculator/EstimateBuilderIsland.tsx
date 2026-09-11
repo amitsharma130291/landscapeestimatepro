@@ -1,9 +1,19 @@
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Printer, Plus, Trash2 } from "lucide-react";
 import { formatCurrency } from "../../lib/calc";
 import { multiplyCentsByQuantity, sumCents, ZERO_CENTS, type MoneyCents } from "../../lib/money";
 import { validateQuantity } from "../../lib/validation";
-import { Button, Card, DraftNumberInput, Field, MoneyInput, TextInput } from "../ui/primitives";
+import { Button, Card, DraftNumberInput, Field, MoneyInput, PrintableTextField, Select, TextInput } from "../ui/primitives";
+import FreeCustomerDocumentView, { type FreeCustomerDocument, type FreeDocumentLine } from "./FreeCustomerDocumentView";
+
+/** "2026-09-11" (a raw <input type="date"> value) -> "September 11, 2026" —
+ * falls back to the raw string for a blank/invalid date rather than
+ * crashing or showing "Invalid Date" on the printed document. */
+function formatDocDateLabel(isoDate: string): string {
+  const parsed = new Date(`${isoDate}T00:00:00`);
+  if (isoDate === "" || Number.isNaN(parsed.getTime())) return isoDate;
+  return parsed.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
 
 interface LineItem {
   id: string;
@@ -34,12 +44,36 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
   const [projectName, setProjectName] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
+  // Quote-only (DEF-13/LEP-045): a purely presentational toggle — it can
+  // never change `totalCents` below, only how many columns of the same
+  // already-computed line amounts are shown.
+  const [detailMode, setDetailMode] = useState<"detailed" | "summary">("detailed");
   const [lines, setLines] = useState<LineItem[]>([
     { id: crypto.randomUUID(), description: "Mulch installation", quantity: 8, unit: "yd³", unitPriceCents: 9500 as MoneyCents },
     { id: crypto.randomUUID(), description: "Shrub planting", quantity: 18, unit: "each", unitPriceCents: 6500 as MoneyCents },
   ]);
 
   const totalCents = useMemo(() => sumCents(lines.map(lineTotalCents)), [lines]);
+  // LEP-041: a dedicated, allowlisted print root — printingDocument gates
+  // BOTH the body class (which hides everything else on the page via
+  // global.css) and the print-root's own presence in the DOM, mirroring the
+  // exact same pattern the Pro app's customer estimate print flow uses.
+  const [printingDocument, setPrintingDocument] = useState(false);
+
+  useEffect(() => {
+    if (!printingDocument) return;
+    document.body.classList.add("printing-free-document");
+    const timer = setTimeout(() => window.print(), 50);
+    const cleanup = () => {
+      document.body.classList.remove("printing-free-document");
+      setPrintingDocument(false);
+    };
+    window.addEventListener("afterprint", cleanup, { once: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("afterprint", cleanup);
+    };
+  }, [printingDocument]);
 
   function updateLine(id: string, patch: Partial<LineItem>) {
     setLines((prev) => prev.map((line) => (line.id === id ? { ...line, ...patch } : line)));
@@ -51,6 +85,26 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
 
   const docLabel = variant === "quote" ? "Quote" : "Estimate";
 
+  const printDocumentLines: FreeDocumentLine[] = lines.map((line): FreeDocumentLine => ({
+    key: line.id,
+    description: line.description,
+    quantity: detailMode === "detailed" ? (line.quantity === "" ? 0 : line.quantity) : undefined,
+    unit: detailMode === "detailed" ? line.unit : undefined,
+    unitPriceCents: detailMode === "detailed" ? (line.unitPriceCents === "" ? ZERO_CENTS : line.unitPriceCents) : undefined,
+    amountCents: lineTotalCents(line),
+  }));
+  const printDocument: FreeCustomerDocument = {
+    docLabel,
+    businessName,
+    customerName,
+    projectName,
+    dateLabel: formatDocDateLabel(docDate),
+    notes: notes.trim() ? notes : undefined,
+    showBreakdown: true,
+    lines: printDocumentLines,
+    totalCents,
+  };
+
   return (
     <div>
       <div className="grid gap-6 lg:grid-cols-2">
@@ -58,7 +112,7 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
           <h2 className="text-lg font-bold text-ink">Your business</h2>
           <div className="mt-4 space-y-4">
             <Field label="Business name" htmlFor={`${idPrefix}-business`}>
-              <TextInput id={`${idPrefix}-business`} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Greenscape Landscaping" />
+              <PrintableTextField id={`${idPrefix}-business`} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Greenscape Landscaping" />
             </Field>
           </div>
         </Card>
@@ -67,10 +121,10 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
           <h2 className="text-lg font-bold text-ink">Customer &amp; project</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Customer name" htmlFor={`${idPrefix}-customer`}>
-              <TextInput id={`${idPrefix}-customer`} value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Smith Residence" />
+              <PrintableTextField id={`${idPrefix}-customer`} value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Smith Residence" />
             </Field>
             <Field label="Project" htmlFor={`${idPrefix}-project`}>
-              <TextInput id={`${idPrefix}-project`} value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="Landscape installation" />
+              <PrintableTextField id={`${idPrefix}-project`} value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="Landscape installation" />
             </Field>
             <Field label={`${docLabel} date`} htmlFor={`${idPrefix}-date`}>
               <TextInput id={`${idPrefix}-date`} type="date" value={docDate} onChange={(e) => setDocDate(e.target.value)} />
@@ -80,16 +134,35 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
       </div>
 
       <Card className="mt-6" padded={false}>
-        <div className="flex items-center justify-between p-5 pb-0 sm:p-6 sm:pb-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-5 pb-0 sm:p-6 sm:pb-0">
           <h2 className="text-lg font-bold text-ink">Services</h2>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setLines((prev) => [...prev, newLine()])}
-          >
-            <Plus size={16} aria-hidden="true" /> Add line
-          </Button>
+          <div className="flex items-center gap-3">
+            {variant === "quote" && (
+              <div className="flex items-center gap-2">
+                <label htmlFor={`${idPrefix}-detail-mode`} className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  Line-item detail
+                </label>
+                <Select
+                  id={`${idPrefix}-detail-mode`}
+                  aria-label="Line-item detail"
+                  value={detailMode}
+                  onChange={(e) => setDetailMode(e.target.value as "detailed" | "summary")}
+                  className="w-auto"
+                >
+                  <option value="detailed">Detailed</option>
+                  <option value="summary">Summary</option>
+                </Select>
+              </div>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setLines((prev) => [...prev, newLine()])}
+            >
+              <Plus size={16} aria-hidden="true" /> Add line
+            </Button>
+          </div>
         </div>
 
         <div className="mt-4 table-scroll">
@@ -97,10 +170,14 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
             <thead>
               <tr className="border-y border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">
                 <th scope="col" className="px-5 py-3 sm:px-6">Service / item</th>
-                <th scope="col" className="px-3 py-3">Qty</th>
-                <th scope="col" className="px-3 py-3">Unit</th>
-                <th scope="col" className="px-3 py-3">Unit price</th>
-                <th scope="col" className="px-3 py-3 text-right">Line total</th>
+                {detailMode === "detailed" && (
+                  <>
+                    <th scope="col" className="px-3 py-3">Qty</th>
+                    <th scope="col" className="px-3 py-3">Unit</th>
+                    <th scope="col" className="px-3 py-3">Unit price</th>
+                  </>
+                )}
+                <th scope="col" className="px-3 py-3 text-right">{detailMode === "detailed" ? "Line total" : "Amount"}</th>
                 <th scope="col" className="px-3 py-3"><span className="sr-only">Remove</span></th>
               </tr>
             </thead>
@@ -110,41 +187,45 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
                   <tr key={line.id} className="border-b border-border last:border-b-0">
                     <td className="px-5 py-2.5 sm:px-6 align-top">
                       <label className="sr-only" htmlFor={`${idPrefix}-desc-${index}`}>Service description, line {index + 1}</label>
-                      <TextInput
+                      <PrintableTextField
                         id={`${idPrefix}-desc-${index}`}
                         value={line.description}
                         onChange={(e) => updateLine(line.id, { description: e.target.value })}
                         placeholder="Mulch installation"
                       />
                     </td>
-                    <td className="px-3 py-2.5 align-top">
-                      <label className="sr-only" htmlFor={`${idPrefix}-qty-${index}`}>Quantity, line {index + 1}</label>
-                      <DraftNumberInput
-                        id={`${idPrefix}-qty-${index}`}
-                        value={line.quantity}
-                        onValueChange={(v) => updateLine(line.id, { quantity: v })}
-                        validate={validateQuantity}
-                        className="w-24 text-left"
-                      />
-                    </td>
-                    <td className="px-3 py-2.5 align-top">
-                      <label className="sr-only" htmlFor={`${idPrefix}-unit-${index}`}>Unit, line {index + 1}</label>
-                      <TextInput
-                        id={`${idPrefix}-unit-${index}`}
-                        value={line.unit}
-                        onChange={(e) => updateLine(line.id, { unit: e.target.value })}
-                        className="w-24"
-                      />
-                    </td>
-                    <td className="px-3 py-2.5 align-top">
-                      <label className="sr-only" htmlFor={`${idPrefix}-price-${index}`}>Unit price, line {index + 1}</label>
-                      <MoneyInput
-                        id={`${idPrefix}-price-${index}`}
-                        valueCents={line.unitPriceCents}
-                        onValueCentsChange={(v) => updateLine(line.id, { unitPriceCents: v })}
-                        className="w-28"
-                      />
-                    </td>
+                    {detailMode === "detailed" && (
+                      <>
+                        <td className="px-3 py-2.5 align-top">
+                          <label className="sr-only" htmlFor={`${idPrefix}-qty-${index}`}>Quantity, line {index + 1}</label>
+                          <DraftNumberInput
+                            id={`${idPrefix}-qty-${index}`}
+                            value={line.quantity}
+                            onValueChange={(v) => updateLine(line.id, { quantity: v })}
+                            validate={validateQuantity}
+                            className="w-24 text-left"
+                          />
+                        </td>
+                        <td className="px-3 py-2.5 align-top">
+                          <label className="sr-only" htmlFor={`${idPrefix}-unit-${index}`}>Unit, line {index + 1}</label>
+                          <TextInput
+                            id={`${idPrefix}-unit-${index}`}
+                            value={line.unit}
+                            onChange={(e) => updateLine(line.id, { unit: e.target.value })}
+                            className="w-24"
+                          />
+                        </td>
+                        <td className="px-3 py-2.5 align-top">
+                          <label className="sr-only" htmlFor={`${idPrefix}-price-${index}`}>Unit price, line {index + 1}</label>
+                          <MoneyInput
+                            id={`${idPrefix}-price-${index}`}
+                            valueCents={line.unitPriceCents}
+                            onValueCentsChange={(v) => updateLine(line.id, { unitPriceCents: v })}
+                            className="w-28"
+                          />
+                        </td>
+                      </>
+                    )}
                     <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-ink">{formatCurrency(lineTotalCents(line), { cents: true })}</td>
                     <td className="px-3 py-2.5">
                       <button
@@ -183,10 +264,12 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
       </Card>
 
       <div className="no-print mt-6 flex justify-end">
-        <Button type="button" onClick={() => window.print()}>
+        <Button type="button" onClick={() => setPrintingDocument(true)}>
           <Printer size={18} aria-hidden="true" /> Print / Save as PDF
         </Button>
       </div>
+
+      {printingDocument && <FreeCustomerDocumentView doc={printDocument} />}
     </div>
   );
 }

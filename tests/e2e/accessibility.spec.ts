@@ -19,6 +19,12 @@ const PAGES = [
   { name: "free-price-list", url: "/landscaping-price-list/" },
   { name: "app-overview", url: "/app/" },
   { name: "app-catalog", url: "/app/catalog/" },
+  // DEF-11 regression: the sample workspace seeds assemblies with material/
+  // equipment lines already attached, and those lines' Select dropdowns had
+  // no accessible name at all (axe "select-name", critical) until fixed —
+  // this page must stay in the audited set so that class of defect can't
+  // silently return.
+  { name: "app-templates", url: "/app/templates/" },
   { name: "app-estimates-list", url: "/app/estimates/" },
   { name: "app-settings", url: "/app/settings/" },
 ];
@@ -39,6 +45,14 @@ for (const p of PAGES) {
 test("axe: estimate editor (WorkflowStatusBar, Estimate summary, HelpTooltip open) has no serious/critical violations", async ({ page }) => {
   await openOrCreateProject(page);
   await page.getByRole("button", { name: /^Help:/ }).first().click(); // open a tooltip so its markup is scanned too
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+  expect(serious, serious.map((v) => `${v.id}: ${v.help}`).join("\n")).toEqual([]);
+});
+
+test("DEF-11b regression: axe: estimate editor WITH a service line added (the assembly-choice Select had no accessible name, critical, until fixed)", async ({ page }) => {
+  await openOrCreateProject(page);
+  await page.getByRole("button", { name: "+ Add service" }).click();
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(serious, serious.map((v) => `${v.id}: ${v.help}`).join("\n")).toEqual([]);

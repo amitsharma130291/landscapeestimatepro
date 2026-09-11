@@ -38,7 +38,10 @@ function buildFixtureWorkspace(): Workspace {
     equipment: [],
     otherCostPerUnitCents: ZERO_CENTS,
   };
-  const business: BusinessSettings = { ...DEFAULT_BUSINESS_SETTINGS, loadedLaborRateCents: cents(3000) };
+  // minimumProjectPriceCents is zeroed so this file's actuals/variance
+  // assertions aren't silently confounded by DEFAULT_BUSINESS_SETTINGS' own
+  // $500 floor (LEP-115) — that enforcement mechanism gets its own tests.
+  const business: BusinessSettings = { ...DEFAULT_BUSINESS_SETTINGS, loadedLaborRateCents: cents(3000), minimumProjectPriceCents: ZERO_CENTS };
   const draftProject: Project = {
     id: "p1",
     name: "Test Job",

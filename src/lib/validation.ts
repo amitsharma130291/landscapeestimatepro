@@ -59,6 +59,19 @@ export function validateOverheadPercent(value: number): string | null {
   return null;
 }
 
+/** A crew-size scenario's efficiency factor (100 = perfectly linear — no
+ * coordination gain or loss). Must be positive (zero or negative people-
+ * equivalent output isn't a real crew); the generous upper bound rejects an
+ * obvious typo (e.g. "1000" meant as "100") without philosophically
+ * constraining a contractor who genuinely believes a crew size works better
+ * than linear. */
+export function validateEfficiencyPercent(value: number): string | null {
+  if (!Number.isFinite(value)) return "Enter a number.";
+  if (value <= 0) return "Efficiency must be greater than 0%.";
+  if (value > 500) return "That's an unusually high efficiency — double-check the number.";
+  return null;
+}
+
 export function validateTaxRatePercent(value: number): string | null {
   if (!Number.isFinite(value)) return "Enter a number.";
   if (value < 0 || value > 100) return "Tax rate must be between 0% and 100%.";
@@ -203,4 +216,24 @@ export function getActualsValidationErrors(
   const hoursError = validateQuantity(actual.actualLaborPersonHours);
   if (hoursError) errors.push(`Actual labor hours: ${hoursError}`);
   return errors;
+}
+
+// -- Business identity / contact (DEF-14) ------------------------------------
+
+/** Lenient email-shape check — "something@something.something", no stricter
+ * than that. Never rejects a value the contractor hasn't typed yet (blank is
+ * valid — required-ness is a separate, UI-level concern), and never blocks
+ * saving the raw text on a failed check (see SettingsTab's own handling) —
+ * this only decides whether to show an inline warning. */
+export function validateEmailFormat(value: string): string | null {
+  if (value.trim() === "") return null;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) ? null : "Doesn't look like a valid email address.";
+}
+
+/** Lenient website-shape check — accepts a bare domain ("example.com") or a
+ * full URL; only rejects something with no dot at all (clearly incomplete). */
+export function validateWebsiteFormat(value: string): string | null {
+  if (value.trim() === "") return null;
+  const stripped = value.trim().replace(/^https?:\/\//i, "");
+  return /^[^\s.]+\.[^\s]+$/.test(stripped) ? null : "Doesn't look like a valid website address.";
 }

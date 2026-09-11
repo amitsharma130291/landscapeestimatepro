@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { Printer, Plus, Trash2 } from "lucide-react";
-import { Button, Card, Field, MoneyInput, TextInput } from "../ui/primitives";
+import { Button, Card, Field, MoneyInput, PrintableTextField, TextInput } from "../ui/primitives";
 import { formatCurrency } from "../../lib/calc";
 import { ZERO_CENTS, type MoneyCents } from "../../lib/money";
 
@@ -33,7 +33,7 @@ export default function PriceListBuilderIsland() {
     <div>
       <Card>
         <Field label="Business name" htmlFor={`${idPrefix}-business`}>
-          <TextInput id={`${idPrefix}-business`} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Greenscape Landscaping" className="max-w-sm" />
+          <PrintableTextField id={`${idPrefix}-business`} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Greenscape Landscaping" className="max-w-sm" />
         </Field>
       </Card>
 

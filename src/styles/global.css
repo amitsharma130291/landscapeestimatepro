@@ -160,4 +160,26 @@
     inset: 0;
     width: 100%;
   }
+
+  /* Free-tool customer document (LEP-041): the SAME "print only this one
+   * element" mechanism as the Pro app's customer estimate above — the free
+   * estimate/quote builder lives inside a full marketing page (breadcrumb,
+   * hero copy, trust badges, "More free tools", FAQs, site header/footer),
+   * none of which is tagged .no-print individually. Relying on per-element
+   * .no-print tags here would silently reprint whatever a future marketing
+   * edit forgets to tag; this instead allowlists ONE element and hides
+   * literally everything else, regardless of what gets added to the page
+   * around it later. */
+  body.printing-free-document * {
+    visibility: hidden;
+  }
+  body.printing-free-document #customer-document-print-root,
+  body.printing-free-document #customer-document-print-root * {
+    visibility: visible;
+  }
+  body.printing-free-document #customer-document-print-root {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
 }

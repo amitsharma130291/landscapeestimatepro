@@ -39,7 +39,10 @@ function cents(n: number): MoneyCents {
   return n as MoneyCents;
 }
 
-const business: BusinessSettings = { ...DEFAULT_BUSINESS_SETTINGS, loadedLaborRateCents: cents(3200) };
+// minimumProjectPriceCents is zeroed here so this file's unrelated cases
+// aren't silently confounded by DEFAULT_BUSINESS_SETTINGS' own $500 floor
+// (LEP-115) — that enforcement mechanism gets its own dedicated tests.
+const business: BusinessSettings = { ...DEFAULT_BUSINESS_SETTINGS, loadedLaborRateCents: cents(3200), minimumProjectPriceCents: ZERO_CENTS };
 const zeroLaborBusiness: BusinessSettings = { ...business, loadedLaborRateCents: cents(0) };
 
 function baseProject(overrides?: Partial<Project>): Project {

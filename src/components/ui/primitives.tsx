@@ -97,6 +97,38 @@ export function TextInput({
   );
 }
 
+/**
+ * A single-line text field for values that end up on a PRINTED/PDF
+ * customer-facing document (a business name, customer name, project name)
+ * — the free tools print their live form directly rather than a separate
+ * print-only view, and a plain `<input>` clips any value wider than its own
+ * fixed pixel width under print media (an `<input>`'s overflow text never
+ * wraps, unlike a block element). This renders the SAME input for on-screen
+ * editing, plus a print-only wrapped-text twin that takes over visually
+ * once print media is active, so a long name is fully visible on paper
+ * instead of silently cut off.
+ */
+export function PrintableTextField({
+  className = "",
+  invalid,
+  value,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean; value: string }) {
+  return (
+    <>
+      <input
+        className={`${baseControlClasses} no-print ${invalid ? "border-red focus:ring-red focus:border-red" : ""} ${className}`}
+        aria-invalid={invalid || undefined}
+        value={value}
+        {...props}
+      />
+      <p aria-hidden="true" className="hidden whitespace-pre-wrap break-words font-medium text-ink print:block">
+        {value || " "}
+      </p>
+    </>
+  );
+}
+
 /** Numeric input that displays an empty string while cleared, rather than
  * forcing a misleading "0" — clearing a field is not the same as typing 0. */
 export function NumberInput({
@@ -104,28 +136,45 @@ export function NumberInput({
   onValueChange,
   className = "",
   invalid,
+  onBlur,
   ...props
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> & {
   value: number | "";
   onValueChange: (value: number | "") => void;
   invalid?: boolean;
 }) {
+  // Commits on every keystroke (unlike MoneyInput/DraftNumberInput's
+  // blur/Enter-only commit — callers of NumberInput rely on that immediate
+  // signal), but still buffers the RAW typed text locally while focused.
+  // Without this, an in-progress "3." gets immediately reformatted back to
+  // "3" by the controlled `value` prop (Number("3.") drops the trailing
+  // dot) — so typing "3", ".", "5" produced "35", never "3.5". The bug
+  // was real: it silently corrupted every fractional value typed
+  // character-by-character (e.g. Actual labor hours in the Actuals tab).
+  const [draft, setDraft] = useState<string | null>(null);
+  const display = draft !== null ? draft : value;
   return (
     <input
       type="text"
       inputMode="decimal"
       className={`${baseControlClasses} text-right tabular-nums ${invalid ? "border-red focus:ring-red focus:border-red" : ""} ${className}`}
-      value={value}
+      value={display}
       aria-invalid={invalid || undefined}
       onChange={(e) => {
         const raw = e.target.value;
         if (raw === "") {
+          setDraft("");
           onValueChange("");
           return;
         }
         if (!/^-?\d*\.?\d*$/.test(raw)) return;
+        setDraft(raw);
         const parsed = Number(raw);
         onValueChange(Number.isNaN(parsed) ? "" : parsed);
+      }}
+      onBlur={(e: FocusEvent<HTMLInputElement>) => {
+        setDraft(null); // done editing — go back to reflecting the committed numeric value's own formatting
+        onBlur?.(e);
       }}
       {...props}
     />

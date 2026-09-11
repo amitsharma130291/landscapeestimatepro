@@ -1,8 +1,9 @@
+import { RotateCcw } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { calculateExactPricingChainCents, formatCurrency, formatPercent } from "../../lib/calc";
 import { ZERO_CENTS, type MoneyCents } from "../../lib/money";
 import { validateOverheadPercent, validateTargetMarginPercent } from "../../lib/validation";
-import { Card, DraftNumberInput, Field, MoneyInput } from "../ui/primitives";
+import { Button, Card, DraftNumberInput, Field, MoneyInput } from "../ui/primitives";
 
 interface FieldState {
   materials: MoneyCents | "";
@@ -57,6 +58,19 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
     setFields((prev) => ({ ...prev, [key]: value }));
   }
 
+  // Only worth confirming when there's actually something to lose — a form
+  // still sitting at the untouched sample defaults has nothing "substantial"
+  // for a confirmation to protect. Same policy on both calculators, since
+  // they share this one component.
+  const isDirty = JSON.stringify(fields) !== JSON.stringify(DEFAULTS);
+
+  function handleReset() {
+    if (isDirty && !window.confirm("Reset this calculator to its starting values? Anything you've entered will be lost.")) {
+      return;
+    }
+    setFields(DEFAULTS);
+  }
+
   // min-w-0 on both grid children is load-bearing (see EstimatesTab's
   // identical grid for the full explanation) — a CSS grid item's default
   // min-width:auto can leak nested content's min-content size past this
@@ -64,8 +78,15 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
   return (
     <div className={`grid gap-6 ${compact ? "" : "lg:grid-cols-[minmax(0,1fr)_23rem]"}`}>
       <Card className="min-w-0">
-        <h2 className="text-lg font-bold text-ink">Project costs</h2>
-        <p className="mt-1 text-sm text-muted">Enter what this project actually costs your business.</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-ink">Project costs</h2>
+            <p className="mt-1 text-sm text-muted">Enter what this project actually costs your business.</p>
+          </div>
+          <Button type="button" variant="ghost" size="sm" onClick={handleReset} aria-label="Reset calculator to starting values">
+            <RotateCcw size={16} aria-hidden="true" /> Reset
+          </Button>
+        </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <Field label="Materials" htmlFor={`${idPrefix}-materials`}>

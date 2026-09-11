@@ -9,7 +9,7 @@ import { HelpTooltip } from "../../ui/HelpTooltip";
 import { CostImpactBanner, useCostImpactAlert } from "../CostImpactBanner";
 import { ROUNDING_INCREMENTS, formatCurrency, formatPercent } from "../../../lib/calc";
 import { ZERO_CENTS, type MoneyCents } from "../../../lib/money";
-import { validateOverheadPercent, validateTargetMarginPercent, validateTaxRatePercent } from "../../../lib/validation";
+import { validateEmailFormat, validateOverheadPercent, validateTargetMarginPercent, validateTaxRatePercent, validateWebsiteFormat } from "../../../lib/validation";
 import type { RoundingIncrementCents } from "../../../lib/types";
 
 function n(value: number | ""): number {
@@ -185,6 +185,82 @@ export default function SettingsTab() {
             </div>
             {logoError && <p className="mt-1.5 text-xs font-medium text-red">{logoError}</p>}
           </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <Field label="Address line 1" htmlFor={`${idPrefix}-address1`}>
+            <TextInput
+              id={`${idPrefix}-address1`}
+              value={business.businessAddressLine1 ?? ""}
+              onChange={(e) => updateBusiness({ businessAddressLine1: e.target.value })}
+              placeholder="123 Main St"
+              autoComplete="address-line1"
+            />
+          </Field>
+          <Field label="Address line 2" htmlFor={`${idPrefix}-address2`} hint="Optional">
+            <TextInput
+              id={`${idPrefix}-address2`}
+              value={business.businessAddressLine2 ?? ""}
+              onChange={(e) => updateBusiness({ businessAddressLine2: e.target.value })}
+              placeholder="Suite 200"
+              autoComplete="address-line2"
+            />
+          </Field>
+          <Field label="City" htmlFor={`${idPrefix}-city`}>
+            <TextInput id={`${idPrefix}-city`} value={business.businessCity ?? ""} onChange={(e) => updateBusiness({ businessCity: e.target.value })} autoComplete="address-level2" />
+          </Field>
+          <Field label="State / region" htmlFor={`${idPrefix}-state`}>
+            <TextInput id={`${idPrefix}-state`} value={business.businessStateRegion ?? ""} onChange={(e) => updateBusiness({ businessStateRegion: e.target.value })} autoComplete="address-level1" />
+          </Field>
+          <Field label="Postal code" htmlFor={`${idPrefix}-postal`}>
+            <TextInput id={`${idPrefix}-postal`} value={business.businessPostalCode ?? ""} onChange={(e) => updateBusiness({ businessPostalCode: e.target.value })} autoComplete="postal-code" />
+          </Field>
+          <Field label="Country" htmlFor={`${idPrefix}-country`} hint="Optional">
+            <TextInput id={`${idPrefix}-country`} value={business.businessCountry ?? ""} onChange={(e) => updateBusiness({ businessCountry: e.target.value })} autoComplete="country-name" />
+          </Field>
+          <Field label="Phone" htmlFor={`${idPrefix}-phone`}>
+            <TextInput id={`${idPrefix}-phone`} type="tel" value={business.businessPhone ?? ""} onChange={(e) => updateBusiness({ businessPhone: e.target.value })} autoComplete="tel" />
+          </Field>
+          <div>
+            <Field label="Email" htmlFor={`${idPrefix}-email`}>
+              <TextInput
+                id={`${idPrefix}-email`}
+                type="email"
+                value={business.businessEmail ?? ""}
+                onChange={(e) => updateBusiness({ businessEmail: e.target.value })}
+                autoComplete="email"
+                invalid={Boolean(validateEmailFormat(business.businessEmail ?? ""))}
+                aria-describedby={validateEmailFormat(business.businessEmail ?? "") ? `${idPrefix}-email-error` : undefined}
+              />
+            </Field>
+            {validateEmailFormat(business.businessEmail ?? "") && (
+              <p id={`${idPrefix}-email-error`} role="alert" className="mt-1 text-xs font-medium text-red">
+                {validateEmailFormat(business.businessEmail ?? "")}
+              </p>
+            )}
+          </div>
+          <div>
+            <Field label="Website" htmlFor={`${idPrefix}-website`} hint="Optional">
+              <TextInput
+                id={`${idPrefix}-website`}
+                type="url"
+                value={business.businessWebsite ?? ""}
+                onChange={(e) => updateBusiness({ businessWebsite: e.target.value })}
+                autoComplete="url"
+                placeholder="www.example.com"
+                invalid={Boolean(validateWebsiteFormat(business.businessWebsite ?? ""))}
+                aria-describedby={validateWebsiteFormat(business.businessWebsite ?? "") ? `${idPrefix}-website-error` : undefined}
+              />
+            </Field>
+            {validateWebsiteFormat(business.businessWebsite ?? "") && (
+              <p id={`${idPrefix}-website-error`} role="alert" className="mt-1 text-xs font-medium text-red">
+                {validateWebsiteFormat(business.businessWebsite ?? "")}
+              </p>
+            )}
+          </div>
+          <Field label="Contractor / license number" htmlFor={`${idPrefix}-license`} hint="Optional">
+            <TextInput id={`${idPrefix}-license`} value={business.businessLicenseNumber ?? ""} onChange={(e) => updateBusiness({ businessLicenseNumber: e.target.value })} />
+          </Field>
         </div>
       </Card>
 

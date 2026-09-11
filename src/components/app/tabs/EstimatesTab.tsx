@@ -17,10 +17,12 @@ import {
   type LifecycleStage,
 } from "../../../lib/estimateMath";
 import { buildCsv, downloadCsv } from "../../../lib/csv";
+import { buildCustomerDocumentFromDraft, buildCustomerDocumentFromRevision } from "../../../lib/customerDocument";
 import { formatCurrency, formatPercent } from "../../../lib/calc";
-import { centsToDecimal, fromDollarInputToCents, ZERO_CENTS } from "../../../lib/money";
+import { centsToDecimal, fromDollarInputToCents, ZERO_CENTS, type MoneyCents } from "../../../lib/money";
 import { Badge, Button, Card, DraftNumberInput, EmptyState, MoneyInput, Select, TextInput } from "../../ui/primitives";
 import { HelpTooltip } from "../../ui/HelpTooltip";
+import CrewSizeScenarioPanel from "../CrewSizeScenarioPanel";
 import CustomerEstimateView from "../CustomerEstimateView";
 import WorkflowStatusBar from "../WorkflowStatusBar";
 import {
@@ -207,6 +209,17 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
     achievedMargin: activeRevision ? activeRevision.achievedMargin : result.expectedMargin,
     customerTotalCents: activeRevision ? activeRevision.customerTotalCents : (result.customerTotalCents ?? result.displayPriceCents),
   };
+  // LEP-115: "clearly indicate when the configured minimum has been
+  // applied." A draft reads this straight off the live calculation; a
+  // locked revision derives it from its own FROZEN configured minimum and
+  // calculated required price, so it never drifts if the business minimum
+  // changes later.
+  const minimumAppliedCents = activeRevision
+    ? (activeRevision.configuredMinimumProjectPriceCents ?? 0) > activeRevision.roundedRecommendedPriceCents &&
+      activeRevision.actualQuotedPriceCents === (activeRevision.configuredMinimumProjectPriceCents ?? 0)
+      ? activeRevision.configuredMinimumProjectPriceCents!
+      : null
+    : result.minimumPriceAppliedCents;
   const targetCheck =
     summary.actualCustomerQuoteCents !== null
       ? evaluateQuoteAgainstTarget(summary.actualCustomerQuoteCents, summary.trueCostCents, result.requiredSellingPriceCents, project.targetMarginPercent)
@@ -299,6 +312,18 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
       return;
     }
     const enteredCents = fromDollarInputToCents(raw);
+    // LEP-115: an explicitly recorded actual price is a historical fact and
+    // is never silently clamped to the configured minimum — but recording
+    // one below it should still require a deliberate confirmation, the same
+    // way a below-target-margin price already does below.
+    const configuredMinimumCents = business.minimumProjectPriceCents;
+    if (enteredCents < configuredMinimumCents) {
+      const proceed = window.confirm(
+        `This is ${formatCurrency((configuredMinimumCents - enteredCents) as MoneyCents, { cents: true })} below your configured minimum project price of ${formatCurrency(configuredMinimumCents, { cents: true })}.\n\n` +
+          `You can still record it — this only asks you to confirm before locking in a below-minimum price.`
+      );
+      if (!proceed) return;
+    }
     const check = evaluateQuoteAgainstTarget(enteredCents, activeRevision.trueCostCents, result.requiredSellingPriceCents, project.targetMarginPercent);
     if (check.isBelowTarget && check.shortfallCents !== null && check.achievedMargin !== null) {
       const proceed = window.confirm(
@@ -373,7 +398,21 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
         <button type="button" onClick={onClose} className="tap-target text-sm font-semibold text-forest hover:underline">
           ← Back to estimates
         </button>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="customer-detail-mode" className="text-xs font-semibold uppercase tracking-wider text-muted">
+            Customer document detail
+          </label>
+          <Select
+            id="customer-detail-mode"
+            aria-label="Customer document detail level"
+            value={project.customerDetailMode ?? "detailed"}
+            onChange={(e) => patch({ customerDetailMode: e.target.value as Project["customerDetailMode"] })}
+            className="w-auto"
+          >
+            <option value="project-total">Project total only</option>
+            <option value="service-totals">Service totals</option>
+            <option value="detailed">Detailed quantities and rates</option>
+          </Select>
           <Button type="button" variant="ghost" size="sm" onClick={handleSaveAsTemplate}>
             <FileStack size={16} aria-hidden="true" /> Save as template
           </Button>
@@ -419,23 +458,20 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
       )}
 
       {printingCustomer && activeRevision !== null && (
-        <CustomerEstimateView
-          business={business}
-          project={project}
-          assemblies={assemblies}
-          displayPriceCents={activeRevision.actualQuotedPriceCents}
-          taxAmountCents={activeRevision.taxAmountCents}
-          customerTotalCents={activeRevision.customerTotalCents}
-        />
+        <CustomerEstimateView doc={buildCustomerDocumentFromRevision(project, activeRevision, business)} />
       )}
       {printingCustomer && activeRevision === null && result.displayPriceCents !== null && (
         <CustomerEstimateView
-          business={business}
-          project={project}
-          assemblies={assemblies}
-          displayPriceCents={result.displayPriceCents}
-          taxAmountCents={result.taxAmountCents ?? ZERO_CENTS}
-          customerTotalCents={result.customerTotalCents ?? result.displayPriceCents}
+          doc={buildCustomerDocumentFromDraft(
+            project,
+            assemblies,
+            materials,
+            equipment,
+            business,
+            result.displayPriceCents,
+            result.taxAmountCents ?? ZERO_CENTS,
+            result.customerTotalCents ?? result.displayPriceCents
+          )}
         />
       )}
 
@@ -555,7 +591,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
               {project.serviceLines.length === 0 && <p className="text-sm text-muted">No services added yet.</p>}
               {project.serviceLines.map((line) => (
                 <div key={line.id} className="flex items-center gap-2">
-                  <Select value={line.assemblyId} onChange={(e) => updateServiceLine(line.id, { assemblyId: e.target.value })} className="flex-1">
+                  <Select value={line.assemblyId} onChange={(e) => updateServiceLine(line.id, { assemblyId: e.target.value })} className="flex-1" aria-label="Service assembly">
                     {assemblies.map((a) => (
                       <option key={a.id} value={a.id}>{a.name}</option>
                     ))}
@@ -642,6 +678,11 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
                     <p className="mt-1.5 text-xs text-muted">
                       = {personHours.toFixed(1)} person-hours
                     </p>
+                    {personHours > 0 && (
+                      <div className="no-print">
+                        <CrewSizeScenarioPanel baselinePersonHours={personHours} loadedRateCents={line.loadedRateCents} label={line.label} />
+                      </div>
+                    )}
                     {lineErrors.length > 0 && (
                       <ul className="mt-1.5 space-y-0.5 text-xs font-medium text-red">
                         {lineErrors.map((error, i) => (
@@ -722,9 +763,17 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
                 strong
               />
               <Row
-                label={<>Recommended quote<HelpTooltip label="Recommended quote">The price that turns your true job cost into your target margin, rounded up to your rounding increment. You're always free to charge more or less.</HelpTooltip></>}
+                label={<>Recommended quote<HelpTooltip label="Recommended quote">The price that turns your true job cost into your target margin, rounded up to your rounding increment, floored to your configured minimum project price if that's higher. You're always free to charge more or less.</HelpTooltip></>}
                 value={formatCurrency(summary.recommendedPriceCents)}
                 strong
+                hint={
+                  minimumAppliedCents !== null
+                    ? `Minimum price applied — calculated price was ${formatCurrency(
+                        (activeRevision ? activeRevision.roundedRecommendedPriceCents : result.preMinimumPriceCents)!,
+                        { cents: true }
+                      )}`
+                    : undefined
+                }
               />
               <Row
                 label="Actual customer quote"

@@ -12,7 +12,7 @@
  */
 import Decimal from "decimal.js";
 import { calculateExactPricingChainCents, calculateExactRequiredPriceCentsDecimal, calculateMargin, fractionToPercent, percentToFraction, safe } from "./calc";
-import { allocateCents, fromDecimalToCents, MoneyError, safe as safeCents, sumCents, type MoneyCents } from "./money";
+import { allocateCents, fromDecimalToCents, MoneyError, safe as safeCents, sumCents, ZERO_CENTS, type MoneyCents } from "./money";
 import { getAssemblyValidationErrors, getEquipmentValidationErrors, getMaterialValidationErrors, getProjectLaborLineValidationErrors } from "./validation";
 import type {
   Assembly,
@@ -270,7 +270,7 @@ function computeTaxFromAllocation(revenueAllocation: RevenueAllocationLine[], ta
   return { taxableSubtotalCents, taxAmountCents };
 }
 
-interface ProjectRollup {
+export interface ProjectRollup {
   materialsCostCents: MoneyCents;
   laborCostCents: MoneyCents;
   laborPersonHours: number;
@@ -287,8 +287,10 @@ interface ProjectRollup {
  * equipment, ad-hoc crew-duration labor lines, delivery, extra costs) into
  * one direct-cost total AND a row-by-row breakdown suitable for revenue
  * allocation. Shared by evaluateProject (live draft) and buildQuoteRevision
- * (locked quote) so both use identical roll-up logic. */
-function rollUpProject(project: Project, assemblies: Assembly[], materials: Material[], equipment: Equipment[], loadedLaborRateCents: number, overheadPercentForPerUnit: number): ProjectRollup {
+ * (locked quote) so both use identical roll-up logic. Also exported for
+ * customerDocument.ts's live-draft preview (DEF-13) — a locked revision
+ * instead reads its own already-frozen serviceLines/revenueAllocation. */
+export function rollUpProject(project: Project, assemblies: Assembly[], materials: Material[], equipment: Equipment[], loadedLaborRateCents: number, overheadPercentForPerUnit: number): ProjectRollup {
   const assemblyById = new Map(assemblies.map((a) => [a.id, a]));
   const equipmentById = new Map(equipment.map((e) => [e.id, e]));
 
@@ -399,7 +401,7 @@ export function evaluateProject(
   assemblies: Assembly[],
   materials: Material[],
   equipment: Equipment[],
-  business: Pick<BusinessSettings, "loadedLaborRateCents" | "roundingIncrementCents">
+  business: Pick<BusinessSettings, "loadedLaborRateCents" | "roundingIncrementCents" | "minimumProjectPriceCents">
 ): ProjectEstimateResult {
   const rollup = rollUpProject(project, assemblies, materials, equipment, business.loadedLaborRateCents, 0);
 
@@ -429,6 +431,8 @@ export function evaluateProject(
       trueCostCents: pricing.trueCostCents,
       requiredSellingPriceCents: null,
       displayPriceCents: null,
+      preMinimumPriceCents: null,
+      minimumPriceAppliedCents: null,
       expectedMargin: null,
       taxableSubtotalCents: null,
       taxAmountCents: null,
@@ -436,13 +440,23 @@ export function evaluateProject(
     };
   }
 
+  // LEP-115: the app must never silently quote below the configured minimum
+  // project price — finalPriceCents = max(calculated, minimum). Applied here
+  // (the single live-draft pricing path) so every downstream figure —
+  // preview, tax/revenue allocation, customer total, and (via
+  // buildQuoteRevision's identical call) the locked quote revision itself —
+  // is consistent with the SAME final price.
+  const minimumCents = safeCents(business.minimumProjectPriceCents);
+  const finalPriceCents = safeCents(Math.max(pricing.roundedRecommendedPriceCents, minimumCents));
+  const minimumPriceAppliedCents = minimumCents > pricing.roundedRecommendedPriceCents ? minimumCents : null;
+
   // Same exact allocation function a locked revision uses — see
   // allocateRevenue()'s doc comment. A draft has no actualQuotedPrice yet, so
-  // the live preview allocates against the system's own recommendation.
+  // the live preview allocates against the FINAL (post-minimum) price.
   let taxableSubtotalCents: MoneyCents;
   let taxAmountCents: MoneyCents;
   try {
-    const allocation = allocateRevenue(pricing.roundedRecommendedPriceCents, rollup.revenueRows);
+    const allocation = allocateRevenue(finalPriceCents, rollup.revenueRows);
     ({ taxableSubtotalCents, taxAmountCents } = computeTaxFromAllocation(allocation, project.taxRatePercent ?? 0));
   } catch {
     // Every line has zero direct cost — nothing to allocate proportionally.
@@ -452,7 +466,7 @@ export function evaluateProject(
     taxableSubtotalCents = 0 as MoneyCents;
     taxAmountCents = 0 as MoneyCents;
   }
-  const customerTotalCents = safeCents(pricing.roundedRecommendedPriceCents + taxAmountCents);
+  const customerTotalCents = safeCents(finalPriceCents + taxAmountCents);
 
   return {
     materialsCostCents: rollup.materialsCostCents,
@@ -465,8 +479,14 @@ export function evaluateProject(
     overheadAmountCents: pricing.overheadAmountCents,
     trueCostCents: pricing.trueCostCents,
     requiredSellingPriceCents: pricing.exactRequiredPriceCents,
-    displayPriceCents: pricing.roundedRecommendedPriceCents,
-    expectedMargin: pricing.achievedMargin,
+    displayPriceCents: finalPriceCents,
+    preMinimumPriceCents: pricing.roundedRecommendedPriceCents,
+    minimumPriceAppliedCents,
+    // Recomputed at the FINAL (post-minimum) price — never
+    // pricing.achievedMargin, which was computed at the pre-minimum
+    // recommendation and would understate margin whenever the floor lifted
+    // the price above it.
+    expectedMargin: calculateMargin(finalPriceCents, pricing.trueCostCents),
     taxableSubtotalCents,
     taxAmountCents,
     customerTotalCents,
@@ -726,7 +746,18 @@ export function buildQuoteRevision(
   }));
 
   const previous = project.quoteRevisions[project.quoteRevisions.length - 1] ?? null;
-  const actualQuotedPriceCents = safeCents(options?.actualQuotedPriceOverrideCents ?? pricing.roundedRecommendedPriceCents);
+  // LEP-115: when no manual override is given, the price this revision locks
+  // in must never fall below the configured minimum project price —
+  // max(calculated, minimum), exactly like evaluateProject's live preview
+  // (so "Review and quote" locks in byte-for-byte the same number the
+  // preview was just showing). An explicit override (e.g. "Record actual
+  // price") is a recorded historical fact and is deliberately NEVER clamped
+  // here — see EstimatesTab.tsx's own below-minimum confirmation prompt for
+  // where that case is instead surfaced to the contractor.
+  const configuredMinimumProjectPriceCents = safeCents(business.minimumProjectPriceCents);
+  const actualQuotedPriceCents = safeCents(
+    options?.actualQuotedPriceOverrideCents ?? Math.max(pricing.roundedRecommendedPriceCents, configuredMinimumProjectPriceCents)
+  );
   const achievedMargin = calculateMargin(actualQuotedPriceCents, trueCostCents);
 
   // THE SAME allocateRevenue() a live draft preview uses — see
@@ -745,6 +776,9 @@ export function buildQuoteRevision(
     reason: options?.reason,
     calculationSchemaVersion: QUOTE_REVISION_SCHEMA_VERSION,
     roundingIncrementCents: business.roundingIncrementCents,
+    // Frozen at lock time (DEF-13) — a later change to the project's own
+    // live customerDetailMode never alters how this revision presents.
+    customerDetailMode: project.customerDetailMode ?? "detailed",
     serviceLines,
     equipmentLines,
     laborLines,
@@ -761,6 +795,7 @@ export function buildQuoteRevision(
     trueCostCents,
     exactRequiredPriceCents: pricing.exactRequiredPriceCents as MoneyCents,
     roundedRecommendedPriceCents: pricing.roundedRecommendedPriceCents,
+    configuredMinimumProjectPriceCents,
     actualQuotedPriceCents,
     taxableSubtotalCents,
     taxAmountCents,
@@ -1759,5 +1794,68 @@ export function evaluateOverheadScenario(
       scenarioMargin,
       crossesBelowTarget: wasAtOrAboveTarget && isNowBelowTarget,
     };
+  });
+}
+
+// -- Crew-size scenario -------------------------------------------------------
+//
+// "Would sending more people actually finish this faster, and what would it
+// cost me?" A pure what-if calculation — never mutates the labor line it's
+// comparing against. Deliberately does NOT assume doubling the crew halves
+// the elapsed time: each crew size carries its OWN efficiency percent
+// (100% = perfectly linear — the same total person-hours regardless of how
+// they're split, so cost is identical and only elapsed time changes). Below
+// 100% models real coordination overhead (a bigger crew needs MORE total
+// person-hours — and therefore costs more — to finish the same scope of
+// work, even though it still finishes sooner in elapsed time). The contractor
+// sets the efficiency factor themselves; the engine never invents one.
+
+export interface CrewSizeScenario {
+  crewSize: number;
+  /** 100 = perfectly linear (no coordination gain or loss). Contractor-
+   * supplied, never assumed. */
+  efficiencyPercent: number;
+  /** Total person-hours actually needed to finish the SAME scope of work at
+   * this crew size's efficiency — equal to the baseline at 100% efficiency,
+   * strictly greater below 100% (coordination overhead), strictly less
+   * above 100% (a genuine efficiency gain, if the contractor believes one
+   * exists for this crew size). */
+  totalPersonHours: number;
+  /** totalPersonHours / crewSize — how long the job takes with this many
+   * people on it. */
+  elapsedHours: number;
+  /** totalPersonHours x the loaded labor rate — identical to the baseline
+   * cost only when efficiency is exactly 100%. */
+  totalLaborCostCents: MoneyCents;
+}
+
+/**
+ * Compares alternative crew sizes for completing the SAME scope of work,
+ * given as `baselinePersonHours` (e.g. an existing ad-hoc crew-labor line's
+ * own crewSize x elapsedHours) — the total amount of work, measured in
+ * person-hours, independent of how many people it's split across. Invalid
+ * inputs (crew size or efficiency <= 0) produce an all-zero row rather than
+ * NaN/Infinity, matching this module's usual safe-fallback convention.
+ */
+export function evaluateCrewSizeScenarios(
+  baselinePersonHours: number,
+  loadedRateCents: MoneyCents,
+  scenarios: { crewSize: number; efficiencyPercent: number }[]
+): CrewSizeScenario[] {
+  const safeBaseline = safe(baselinePersonHours);
+  return scenarios.map(({ crewSize, efficiencyPercent }) => {
+    if (!Number.isFinite(crewSize) || crewSize <= 0 || !Number.isFinite(efficiencyPercent) || efficiencyPercent <= 0) {
+      return { crewSize, efficiencyPercent, totalPersonHours: 0, elapsedHours: 0, totalLaborCostCents: ZERO_CENTS };
+    }
+    // NOT percentToFraction() — that clamps to [0, 100], which would silently
+    // discard a genuine above-100%-efficiency scenario (a crew the
+    // contractor believes works BETTER than linear). Efficiency here is
+    // deliberately unbounded above zero.
+    const efficiencyFraction = new Decimal(efficiencyPercent).dividedBy(100);
+    const totalPersonHoursDecimal = new Decimal(safeBaseline).dividedBy(efficiencyFraction);
+    const totalPersonHours = totalPersonHoursDecimal.toNumber();
+    const elapsedHours = totalPersonHoursDecimal.dividedBy(crewSize).toNumber();
+    const totalLaborCostCents = fromDecimalToCents(totalPersonHoursDecimal.times(new Decimal(safeCents(loadedRateCents))));
+    return { crewSize, efficiencyPercent, totalPersonHours, elapsedHours, totalLaborCostCents };
   });
 }

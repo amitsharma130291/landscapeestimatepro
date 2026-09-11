@@ -3,7 +3,7 @@ import { Printer, Plus, Trash2 } from "lucide-react";
 import { formatCurrency, percentToFraction } from "../../lib/calc";
 import { addCents, multiplyCentsByQuantity, multiplyCentsByRate, sumCents, ZERO_CENTS, type MoneyCents } from "../../lib/money";
 import { validateQuantity, validateTaxRatePercent } from "../../lib/validation";
-import { Button, Card, DraftNumberInput, Field, MoneyInput, TextInput } from "../ui/primitives";
+import { Button, Card, DraftNumberInput, Field, MoneyInput, PrintableTextField, TextInput } from "../ui/primitives";
 
 interface LineItem {
   id: string;
@@ -56,7 +56,7 @@ export default function InvoiceBuilderIsland() {
           <h2 className="text-lg font-bold text-ink">Business</h2>
           <div className="mt-4 space-y-4">
             <Field label="Business name" htmlFor={`${idPrefix}-business`}>
-              <TextInput id={`${idPrefix}-business`} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Greenscape Landscaping" />
+              <PrintableTextField id={`${idPrefix}-business`} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Greenscape Landscaping" />
             </Field>
           </div>
         </Card>
@@ -64,7 +64,7 @@ export default function InvoiceBuilderIsland() {
           <h2 className="text-lg font-bold text-ink">Customer</h2>
           <div className="mt-4 space-y-4">
             <Field label="Customer name" htmlFor={`${idPrefix}-customer`}>
-              <TextInput id={`${idPrefix}-customer`} value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Smith Residence" />
+              <PrintableTextField id={`${idPrefix}-customer`} value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Smith Residence" />
             </Field>
           </div>
         </Card>
@@ -111,7 +111,7 @@ export default function InvoiceBuilderIsland() {
                   <tr key={line.id} className="border-b border-border last:border-b-0">
                     <td className="px-5 py-2.5 sm:px-6 align-top">
                       <label className="sr-only" htmlFor={`${idPrefix}-desc-${index}`}>Description, line {index + 1}</label>
-                      <TextInput id={`${idPrefix}-desc-${index}`} value={line.description} onChange={(e) => updateLine(line.id, { description: e.target.value })} />
+                      <PrintableTextField id={`${idPrefix}-desc-${index}`} value={line.description} onChange={(e) => updateLine(line.id, { description: e.target.value })} />
                     </td>
                     <td className="px-3 py-2.5 align-top">
                       <label className="sr-only" htmlFor={`${idPrefix}-qty-${index}`}>Quantity, line {index + 1}</label>
@@ -153,8 +153,9 @@ export default function InvoiceBuilderIsland() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="block w-full rounded-lg border border-border px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-lime-surface"
+              className="no-print block w-full rounded-lg border border-border px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-lime-surface"
             />
+            {notes && <p aria-hidden="true" className="hidden whitespace-pre-wrap break-words text-sm print:block">{notes}</p>}
           </div>
           <div className="space-y-2 text-right">
             <div className="flex items-center justify-between text-sm text-muted">

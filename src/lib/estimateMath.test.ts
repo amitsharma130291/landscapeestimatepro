@@ -9,11 +9,13 @@ import {
   calculateProfitabilitySummary,
   classifyCostImpact,
   evaluateActualVsEstimate,
+  evaluateCrewSizeScenarios,
   evaluateMinimumJob,
   evaluateProject,
   evaluateRateHealth,
   getActiveRevision,
   getQuoteBlockingErrors,
+  projectCostImpactForRevision,
   QuoteBlockedError,
   snapshotCostImpact,
 } from "./estimateMath";
@@ -25,7 +27,12 @@ function cents(n: number): MoneyCents {
   return n as MoneyCents;
 }
 
-const business: BusinessSettings = { ...DEFAULT_BUSINESS_SETTINGS, loadedLaborRateCents: cents(3200) };
+// minimumProjectPriceCents is zeroed here so the many unrelated tests below
+// (materials/labor/overhead/tax/margin math) aren't silently confounded by
+// DEFAULT_BUSINESS_SETTINGS' own $500 floor (LEP-115) — that enforcement
+// mechanism itself gets its own dedicated tests further down, using the
+// workbook's exact $438/$500 example.
+const business: BusinessSettings = { ...DEFAULT_BUSINESS_SETTINGS, loadedLaborRateCents: cents(3200), minimumProjectPriceCents: ZERO_CENTS };
 
 const materials: Material[] = [
   { id: "mulch", name: "Mulch", unitCostCents: cents(4200), unit: "yd3" },
@@ -131,6 +138,16 @@ describe("calculateAssemblyCost — overhead must be included in trueCostPerUnit
       equipment: [{ equipmentId: "does-not-exist", quantityPerUnit: 1 }],
     };
     expect(() => calculateAssemblyCost(withBadEquipment, materials, equipment, cents(3200), 15)).not.toThrow();
+  });
+
+  it("LEP-090 scaling linearity: a project's direct cost for N units is exactly N x the per-unit direct cost — no batch discount or per-line rounding creep", () => {
+    const perUnit = calculateAssemblyCost(assembly, materials, equipment, cents(3200), 0);
+    const quantities = [1, 3, 10, 37];
+    for (const qty of quantities) {
+      const project = baseProject({ overheadPercent: 0, serviceLines: [{ id: "l1", assemblyId: assembly.id, quantity: qty }] });
+      const result = evaluateProject(project, [assembly], materials, equipment, { ...business, loadedLaborRateCents: cents(3200) });
+      expect(result.directCostCents).toBe(perUnit.directCostPerUnitCents * qty);
+    }
   });
 });
 
@@ -265,6 +282,40 @@ describe("evaluateProject — Smith Residence, full project roll-up", () => {
     expect(chunkyRounding.displayPriceCents).not.toBeNull();
     expect((chunkyRounding.displayPriceCents as number) % 5000).toBe(0);
     expect(chunkyRounding.displayPriceCents as number).toBeGreaterThanOrEqual(chunkyRounding.requiredSellingPriceCents as number);
+  });
+
+  it("LEP-094 multi-service quote: two DIFFERENT services in one project sum independently, with no shared-resource double-count", () => {
+    const shrubAssembly: Assembly = {
+      id: "shrub-install",
+      name: "Shrub Installation",
+      unit: "each",
+      materials: [{ materialId: "shrub", quantityPerUnit: 1 }],
+      laborInputMode: "person-hours-per-unit" as const,
+      laborPersonHoursPerUnit: 0.45,
+      equipment: [],
+      otherCostPerUnitCents: ZERO_CENTS,
+    };
+    const multiServiceProject = baseProject({
+      overheadPercent: 0,
+      serviceLines: [
+        { id: "line-1", assemblyId: "mulch-install", quantity: 8 },
+        { id: "line-2", assemblyId: "shrub-install", quantity: 18 },
+      ],
+    });
+    const multiResult = evaluateProject(multiServiceProject, [mulchAssembly, shrubAssembly], materials, equipment, business);
+
+    // Hand: mulch (8 x $42.00 material + 8 x 0.4h x $32.00 labor) = $336.00 + $102.40 = $438.40
+    // shrub (18 x $28.00 material + 18 x 0.45h x $32.00 labor) = $504.00 + $259.20 = $763.20
+    // Total direct cost = $438.40 + $763.20 = $1,201.60 — the exact sum, never the two lines' costs multiplied together or one overwriting the other.
+    expect(multiResult.materialsCostCents).toBe(84000); // 33600 (mulch) + 50400 (shrub)
+    expect(multiResult.laborCostCents).toBe(36160); // 10240 (mulch) + 25920 (shrub)
+    expect(multiResult.directCostCents).toBe(120160);
+
+    const mulchOnly = evaluateProject({ ...multiServiceProject, serviceLines: [multiServiceProject.serviceLines[0]] }, [mulchAssembly, shrubAssembly], materials, equipment, business);
+    const shrubOnly = evaluateProject({ ...multiServiceProject, serviceLines: [multiServiceProject.serviceLines[1]] }, [mulchAssembly, shrubAssembly], materials, equipment, business);
+    // The combined total is exactly the two single-service totals added
+    // together — proves no cross-contamination between service lines.
+    expect(multiResult.directCostCents).toBe(mulchOnly.directCostCents + shrubOnly.directCostCents);
   });
 
   it("REGRESSION (item 4): the live draft preview and a just-locked revision agree EXACTLY when nothing changes in between — no separate approximate draft tax engine", () => {
@@ -959,6 +1010,45 @@ describe("calculateAssemblyVariance — brief reference examples", () => {
   it("omits assemblies with no completed jobs", () => {
     expect(calculateAssemblyVariance([])).toEqual([]);
   });
+
+  it("LEP-135 groups completed jobs by their OWN assembly — two different services never blend into one row", () => {
+    const mulchAssembly: Assembly = {
+      id: "mulch-group",
+      name: "Mulch Installation",
+      unit: "yd3",
+      materials: [],
+      laborInputMode: "person-hours-per-unit" as const,
+      laborPersonHoursPerUnit: 0.4,
+      equipment: [],
+      otherCostPerUnitCents: ZERO_CENTS,
+    };
+    const shrubAssembly: Assembly = {
+      id: "shrub-group",
+      name: "Shrub Installation",
+      unit: "each",
+      materials: [],
+      laborInputMode: "person-hours-per-unit" as const,
+      laborPersonHoursPerUnit: 0.46,
+      equipment: [],
+      otherCostPerUnitCents: ZERO_CENTS,
+    };
+    const projects = [
+      completedProjectWithLine(mulchAssembly, 7.8, 8.7, 3, 0),
+      completedProjectWithLine(mulchAssembly, 7.8, 8.7, 3, 1),
+      completedProjectWithLine(shrubAssembly, 20, 20, 10.8, 2),
+    ];
+    const results = calculateAssemblyVariance(projects);
+    expect(results).toHaveLength(2); // one row per DISTINCT (assembly, unit) group, never merged
+
+    const mulchResult = results.find((r) => r.assemblyId === "mulch-group");
+    const shrubResult = results.find((r) => r.assemblyId === "shrub-group");
+    expect(mulchResult?.completedCount).toBe(2); // only the 2 mulch jobs, not all 3
+    expect(shrubResult?.completedCount).toBe(1); // only the 1 shrub job
+
+    // Each group's own averages stay unpolluted by the other service's numbers.
+    expect(mulchResult?.avgActualLaborHours).toBeCloseTo(3, 10);
+    expect(shrubResult?.avgActualLaborHours).toBeCloseTo(10.8, 10);
+  });
 });
 
 describe("calculateProfitabilitySummary — revenue-weighted, using actualQuotedPriceCents", () => {
@@ -1169,6 +1259,19 @@ describe("snapshotCostImpact / classifyCostImpact — three independent axes", (
     expect(impact?.impactDirection).toBe("unchanged");
     expect(impact?.marginPointsDelta).toBeCloseTo(0, 10);
   });
+
+  it("LEP-124 scenario reprice always applies the LOCKED revision overhead — the function has no live-business-overhead input at all, so a since-changed business setting can never leak in", () => {
+    const revision = lowMarginProject.quoteRevisions[0];
+    expect(revision.overheadPercent).toBe(15); // locked at quote time, from DEFAULT_BUSINESS_SETTINGS
+
+    const projected = projectCostImpactForRevision(revision, assemblies, materials, equipment, DEFAULT_BUSINESS_SETTINGS.loadedLaborRateCents);
+    // Hand: overhead actually applied = projectedOverheadCents / projectedDirectCostCents.
+    // Must reconcile to the revision's own locked 15%, never some other
+    // "current" business rate — the function signature doesn't even accept
+    // a live overhead percent, only a loaded labor rate.
+    const impliedOverheadPercent = (projected.projectedOverheadCents / projected.projectedDirectCostCents) * 100;
+    expect(Number(impliedOverheadPercent.toFixed(2))).toBe(15);
+  });
 });
 
 describe("integration: draft -> recommended price -> override -> revision -> catalog change -> cost-impact -> actuals -> profitability", () => {
@@ -1248,5 +1351,84 @@ describe("integration: draft -> recommended price -> override -> revision -> cat
     expect(summary.weightedActualMargin).not.toBeNull();
     // Actual margin must be lower than expected, since real costs came in higher.
     expect(summary.weightedActualMargin as number).toBeLessThan(summary.weightedExpectedMargin as number);
+  });
+});
+
+describe("evaluateCrewSizeScenarios — crew-size what-if comparison (spec section 23)", () => {
+  it("at 100% efficiency for every crew size, total labor cost is IDENTICAL to the baseline — only elapsed time changes (never assumes 2x crew = 2x production, but confirms the neutral case is truly cost-neutral)", () => {
+    // Baseline: 3 people x 8 hours x $32.00/hr loaded = 24 person-hours, $768.00.
+    const baselinePersonHours = 24;
+    const loadedRateCents = 3200 as MoneyCents;
+    const scenarios = evaluateCrewSizeScenarios(baselinePersonHours, loadedRateCents, [
+      { crewSize: 2, efficiencyPercent: 100 },
+      { crewSize: 3, efficiencyPercent: 100 },
+      { crewSize: 4, efficiencyPercent: 100 },
+    ]);
+
+    for (const s of scenarios) {
+      expect(s.totalPersonHours).toBe(24);
+      expect(s.totalLaborCostCents).toBe(76800); // $768.00, unchanged regardless of crew size
+    }
+    // Elapsed time DOES change, and is never a naive "half the crew, half the
+    // time" — it's baseline / crewSize exactly.
+    expect(scenarios[0].elapsedHours).toBe(12); // 24 / 2
+    expect(scenarios[1].elapsedHours).toBeCloseTo(8, 5); // 24 / 3 — matches the original 3-person, 8-hour baseline exactly
+    expect(scenarios[2].elapsedHours).toBe(6); // 24 / 4
+  });
+
+  it("below 100% efficiency (coordination overhead), a bigger crew finishes SOONER but costs MORE — never assumes linear scaling", () => {
+    const baselinePersonHours = 24;
+    const loadedRateCents = 3200 as MoneyCents;
+    const scenarios = evaluateCrewSizeScenarios(baselinePersonHours, loadedRateCents, [{ crewSize: 4, efficiencyPercent: 90 }]);
+    const s = scenarios[0];
+    // Hand: 24 / 0.90 = 26.666... total person-hours needed at 90% efficiency.
+    expect(s.totalPersonHours).toBeCloseTo(26.6667, 3);
+    // Elapsed: 26.6667 / 4 = 6.6667 hours — still faster than the 8-hour
+    // baseline, but NOT the naive 24/4=6 hours a linear assumption would give.
+    expect(s.elapsedHours).toBeCloseTo(6.6667, 3);
+    expect(s.elapsedHours).toBeGreaterThan(24 / 4); // strictly worse than the naive linear guess
+    // Cost: 26.6667 x $32.00 = $853.33, MORE than the $768.00 baseline.
+    expect(s.totalLaborCostCents).toBe(85333);
+    expect(s.totalLaborCostCents).toBeGreaterThan(76800);
+  });
+
+  it("above 100% efficiency (a genuine, contractor-asserted efficiency gain), total cost drops below the baseline", () => {
+    const scenarios = evaluateCrewSizeScenarios(24, 3200 as MoneyCents, [{ crewSize: 4, efficiencyPercent: 120 }]);
+    const s = scenarios[0];
+    // Hand: 24 / 1.20 = 20 total person-hours.
+    expect(s.totalPersonHours).toBe(20);
+    expect(s.elapsedHours).toBe(5); // 20 / 4
+    expect(s.totalLaborCostCents).toBe(64000); // $640.00, LESS than the $768.00 baseline
+  });
+
+  it("invalid crew size or efficiency (<= 0) produces an all-zero row, never NaN or Infinity", () => {
+    const scenarios = evaluateCrewSizeScenarios(24, 3200 as MoneyCents, [
+      { crewSize: 0, efficiencyPercent: 100 },
+      { crewSize: -2, efficiencyPercent: 100 },
+      { crewSize: 3, efficiencyPercent: 0 },
+      { crewSize: 3, efficiencyPercent: -50 },
+    ]);
+    for (const s of scenarios) {
+      expect(s.totalPersonHours).toBe(0);
+      expect(s.elapsedHours).toBe(0);
+      expect(s.totalLaborCostCents).toBe(0);
+      expect(Number.isFinite(s.totalPersonHours)).toBe(true);
+      expect(Number.isFinite(s.elapsedHours)).toBe(true);
+    }
+  });
+
+  it("a zero baseline (no work scoped yet) produces zero cost/time at any crew size, never a divide-by-zero artifact", () => {
+    const scenarios = evaluateCrewSizeScenarios(0, 3200 as MoneyCents, [{ crewSize: 3, efficiencyPercent: 100 }]);
+    expect(scenarios[0].totalPersonHours).toBe(0);
+    expect(scenarios[0].elapsedHours).toBe(0);
+    expect(scenarios[0].totalLaborCostCents).toBe(0);
+  });
+
+  it("integer-cent precision is preserved — a fractional-person-hour result never drifts through floating point", () => {
+    // 10 person-hours at $32.50/hr, compared at 3 people, 100% efficiency.
+    const scenarios = evaluateCrewSizeScenarios(10, 3250 as MoneyCents, [{ crewSize: 3, efficiencyPercent: 100 }]);
+    // Hand: 10 x $32.50 = $325.00 exactly, regardless of the 3.333... elapsed hours.
+    expect(scenarios[0].totalLaborCostCents).toBe(32500);
+    expect(scenarios[0].elapsedHours).toBeCloseTo(3.3333, 3);
   });
 });
