@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Check, Clock, Lock, Radio, TriangleAlert } from "lucide-react";
 import { Badge, Button } from "../ui/primitives";
 import {
@@ -59,9 +60,22 @@ export default function WorkflowStatusBar({
 }) {
   const stage = deriveLifecycleStage(project);
   const nextAction = deriveNextAction(project, canQuote, blockingErrors);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Every action here can change `nextAction.kind`, which swaps out the very
+  // button that was just clicked — the browser's default is to drop focus to
+  // <body> when a focused element is removed from the DOM (confirmed live
+  // via a keyboard-only Playwright pass: pressing Enter on "Review and
+  // quote" left focus nowhere). The container itself survives every
+  // re-render (only its action buttons change), so refocusing it keeps
+  // focus somewhere real and still visibly part of this status bar.
+  function runAndRefocus(action: () => void) {
+    action();
+    containerRef.current?.focus();
+  }
 
   return (
-    <div className="no-print flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border bg-paper-dim px-4 py-3 text-xs">
+    <div ref={containerRef} tabIndex={-1} className="no-print flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border bg-paper-dim px-4 py-3 text-xs outline-none">
       <Badge tone={STAGE_TONE[stage]}>{LIFECYCLE_STAGE_LABELS[stage]}</Badge>
 
       <span className="inline-flex items-center gap-1.5 font-semibold text-ink" title={activeRevision ? "Frozen at the locked revision — catalog cost changes won't silently change it" : "Recalculating live from your current catalog and settings"}>
@@ -93,15 +107,15 @@ export default function WorkflowStatusBar({
 
       <div className="ml-auto flex flex-wrap items-center gap-2">
         {nextAction.kind === "quote" && (
-          <Button type="button" size="sm" disabled={nextAction.disabled} title={nextAction.reason} onClick={onQuote}>
+          <Button type="button" size="sm" disabled={nextAction.disabled} title={nextAction.reason} onClick={() => runAndRefocus(onQuote)}>
             {nextAction.label}
           </Button>
         )}
         {nextAction.kind === "accept-or-requote" && (
           <>
             <span className="text-muted">{nextAction.label}:</span>
-            <Button type="button" size="sm" variant="secondary" onClick={onMarkAccepted}>Mark accepted</Button>
-            <Button type="button" size="sm" variant="ghost" onClick={onCreateRevision}>Create revision</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={() => runAndRefocus(onMarkAccepted)}>Mark accepted</Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => runAndRefocus(onCreateRevision)}>Create revision</Button>
           </>
         )}
         {nextAction.kind === "record-actuals" && (
@@ -111,7 +125,7 @@ export default function WorkflowStatusBar({
           <Button type="button" size="sm" onClick={() => (window.location.href = "/app/actuals/")}>{nextAction.label}</Button>
         )}
         {nextAction.kind === "view-history" && project.quoteRevisions.length > 0 && (
-          <Button type="button" size="sm" variant="ghost" onClick={onShowHistory}>{nextAction.label}</Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => runAndRefocus(onShowHistory)}>{nextAction.label}</Button>
         )}
         {nextAction.kind === "reopen-or-archive" && <span className="text-muted">{nextAction.label} using the Status field</span>}
       </div>

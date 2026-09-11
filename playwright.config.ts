@@ -15,5 +15,13 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 60_000,
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    // Firefox/WebKit only run the tagged @smoke subset (see
+    // tests/e2e/cross-browser.spec.ts) — WebKit here is Playwright's own
+    // WebKit build, NOT real Safari; that remains a separate manual
+    // requirement (see the QA workbook, LEP-142).
+    { name: "firefox", testMatch: /cross-browser\.spec\.ts/, use: { ...devices["Desktop Firefox"] } },
+    { name: "webkit", testMatch: /cross-browser\.spec\.ts/, use: { ...devices["Desktop Safari"] } },
+  ],
 });

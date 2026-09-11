@@ -101,7 +101,7 @@ export default function WorkspaceMigrationError({
         </div>
 
         {fieldErrors.length > 0 && (
-          <div className="mt-5 overflow-x-auto rounded-xl border border-border">
+          <div className="mt-5 table-scroll rounded-xl border border-border">
             <table className="w-full min-w-[560px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">

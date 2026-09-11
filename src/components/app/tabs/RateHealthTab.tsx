@@ -77,7 +77,7 @@ export default function RateHealthTab() {
             <EmptyState title="No services yet" description="Add a service assembly with a current rate on the Assemblies & Templates tab to see its rate health here." />
           </div>
         ) : (
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4 table-scroll">
             <table className="w-full min-w-[640px] border-collapse text-sm">
               <thead>
                 <tr className="border-y border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">

@@ -92,12 +92,12 @@ const organizationSchema = {
     <slot name="head" />
   </head>
 
-  <body class="flex min-h-screen flex-col bg-paper font-sans text-ink antialiased">
+  <body class="flex min-h-screen flex-col overflow-x-clip bg-paper font-sans text-ink antialiased">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-forest focus:px-4 focus:py-2 focus:text-white">
       Skip to content
     </a>
     <PublicHeader />
-    <main id="main-content" class="flex-1">
+    <main id="main-content" class="min-w-0 flex-1">
       <slot />
     </main>
     <PublicFooter />

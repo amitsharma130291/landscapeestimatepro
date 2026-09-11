@@ -94,7 +94,7 @@ export default function InvoiceBuilderIsland() {
           </Button>
         </div>
 
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 table-scroll">
           <table className="w-full min-w-[560px] border-collapse text-sm">
             <thead>
               <tr className="border-y border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">
@@ -134,7 +134,7 @@ export default function InvoiceBuilderIsland() {
                     </td>
                     <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-ink">{formatCurrency(lineTotalCents(line), { cents: true })}</td>
                     <td className="px-3 py-2.5">
-                      <button type="button" onClick={() => removeLine(line.id)} className="no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove line ${index + 1}`}>
+                      <button type="button" onClick={() => removeLine(line.id)} className="tap-target no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove line ${index + 1}`}>
                         <Trash2 size={16} aria-hidden="true" />
                       </button>
                     </td>

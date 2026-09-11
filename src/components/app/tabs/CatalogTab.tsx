@@ -69,7 +69,7 @@ export default function CatalogTab() {
             <Plus size={16} aria-hidden="true" /> Add material
           </Button>
         </div>
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 table-scroll">
           <table className="w-full min-w-[520px] border-collapse text-sm">
             <thead>
               <tr className="border-y border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">
@@ -123,7 +123,7 @@ export default function CatalogTab() {
                       </Select>
                     </td>
                     <td className="px-3 py-2.5 align-top">
-                      <button type="button" onClick={() => handleRemoveMaterial(material.id, material.name)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${material.name}`}>
+                      <button type="button" onClick={() => handleRemoveMaterial(material.id, material.name)} className="tap-target flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${material.name}`}>
                         <Trash2 size={16} aria-hidden="true" />
                       </button>
                     </td>
@@ -152,7 +152,7 @@ export default function CatalogTab() {
             <Plus size={16} aria-hidden="true" /> Add equipment
           </Button>
         </div>
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 table-scroll">
           <table className="w-full min-w-[520px] border-collapse text-sm">
             <thead>
               <tr className="border-y border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">
@@ -202,7 +202,7 @@ export default function CatalogTab() {
                       </Select>
                     </td>
                     <td className="px-3 py-2.5 align-top">
-                      <button type="button" onClick={() => handleRemoveEquipment(item.id, item.name)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${item.name}`}>
+                      <button type="button" onClick={() => handleRemoveEquipment(item.id, item.name)} className="tap-target flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${item.name}`}>
                         <Trash2 size={16} aria-hidden="true" />
                       </button>
                     </td>

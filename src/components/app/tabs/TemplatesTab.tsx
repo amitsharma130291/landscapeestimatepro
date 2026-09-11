@@ -168,7 +168,7 @@ export default function TemplatesTab() {
                       />
                     </div>
                   </div>
-                  <button type="button" onClick={() => removeAssembly(assembly.id)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${assembly.name}`}>
+                  <button type="button" onClick={() => removeAssembly(assembly.id)} className="tap-target flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${assembly.name}`}>
                     <Trash2 size={16} aria-hidden="true" />
                   </button>
                 </div>
@@ -224,7 +224,7 @@ export default function TemplatesTab() {
                               <button
                                 type="button"
                                 onClick={() => updateAssembly(assembly.id, { materials: assembly.materials.filter((_, i) => i !== lineIndex) })}
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red"
+                                className="tap-target flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red"
                                 aria-label="Remove material line"
                               >
                                 <Trash2 size={14} aria-hidden="true" />
@@ -295,7 +295,7 @@ export default function TemplatesTab() {
                               <button
                                 type="button"
                                 onClick={() => updateAssembly(assembly.id, { equipment: assembly.equipment.filter((_, i) => i !== lineIndex) })}
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red"
+                                className="tap-target flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red"
                                 aria-label="Remove equipment line"
                               >
                                 <Trash2 size={14} aria-hidden="true" />
@@ -423,7 +423,7 @@ export default function TemplatesTab() {
                     {template.serviceLines.length} service{template.serviceLines.length === 1 ? "" : "s"}
                   </p>
                 </div>
-                <button type="button" onClick={() => removeTemplate(template.id)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${template.name}`}>
+                <button type="button" onClick={() => removeTemplate(template.id)} className="tap-target flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${template.name}`}>
                   <Trash2 size={16} aria-hidden="true" />
                 </button>
               </li>

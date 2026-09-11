@@ -165,7 +165,7 @@ export default function SettingsTab() {
                 <button
                   type="button"
                   onClick={() => updateBusiness({ businessLogoDataUrl: undefined })}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red"
+                  className="tap-target flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red"
                   aria-label="Remove logo"
                 >
                   <X size={16} aria-hidden="true" />
@@ -525,7 +525,7 @@ function OverheadScenarioCard() {
             <p className="mt-4 text-sm text-mint-ink">No project would cross below its own target margin at this rate.</p>
           )}
 
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4 table-scroll">
             <table className="w-full min-w-[520px] border-collapse text-sm">
               <thead>
                 <tr className="border-y border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">

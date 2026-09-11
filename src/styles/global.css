@@ -20,7 +20,7 @@
 
   --color-lime: #c6f135;         /* on dark surfaces: hero CTA, headline accent */
   --color-lime-ink: #16321a;      /* text color placed on top of --color-lime */
-  --color-lime-surface: #8fae1c;  /* on light surfaces: links/icons, AA against white */
+  --color-lime-surface: #5f7412;  /* on light surfaces: links/icons/eyebrow labels — darkened from #8fae1c, which despite its comment only hit 2.55:1 against white (confirmed by an automated axe-core scan of the site-wide "eyebrow" label pattern); this hits 5.26:1, clearing WCAG AA's 4.5:1 for small bold text */
 
   --color-mint: #e3f5e6;          /* light success chip background */
   --color-mint-ink: #1c6b3c;      /* text on mint chips */
@@ -34,7 +34,7 @@
   --color-border: #dbe3dc;
   --color-border-dark: #2a3d30;   /* borders on dark forest surfaces */
 
-  --color-amber: #a8720b;
+  --color-amber: #8f5f09; /* darkened from #a8720b — that shade only hit 3.65:1 against --color-amber-light, below WCAG AA's 4.5:1 (confirmed by an automated axe-core scan of the "Free beta" badge); this hits 4.88:1 */
   --color-amber-light: #fbf0da;
   --color-red: #b8332a;
   --color-red-light: #fbeae8;
@@ -79,6 +79,53 @@
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /*
+   * Shared touch-target contract: expands a control's effective click/tap
+   * area to at least 44x44 CSS px WITHOUT changing how big it looks or
+   * growing table-row height. A `::after` pseudo-element, invisible and
+   * centered over the control, is sized to whichever is larger — the
+   * control's own box, or 44px. A pointer landing on the pseudo-element
+   * still activates the real control (a pseudo-element is not a separate
+   * hit-testable DOM node), so this is pure hit-area expansion, not a new
+   * clickable thing that could go out of sync with the control it covers.
+   *
+   * Safety rule for call sites: two `.tap-target` siblings sitting closer
+   * together than the extra space this adds on each side (half of
+   * `44px - <control size>`) will get overlapping hit areas — pair this
+   * class with at least an 8px gap between adjacent small icon buttons
+   * (see EstimatesTab/CatalogTab/ActualsTab row-action groups) so a tap
+   * near the boundary can't miss and hit the wrong control.
+   */
+  .tap-target {
+    position: relative;
+  }
+  .tap-target::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(44px, 100%);
+    height: max(44px, 100%);
+    transform: translate(-50%, -50%);
+  }
+
+  /*
+   * Shared "a wide table scrolls inside its own box, never the page"
+   * contract. `overflow-x: auto` alone LOOKS like it's enough — a wrapped
+   * table visually clips to a scrollbar — but it only governs painting and
+   * scrolling, not layout sizing: a table's content-based min-width can
+   * still leak past it during the browser's layout pass and inflate the
+   * whole PAGE's scrollable width (confirmed live in Phase 12's exact-320px
+   * viewport testing — the price-list and invoice tools gained a 100px+
+   * phantom horizontal page-scroll on mobile despite their tables visually
+   * scrolling correctly in place). `contain: layout` closes that leak by
+   * making this element a real layout containment boundary.
+   */
+  .table-scroll {
+    overflow-x: auto;
+    contain: layout;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

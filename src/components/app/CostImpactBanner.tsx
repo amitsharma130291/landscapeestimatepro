@@ -95,7 +95,7 @@ export function CostImpactBanner({ result, onDismiss }: { result: CostImpactResu
             </dl>
           </div>
         </div>
-        <button type="button" onClick={onDismiss} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-white/60" aria-label="Dismiss">
+        <button type="button" onClick={onDismiss} className="tap-target flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-white/60" aria-label="Dismiss">
           <X size={16} aria-hidden="true" />
         </button>
       </div>

@@ -77,7 +77,7 @@ export default function FirstRunChecklist({ workspace }: { workspace: Workspace 
         onClick={toggleCollapsed}
         aria-expanded={!collapsed}
         aria-controls="first-run-checklist-body"
-        className="flex w-full items-center justify-between gap-3 text-left"
+        className="tap-target flex w-full items-center justify-between gap-3 text-left"
       >
         <span>
           <span className="text-lg font-bold text-ink">Setup checklist</span>

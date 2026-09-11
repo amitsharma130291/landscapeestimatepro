@@ -118,7 +118,7 @@ export function HelpTooltip({
             setOpen((o) => !o);
           }
         }}
-        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-muted hover:text-forest focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-surface focus-visible:ring-offset-1"
+        className="tap-target inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-muted hover:text-forest focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-surface focus-visible:ring-offset-1"
       >
         <HelpCircle size={14} aria-hidden="true" />
       </button>

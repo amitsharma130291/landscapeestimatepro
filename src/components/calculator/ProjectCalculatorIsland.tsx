@@ -57,9 +57,13 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
     setFields((prev) => ({ ...prev, [key]: value }));
   }
 
+  // min-w-0 on both grid children is load-bearing (see EstimatesTab's
+  // identical grid for the full explanation) — a CSS grid item's default
+  // min-width:auto can leak nested content's min-content size past this
+  // grid into the page's own scrollable width on narrow viewports.
   return (
     <div className={`grid gap-6 ${compact ? "" : "lg:grid-cols-[minmax(0,1fr)_23rem]"}`}>
-      <Card>
+      <Card className="min-w-0">
         <h2 className="text-lg font-bold text-ink">Project costs</h2>
         <p className="mt-1 text-sm text-muted">Enter what this project actually costs your business.</p>
 
@@ -135,7 +139,7 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
         </div>
       </Card>
 
-      <div className="lg:sticky lg:top-24 lg:self-start">
+      <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
         <Card tone="dark" padded={false}>
           <div className="p-5 sm:p-6">
             <h2 className="text-sm font-bold uppercase tracking-wider text-lime">Your results</h2>

@@ -44,7 +44,7 @@ export default function PriceListBuilderIsland() {
             <Plus size={16} aria-hidden="true" /> Add service
           </Button>
         </div>
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 table-scroll">
           <table className="w-full min-w-[480px] border-collapse text-sm">
             <thead>
               <tr className="border-y border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">
@@ -70,7 +70,7 @@ export default function PriceListBuilderIsland() {
                     <TextInput id={`${idPrefix}-unit-${index}`} value={row.unit} onChange={(e) => updateRow(row.id, { unit: e.target.value })} className="w-28" />
                   </td>
                   <td className="px-3 py-2.5 align-top">
-                    <button type="button" onClick={() => removeRow(row.id)} className="no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${row.service || "row"}`}>
+                    <button type="button" onClick={() => removeRow(row.id)} className="tap-target no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove ${row.service || "row"}`}>
                       <Trash2 size={16} aria-hidden="true" />
                     </button>
                   </td>
@@ -91,7 +91,7 @@ export default function PriceListBuilderIsland() {
 
       <div className="mt-6 rounded-2xl border border-lime-surface bg-mint p-5 sm:p-6">
         <p className="font-bold text-mint-ink">Are these prices actually profitable?</p>
-        <p className="mt-1.5 text-sm text-mint-ink/80">
+        <p className="mt-1.5 text-sm text-mint-ink">
           A price list only tells you what you charge — not what you actually make. Landscape Estimate Pro's Service
           Rate Health checks every rate above against your real cost and target margin, and flags anything priced
           below {formatCurrency(minimumProjectCents === "" ? ZERO_CENTS : minimumProjectCents)} minimum or below target.

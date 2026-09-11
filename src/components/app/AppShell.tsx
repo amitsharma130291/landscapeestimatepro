@@ -49,7 +49,7 @@ export default function AppShell({ activeTab }: { activeTab: AppTab }) {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-ink hover:bg-paper-dim lg:hidden"
+              className="tap-target flex h-10 w-10 items-center justify-center rounded-lg text-ink hover:bg-paper-dim lg:hidden"
               onClick={() => setMobileNavOpen((v) => !v)}
               aria-expanded={mobileNavOpen}
               aria-controls="app-sidebar"

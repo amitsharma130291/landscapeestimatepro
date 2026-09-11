@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronUp, Copy, Download, FileStack, History, Plus, Printer, TriangleAlert, Trash2 } from "lucide-react";
 import { useWorkspace } from "../../../lib/workspaceContext";
 import {
@@ -136,10 +136,10 @@ export default function EstimatesTab() {
                     <Button type="button" size="sm" onClick={() => setOpenProjectId(project.id)}>
                       Open
                     </Button>
-                    <div className="flex gap-1">
+                    <div className="flex gap-2">
                       <button
                         type="button"
-                        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-paper-dim"
+                        className="tap-target flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-paper-dim"
                         onClick={() => duplicateProject(project.id)}
                         aria-label={`Duplicate ${project.name}`}
                       >
@@ -147,7 +147,7 @@ export default function EstimatesTab() {
                       </button>
                       <button
                         type="button"
-                        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red"
+                        className="tap-target flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red"
                         onClick={() => {
                           if (window.confirm(`Delete "${project.name}"? This can't be undone.`)) removeProject(project.id);
                         }}
@@ -173,6 +173,15 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
   const [printingCustomer, setPrintingCustomer] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  // Deleting a row removes its own "Remove" button from the DOM — the
+  // browser's default is to drop focus to <body> when that happens, which
+  // is a real keyboard-navigation dead end (confirmed live via a
+  // keyboard-only Playwright pass). Refocusing each section's own "+ Add"
+  // button after a same-section removal keeps focus somewhere sane and
+  // still on-screen, instead of silently vanishing.
+  const addServiceButtonRef = useRef<HTMLButtonElement>(null);
+  const addLaborButtonRef = useRef<HTMLButtonElement>(null);
+  const addCostButtonRef = useRef<HTMLButtonElement>(null);
 
   const result = useMemo(
     () => evaluateProject(project, assemblies, materials, equipment, business),
@@ -258,18 +267,21 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
   }
   function removeServiceLine(id: string) {
     patch({ serviceLines: project.serviceLines.filter((l) => l.id !== id) });
+    addServiceButtonRef.current?.focus();
   }
   function updateExtra(id: string, next: Partial<ProjectExtraCost>) {
     patch({ extraCosts: project.extraCosts.map((e) => (e.id === id ? { ...e, ...next } : e)) });
   }
   function removeExtra(id: string) {
     patch({ extraCosts: project.extraCosts.filter((e) => e.id !== id) });
+    addCostButtonRef.current?.focus();
   }
   function updateLaborLine(id: string, next: Partial<ProjectLaborLine>) {
     patch({ laborLines: project.laborLines.map((l) => (l.id === id ? { ...l, ...next } : l)) });
   }
   function removeLaborLine(id: string) {
     patch({ laborLines: project.laborLines.filter((l) => l.id !== id) });
+    addLaborButtonRef.current?.focus();
   }
 
   function handleExportCsv() {
@@ -358,7 +370,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
   return (
     <div>
       <div className="no-print flex flex-wrap items-center justify-between gap-3">
-        <button type="button" onClick={onClose} className="text-sm font-semibold text-forest hover:underline">
+        <button type="button" onClick={onClose} className="tap-target text-sm font-semibold text-forest hover:underline">
           ← Back to estimates
         </button>
         <div className="flex flex-wrap gap-2">
@@ -427,8 +439,16 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
         />
       )}
 
+      {/* min-w-0 on both grid items is load-bearing, not decoration: without
+          it, a CSS grid item defaults to min-width:auto (content-based),
+          which can leak a deeply-nested descendant's min-content size past
+          this grid into the page's own scrollable width — confirmed live at
+          a 320px viewport (a 16px phantom page-scroll, closed entirely once
+          both items got min-w-0). Same underlying class of bug as
+          `.table-scroll`'s `contain:layout` fix, different CSS mechanism
+          (grid item sizing vs. table layout containment). */}
       <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -473,18 +493,18 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
                       <span className="ml-1.5 text-amber">— current cost now implies {formatCurrency(result.displayPriceCents)}</span>
                     )}
                   </span>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     {project.quoteRevisions.length > 1 && (
-                      <button type="button" className="inline-flex items-center gap-1 font-semibold text-forest hover:underline" onClick={() => setShowHistory((s) => !s)}>
+                      <button type="button" className="tap-target inline-flex items-center gap-1 font-semibold text-forest hover:underline" onClick={() => setShowHistory((s) => !s)}>
                         <History size={14} aria-hidden="true" /> {project.quoteRevisions.length} revisions
                       </button>
                     )}
-                    <button type="button" className="font-semibold text-forest hover:underline" onClick={handleRecordActualPrice}>
+                    <button type="button" className="tap-target font-semibold text-forest hover:underline" onClick={handleRecordActualPrice}>
                       Record actual price
                     </button>
                     <button
                       type="button"
-                      className="font-semibold text-forest hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
+                      className="tap-target font-semibold text-forest hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
                       disabled={!canQuote}
                       onClick={handleReQuote}
                     >
@@ -517,8 +537,9 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
             <div className="flex items-center justify-between p-5 pb-0 sm:p-6 sm:pb-0">
               <h2 className="text-lg font-bold text-ink">Services</h2>
               <button
+                ref={addServiceButtonRef}
                 type="button"
-                className="text-sm font-semibold text-forest hover:underline disabled:text-muted"
+                className="tap-target text-sm font-semibold text-forest hover:underline disabled:text-muted"
                 disabled={assemblies.length === 0}
                 onClick={() =>
                   assemblies[0] &&
@@ -545,7 +566,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
                     Taxable
                     <HelpTooltip label="Taxable">Whether this line's revenue counts toward the taxable subtotal, using your sales tax rate from Settings. Uncheck it for a line that's exempt (e.g. certain labor-only or resale items in your jurisdiction).</HelpTooltip>
                   </label>
-                  <button type="button" onClick={() => removeServiceLine(line.id)} className="no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label="Remove service">
+                  <button type="button" onClick={() => removeServiceLine(line.id)} className="tap-target no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label="Remove service">
                     <Trash2 size={16} aria-hidden="true" />
                   </button>
                 </div>
@@ -562,8 +583,9 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
                 </p>
               </div>
               <button
+                ref={addLaborButtonRef}
                 type="button"
-                className="shrink-0 text-sm font-semibold text-forest hover:underline"
+                className="tap-target shrink-0 text-sm font-semibold text-forest hover:underline"
                 onClick={() =>
                   patch({
                     laborLines: [
@@ -613,7 +635,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
                         <input type="checkbox" checked={line.taxable ?? true} onChange={(e) => updateLaborLine(line.id, { taxable: e.target.checked })} />
                         Taxable
                       </label>
-                      <button type="button" onClick={() => removeLaborLine(line.id)} className="no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label="Remove labor line">
+                      <button type="button" onClick={() => removeLaborLine(line.id)} className="tap-target no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label="Remove labor line">
                         <Trash2 size={16} aria-hidden="true" />
                       </button>
                     </div>
@@ -637,8 +659,9 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
             <div className="flex items-center justify-between p-5 pb-0 sm:p-6 sm:pb-0">
               <h2 className="text-lg font-bold text-ink">Other costs</h2>
               <button
+                ref={addCostButtonRef}
                 type="button"
-                className="text-sm font-semibold text-forest hover:underline"
+                className="tap-target text-sm font-semibold text-forest hover:underline"
                 onClick={() => patch({ extraCosts: [...project.extraCosts, { id: crypto.randomUUID(), label: "Other", amountCents: ZERO_CENTS }] })}
               >
                 + Add cost
@@ -661,7 +684,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
                     <input type="checkbox" checked={extra.taxable ?? true} onChange={(e) => updateExtra(extra.id, { taxable: e.target.checked })} />
                     Taxable
                   </label>
-                  <button type="button" onClick={() => removeExtra(extra.id)} className="no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label="Remove cost">
+                  <button type="button" onClick={() => removeExtra(extra.id)} className="tap-target no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label="Remove cost">
                     <Trash2 size={16} aria-hidden="true" />
                   </button>
                 </div>
@@ -688,7 +711,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
           </Card>
         </div>
 
-        <div className="lg:sticky lg:top-6 lg:self-start">
+        <div className="min-w-0 lg:sticky lg:top-6 lg:self-start">
           <Card tone="dark">
             <h2 className="text-sm font-bold uppercase tracking-wider text-lime">Estimate summary</h2>
 
@@ -725,8 +748,14 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
             </dl>
 
             {targetCheck?.isBelowTarget && targetCheck.shortfallCents !== null && targetCheck.achievedMargin !== null && (
-              <div role="alert" className="mt-4 flex items-start gap-2.5 rounded-xl bg-amber/15 p-3.5 text-xs text-amber">
-                <TriangleAlert size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+              <div role="alert" className="mt-4 flex items-start gap-2.5 rounded-xl bg-amber/15 p-3.5 text-xs text-amber-light">
+                {/* text-amber-light (not text-amber) is load-bearing: this box
+                    sits on the dark summary card, where amber-on-amber-tint
+                    fails WCAG contrast (confirmed via axe-core — the darker
+                    body text measured well under 4.5:1 here even though the
+                    same amber passes fine on light surfaces elsewhere). The
+                    icon can stay amber since it's aria-hidden (decorative). */}
+                <TriangleAlert size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-amber" />
                 <p>
                   This price is <strong>{formatCurrency(targetCheck.shortfallCents, { cents: true })}</strong> below your {formatPercent(project.targetMarginPercent)} target margin
                   — achieving <strong>{formatPercent(targetCheck.achievedMargin)}</strong> instead
@@ -740,7 +769,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
               onClick={() => setShowBreakdown((s) => !s)}
               aria-expanded={showBreakdown}
               aria-controls="cost-breakdown-detail"
-              className="mt-4 flex w-full items-center justify-between gap-2 border-t border-white/10 pt-3 text-xs font-semibold uppercase tracking-wider text-white/60 hover:text-white"
+              className="tap-target mt-4 flex w-full items-center justify-between gap-2 border-t border-white/10 pt-3 text-xs font-semibold uppercase tracking-wider text-white/60 hover:text-white"
             >
               Cost breakdown &amp; how this price was calculated
               {showBreakdown ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}

@@ -79,7 +79,7 @@ export default function BackupReminderBanner({ workspace, onDownload }: { worksp
           <Button type="button" variant="secondary" size="sm" onClick={handleDownload}>
             <Download size={14} aria-hidden="true" /> Download backup
           </Button>
-          <button type="button" onClick={handleDismiss} className="flex h-9 w-9 items-center justify-center rounded-lg text-mint-ink hover:bg-black/5" aria-label="Dismiss">
+          <button type="button" onClick={handleDismiss} className="tap-target flex h-9 w-9 items-center justify-center rounded-lg text-mint-ink hover:bg-black/5" aria-label="Dismiss">
             <X size={16} aria-hidden="true" />
           </button>
         </div>

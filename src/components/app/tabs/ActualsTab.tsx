@@ -127,7 +127,7 @@ export default function ActualsTab() {
               <span>
                 Highlighting {highlight.ids.length} project{highlight.ids.length === 1 ? "" : "s"} — {highlight.label}
               </span>
-              <button type="button" onClick={() => setHighlight(null)} className="underline underline-offset-2 hover:no-underline">
+              <button type="button" onClick={() => setHighlight(null)} className="tap-target underline underline-offset-2 hover:no-underline">
                 Clear
               </button>
             </div>
@@ -189,7 +189,7 @@ export default function ActualsTab() {
               {profitability.mostOverBudgetProjectIds.length > 0 && (
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-muted">Most over-budget projects</p>
-                  <ul className="mt-2 space-y-1">
+                  <ul className="mt-2 space-y-3">
                     {profitability.mostOverBudgetProjectIds.slice(0, 3).map((id) => {
                       const detail = profitability.perProjectDetail.find((p) => p.projectId === id);
                       if (!detail) return null;
@@ -198,7 +198,7 @@ export default function ActualsTab() {
                           <button
                             type="button"
                             onClick={() => focusProjects([id], detail.projectName)}
-                            className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-paper-dim"
+                            className="tap-target flex w-full items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-paper-dim"
                           >
                             <span className="font-medium text-ink">{detail.projectName}</span>
                             <span className="font-semibold tabular-nums text-red">+{formatCurrency(detail.costVarianceCents as MoneyCents, { cents: true })}</span>
@@ -212,7 +212,7 @@ export default function ActualsTab() {
               {profitability.largestMarginDeteriorationProjectIds.length > 0 && (
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-muted">Largest margin deterioration vs. quoted</p>
-                  <ul className="mt-2 space-y-1">
+                  <ul className="mt-2 space-y-3">
                     {profitability.largestMarginDeteriorationProjectIds.slice(0, 3).map((id) => {
                       const detail = profitability.perProjectDetail.find((p) => p.projectId === id);
                       if (!detail) return null;
@@ -221,7 +221,7 @@ export default function ActualsTab() {
                           <button
                             type="button"
                             onClick={() => focusProjects([id], detail.projectName)}
-                            className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-paper-dim"
+                            className="tap-target flex w-full items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-paper-dim"
                           >
                             <span className="font-medium text-ink">{detail.projectName}</span>
                             <span className="font-semibold tabular-nums text-red">{(detail.marginDeltaPoints as number).toFixed(1)} pts</span>
@@ -283,7 +283,7 @@ export default function ActualsTab() {
               changes your saved rates automatically — it's information, not an auto-correction.
             </p>
           </div>
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4 table-scroll">
             <table className="w-full min-w-[640px] border-collapse text-sm">
               <thead>
                 <tr className="border-y border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">
@@ -625,7 +625,7 @@ function ProjectActualsCard({ project }: { project: Project }) {
           </div>
 
           {categoryComparison && (
-            <div className="overflow-x-auto rounded-xl border border-border">
+            <div className="table-scroll rounded-xl border border-border">
               <table className="w-full min-w-[520px] border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">
