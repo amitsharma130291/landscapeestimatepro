@@ -6,5 +6,6 @@ export default defineConfig({
     // test()/expect() are incompatible with Vitest's collector and must not be picked up here.
     exclude: ["**/node_modules/**", "**/dist/**", "tests/e2e/**"],
     environment: "jsdom",
+    setupFiles: ["./tests/setup.ts"],
   },
 });

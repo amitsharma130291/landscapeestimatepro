@@ -1,18 +1,30 @@
 import { useId, useMemo, useState } from "react";
 import { Printer, Plus, Trash2 } from "lucide-react";
-import { formatCurrency, safe } from "../../lib/calc";
-import { Button, Card, Field, NumberInput, TextInput } from "../ui/primitives";
+import { formatCurrency } from "../../lib/calc";
+import { multiplyCentsByQuantity, sumCents, ZERO_CENTS, type MoneyCents } from "../../lib/money";
+import { validateQuantity } from "../../lib/validation";
+import { Button, Card, DraftNumberInput, Field, MoneyInput, TextInput } from "../ui/primitives";
 
 interface LineItem {
   id: string;
   description: string;
   quantity: number | "";
   unit: string;
-  unitPrice: number | "";
+  unitPriceCents: MoneyCents | "";
 }
 
 function newLine(): LineItem {
-  return { id: crypto.randomUUID(), description: "", quantity: 1, unit: "each", unitPrice: 0 };
+  return { id: crypto.randomUUID(), description: "", quantity: 1, unit: "each", unitPriceCents: ZERO_CENTS };
+}
+
+/** Exact line total, in cents, from a possibly-in-progress line item —
+ * cleared/blank quantity or unit price contribute 0 rather than NaN. Uses
+ * Decimal.js under the hood (via `multiplyCentsByQuantity`) so a fractional
+ * quantity (e.g. 2.5 yd³) never introduces floating-point drift. */
+function lineTotalCents(line: LineItem): MoneyCents {
+  const quantity = line.quantity === "" ? 0 : line.quantity;
+  const unitPriceCents = line.unitPriceCents === "" ? ZERO_CENTS : line.unitPriceCents;
+  return multiplyCentsByQuantity(unitPriceCents, quantity);
 }
 
 export default function EstimateBuilderIsland({ variant = "estimate" }: { variant?: "estimate" | "quote" }) {
@@ -23,14 +35,11 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([
-    { id: crypto.randomUUID(), description: "Mulch installation", quantity: 8, unit: "yd³", unitPrice: 95 },
-    { id: crypto.randomUUID(), description: "Shrub planting", quantity: 18, unit: "each", unitPrice: 65 },
+    { id: crypto.randomUUID(), description: "Mulch installation", quantity: 8, unit: "yd³", unitPriceCents: 9500 as MoneyCents },
+    { id: crypto.randomUUID(), description: "Shrub planting", quantity: 18, unit: "each", unitPriceCents: 6500 as MoneyCents },
   ]);
 
-  const total = useMemo(
-    () => lines.reduce((sum, line) => sum + safe(line.quantity === "" ? 0 : line.quantity) * safe(line.unitPrice === "" ? 0 : line.unitPrice), 0),
-    [lines]
-  );
+  const totalCents = useMemo(() => sumCents(lines.map(lineTotalCents)), [lines]);
 
   function updateLine(id: string, patch: Partial<LineItem>) {
     setLines((prev) => prev.map((line) => (line.id === id ? { ...line, ...patch } : line)));
@@ -97,10 +106,9 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
             </thead>
             <tbody>
               {lines.map((line, index) => {
-                const lineTotal = safe(line.quantity === "" ? 0 : line.quantity) * safe(line.unitPrice === "" ? 0 : line.unitPrice);
                 return (
                   <tr key={line.id} className="border-b border-border last:border-b-0">
-                    <td className="px-5 py-2.5 sm:px-6">
+                    <td className="px-5 py-2.5 sm:px-6 align-top">
                       <label className="sr-only" htmlFor={`${idPrefix}-desc-${index}`}>Service description, line {index + 1}</label>
                       <TextInput
                         id={`${idPrefix}-desc-${index}`}
@@ -109,16 +117,17 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
                         placeholder="Mulch installation"
                       />
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-2.5 align-top">
                       <label className="sr-only" htmlFor={`${idPrefix}-qty-${index}`}>Quantity, line {index + 1}</label>
-                      <NumberInput
+                      <DraftNumberInput
                         id={`${idPrefix}-qty-${index}`}
                         value={line.quantity}
                         onValueChange={(v) => updateLine(line.id, { quantity: v })}
+                        validate={validateQuantity}
                         className="w-24 text-left"
                       />
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-2.5 align-top">
                       <label className="sr-only" htmlFor={`${idPrefix}-unit-${index}`}>Unit, line {index + 1}</label>
                       <TextInput
                         id={`${idPrefix}-unit-${index}`}
@@ -127,16 +136,16 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
                         className="w-24"
                       />
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-2.5 align-top">
                       <label className="sr-only" htmlFor={`${idPrefix}-price-${index}`}>Unit price, line {index + 1}</label>
-                      <NumberInput
+                      <MoneyInput
                         id={`${idPrefix}-price-${index}`}
-                        value={line.unitPrice}
-                        onValueChange={(v) => updateLine(line.id, { unitPrice: v })}
+                        valueCents={line.unitPriceCents}
+                        onValueCentsChange={(v) => updateLine(line.id, { unitPriceCents: v })}
                         className="w-28"
                       />
                     </td>
-                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-ink">{formatCurrency(lineTotal, { cents: true })}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-ink">{formatCurrency(lineTotalCents(line), { cents: true })}</td>
                     <td className="px-3 py-2.5">
                       <button
                         type="button"
@@ -168,7 +177,7 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
           </div>
           <div className="text-right">
             <p className="text-xs font-bold uppercase tracking-wider text-muted">Total</p>
-            <p className="text-3xl font-extrabold tabular-nums text-ink">{formatCurrency(total, { cents: true })}</p>
+            <p className="text-3xl font-extrabold tabular-nums text-ink">{formatCurrency(totalCents, { cents: true })}</p>
           </div>
         </div>
       </Card>

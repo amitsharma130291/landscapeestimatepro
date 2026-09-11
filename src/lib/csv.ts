@@ -1,7 +1,19 @@
 /**
  * CSV export for a project's line items. Every field is quoted per RFC
- * 4180 whenever it contains a comma, quote, or newline — a service name
+ * 4180 whenever it contains a comma, quote, newline, or tab — a service name
  * like "Mulch, delivered" must not silently corrupt the column layout.
+ *
+ * User-controlled text fields (`item`, `unit` — catalog names the user
+ * typed) are ALSO defused against spreadsheet-formula injection: a cell
+ * whose content starts with `=`, `+`, `-`, `@`, a tab, or a carriage return
+ * (optionally after leading whitespace) is a live formula to Excel/Sheets
+ * the moment the file is opened — e.g. a material named `=CMD(...)` could
+ * execute an OS command via a legacy DDE formula. Prefixing an apostrophe is
+ * the standard spreadsheet-safe escape: it forces the cell to render as
+ * literal text without changing what the user sees. Numeric fields
+ * (`quantity`, `unitCost`, `total`) are generated internally by this app,
+ * never typed by a user, so they're only ever RFC-4180-quoted, never
+ * apostrophe-prefixed.
  */
 export interface CsvRow {
   item: string;
@@ -11,12 +23,25 @@ export interface CsvRow {
   total: number;
 }
 
-function escapeCsvField(value: string | number): string {
-  const str = String(value);
-  if (/[",\n]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
+const RFC4180_NEEDS_QUOTING = /["\,\n\r\t]/;
+
+function rfc4180Quote(str: string): string {
+  return RFC4180_NEEDS_QUOTING.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+}
+
+/** A leading formula-trigger character (=, +, -, @) or a leading tab/CR —
+ * optionally after leading whitespace, since spreadsheet apps still treat
+ * "   =SUM(1,1)" as a formula — gets an apostrophe prefix so it's read back
+ * as inert text. */
+const FORMULA_INJECTION_LEAD = /^[ \t]*[=+\-@\t\r]/;
+
+function escapeUserCsvField(value: string): string {
+  const neutralized = FORMULA_INJECTION_LEAD.test(value) ? `'${value}` : value;
+  return rfc4180Quote(neutralized);
+}
+
+function escapeNumericCsvField(value: number): string {
+  return rfc4180Quote(String(value));
 }
 
 export function buildCsv(rows: CsvRow[]): string {
@@ -25,11 +50,11 @@ export function buildCsv(rows: CsvRow[]): string {
   for (const row of rows) {
     lines.push(
       [
-        escapeCsvField(row.item),
-        escapeCsvField(row.quantity),
-        escapeCsvField(row.unit),
-        escapeCsvField(row.unitCost),
-        escapeCsvField(row.total),
+        escapeUserCsvField(row.item),
+        escapeNumericCsvField(row.quantity),
+        escapeUserCsvField(row.unit),
+        escapeNumericCsvField(row.unitCost),
+        escapeNumericCsvField(row.total),
       ].join(",")
     );
   }

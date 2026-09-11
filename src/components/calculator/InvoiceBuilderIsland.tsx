@@ -1,13 +1,25 @@
 import { useId, useMemo, useState } from "react";
 import { Printer, Plus, Trash2 } from "lucide-react";
-import { formatCurrency, safe } from "../../lib/calc";
-import { Button, Card, Field, NumberInput, TextInput } from "../ui/primitives";
+import { formatCurrency, percentToFraction } from "../../lib/calc";
+import { addCents, multiplyCentsByQuantity, multiplyCentsByRate, sumCents, ZERO_CENTS, type MoneyCents } from "../../lib/money";
+import { validateQuantity, validateTaxRatePercent } from "../../lib/validation";
+import { Button, Card, DraftNumberInput, Field, MoneyInput, TextInput } from "../ui/primitives";
 
 interface LineItem {
   id: string;
   description: string;
   quantity: number | "";
-  unitPrice: number | "";
+  unitPriceCents: MoneyCents | "";
+}
+
+/** Exact line total, in cents, from a possibly-in-progress line item —
+ * cleared/blank quantity or unit price contribute 0 rather than NaN. Uses
+ * Decimal.js under the hood (via `multiplyCentsByQuantity`) so a fractional
+ * quantity never introduces floating-point drift. */
+function lineTotalCents(line: LineItem): MoneyCents {
+  const quantity = line.quantity === "" ? 0 : line.quantity;
+  const unitPriceCents = line.unitPriceCents === "" ? ZERO_CENTS : line.unitPriceCents;
+  return multiplyCentsByQuantity(unitPriceCents, quantity);
 }
 
 export default function InvoiceBuilderIsland() {
@@ -19,16 +31,16 @@ export default function InvoiceBuilderIsland() {
   const [taxPercent, setTaxPercent] = useState<number | "">(0);
   const [notes, setNotes] = useState("Thank you for your business. Payment due within 15 days.");
   const [lines, setLines] = useState<LineItem[]>([
-    { id: crypto.randomUUID(), description: "Mulch installation — 8 yd³", quantity: 1, unitPrice: 760 },
-    { id: crypto.randomUUID(), description: "Shrub planting — 18 each", quantity: 1, unitPrice: 1170 },
+    { id: crypto.randomUUID(), description: "Mulch installation — 8 yd³", quantity: 1, unitPriceCents: 76000 as MoneyCents },
+    { id: crypto.randomUUID(), description: "Shrub planting — 18 each", quantity: 1, unitPriceCents: 117000 as MoneyCents },
   ]);
 
-  const subtotal = useMemo(
-    () => lines.reduce((sum, line) => sum + safe(line.quantity === "" ? 0 : line.quantity) * safe(line.unitPrice === "" ? 0 : line.unitPrice), 0),
-    [lines]
+  const subtotalCents = useMemo(() => sumCents(lines.map(lineTotalCents)), [lines]);
+  const taxAmountCents = useMemo(
+    () => multiplyCentsByRate(subtotalCents, percentToFraction(taxPercent === "" ? 0 : taxPercent)),
+    [subtotalCents, taxPercent]
   );
-  const taxAmount = subtotal * (safe(taxPercent === "" ? 0 : taxPercent) / 100);
-  const total = subtotal + taxAmount;
+  const totalCents = useMemo(() => addCents(subtotalCents, taxAmountCents), [subtotalCents, taxAmountCents]);
 
   function updateLine(id: string, patch: Partial<LineItem>) {
     setLines((prev) => prev.map((line) => (line.id === id ? { ...line, ...patch } : line)));
@@ -76,7 +88,7 @@ export default function InvoiceBuilderIsland() {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => setLines((prev) => [...prev, { id: crypto.randomUUID(), description: "", quantity: 1, unitPrice: 0 }])}
+            onClick={() => setLines((prev) => [...prev, { id: crypto.randomUUID(), description: "", quantity: 1, unitPriceCents: ZERO_CENTS }])}
           >
             <Plus size={16} aria-hidden="true" /> Add line
           </Button>
@@ -95,22 +107,32 @@ export default function InvoiceBuilderIsland() {
             </thead>
             <tbody>
               {lines.map((line, index) => {
-                const lineTotal = safe(line.quantity === "" ? 0 : line.quantity) * safe(line.unitPrice === "" ? 0 : line.unitPrice);
                 return (
                   <tr key={line.id} className="border-b border-border last:border-b-0">
-                    <td className="px-5 py-2.5 sm:px-6">
+                    <td className="px-5 py-2.5 sm:px-6 align-top">
                       <label className="sr-only" htmlFor={`${idPrefix}-desc-${index}`}>Description, line {index + 1}</label>
                       <TextInput id={`${idPrefix}-desc-${index}`} value={line.description} onChange={(e) => updateLine(line.id, { description: e.target.value })} />
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-2.5 align-top">
                       <label className="sr-only" htmlFor={`${idPrefix}-qty-${index}`}>Quantity, line {index + 1}</label>
-                      <NumberInput id={`${idPrefix}-qty-${index}`} value={line.quantity} onValueChange={(v) => updateLine(line.id, { quantity: v })} className="w-20 text-left" />
+                      <DraftNumberInput
+                        id={`${idPrefix}-qty-${index}`}
+                        value={line.quantity}
+                        onValueChange={(v) => updateLine(line.id, { quantity: v })}
+                        validate={validateQuantity}
+                        className="w-20 text-left"
+                      />
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-2.5 align-top">
                       <label className="sr-only" htmlFor={`${idPrefix}-price-${index}`}>Price, line {index + 1}</label>
-                      <NumberInput id={`${idPrefix}-price-${index}`} value={line.unitPrice} onValueChange={(v) => updateLine(line.id, { unitPrice: v })} className="w-28" />
+                      <MoneyInput
+                        id={`${idPrefix}-price-${index}`}
+                        valueCents={line.unitPriceCents}
+                        onValueCentsChange={(v) => updateLine(line.id, { unitPriceCents: v })}
+                        className="w-28"
+                      />
                     </td>
-                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-ink">{formatCurrency(lineTotal, { cents: true })}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-ink">{formatCurrency(lineTotalCents(line), { cents: true })}</td>
                     <td className="px-3 py-2.5">
                       <button type="button" onClick={() => removeLine(line.id)} className="no-print flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red" aria-label={`Remove line ${index + 1}`}>
                         <Trash2 size={16} aria-hidden="true" />
@@ -137,17 +159,23 @@ export default function InvoiceBuilderIsland() {
           <div className="space-y-2 text-right">
             <div className="flex items-center justify-between text-sm text-muted">
               <span>Subtotal</span>
-              <span className="font-semibold text-ink">{formatCurrency(subtotal, { cents: true })}</span>
+              <span className="font-semibold text-ink">{formatCurrency(subtotalCents, { cents: true })}</span>
             </div>
             <div className="flex items-center justify-end gap-2 text-sm text-muted">
               <label htmlFor={`${idPrefix}-tax`}>Tax</label>
-              <NumberInput id={`${idPrefix}-tax`} value={taxPercent} onValueChange={setTaxPercent} className="w-20 text-right" />
+              <DraftNumberInput
+                id={`${idPrefix}-tax`}
+                value={taxPercent}
+                onValueChange={setTaxPercent}
+                validate={validateTaxRatePercent}
+                className="w-20 text-right"
+              />
               <span>%</span>
-              <span className="w-24 font-semibold text-ink">{formatCurrency(taxAmount, { cents: true })}</span>
+              <span className="w-24 font-semibold text-ink">{formatCurrency(taxAmountCents, { cents: true })}</span>
             </div>
             <div className="flex items-center justify-between border-t border-border pt-2 text-base">
               <span className="font-bold text-ink">Total</span>
-              <span className="text-2xl font-extrabold tabular-nums text-ink">{formatCurrency(total, { cents: true })}</span>
+              <span className="text-2xl font-extrabold tabular-nums text-ink">{formatCurrency(totalCents, { cents: true })}</span>
             </div>
           </div>
         </div>

@@ -1,23 +1,25 @@
 import { useId, useMemo, useState } from "react";
-import { calculateProjectCost, calculateQuotePricing, formatCurrency, formatPercent } from "../../lib/calc";
-import { Card, Field, NumberInput } from "../ui/primitives";
+import { calculateExactPricingChainCents, formatCurrency, formatPercent } from "../../lib/calc";
+import { ZERO_CENTS, type MoneyCents } from "../../lib/money";
+import { validateOverheadPercent, validateTargetMarginPercent } from "../../lib/validation";
+import { Card, DraftNumberInput, Field, MoneyInput } from "../ui/primitives";
 
 interface FieldState {
-  materials: number | "";
-  labor: number | "";
-  equipment: number | "";
-  delivery: number | "";
-  other: number | "";
+  materials: MoneyCents | "";
+  labor: MoneyCents | "";
+  equipment: MoneyCents | "";
+  delivery: MoneyCents | "";
+  other: MoneyCents | "";
   overheadPercent: number | "";
   targetMarginPercent: number | "";
 }
 
 const DEFAULTS: FieldState = {
-  materials: 1250,
-  labor: 768,
-  equipment: 180,
-  delivery: 180,
-  other: 100,
+  materials: 125000 as MoneyCents,
+  labor: 76800 as MoneyCents,
+  equipment: 18000 as MoneyCents,
+  delivery: 18000 as MoneyCents,
+  other: 10000 as MoneyCents,
   overheadPercent: 15,
   targetMarginPercent: 35,
 };
@@ -26,29 +28,32 @@ function n(value: number | ""): number {
   return value === "" ? 0 : value;
 }
 
+function c(value: MoneyCents | ""): MoneyCents {
+  return value === "" ? ZERO_CENTS : value;
+}
+
 export default function ProjectCalculatorIsland({ compact = false }: { compact?: boolean }) {
   const [fields, setFields] = useState<FieldState>(DEFAULTS);
   const idPrefix = useId();
 
-  const cost = useMemo(
+  const pricing = useMemo(
     () =>
-      calculateProjectCost({
-        materialsCost: n(fields.materials),
-        laborCost: n(fields.labor),
-        equipmentCost: n(fields.equipment),
-        deliveryCost: n(fields.delivery),
-        otherCost: n(fields.other),
-        overheadPercent: n(fields.overheadPercent),
-      }),
+      calculateExactPricingChainCents(
+        {
+          materialsCostCents: c(fields.materials),
+          laborCostCents: c(fields.labor),
+          equipmentCostCents: c(fields.equipment),
+          deliveryCostCents: c(fields.delivery),
+          otherCostCents: c(fields.other),
+          overheadPercent: n(fields.overheadPercent),
+        },
+        n(fields.targetMarginPercent),
+        100
+      ),
     [fields]
   );
 
-  const pricing = useMemo(
-    () => calculateQuotePricing(cost.trueCost, n(fields.targetMarginPercent), "dollar"),
-    [cost.trueCost, fields.targetMarginPercent]
-  );
-
-  function setField<K extends keyof FieldState>(key: K, value: number | "") {
+  function setField<K extends keyof FieldState>(key: K, value: FieldState[K]) {
     setFields((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -60,72 +65,53 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <Field label="Materials" htmlFor={`${idPrefix}-materials`}>
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">$</span>
-              <NumberInput
-                id={`${idPrefix}-materials`}
-                value={fields.materials}
-                onValueChange={(v) => setField("materials", v)}
-                className="pl-7"
-                aria-describedby={`${idPrefix}-materials-hint`}
-              />
-            </div>
+            <MoneyInput
+              id={`${idPrefix}-materials`}
+              valueCents={fields.materials}
+              onValueCentsChange={(v) => setField("materials", v)}
+              aria-describedby={`${idPrefix}-materials-hint`}
+            />
           </Field>
 
           <Field label="Loaded labor" htmlFor={`${idPrefix}-labor`} hint="Crew wages, taxes, and benefits — total for this job">
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">$</span>
-              <NumberInput
-                id={`${idPrefix}-labor`}
-                value={fields.labor}
-                onValueChange={(v) => setField("labor", v)}
-                className="pl-7"
-              />
-            </div>
+            <MoneyInput
+              id={`${idPrefix}-labor`}
+              valueCents={fields.labor}
+              onValueCentsChange={(v) => setField("labor", v)}
+            />
           </Field>
 
           <Field label="Equipment" htmlFor={`${idPrefix}-equipment`}>
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">$</span>
-              <NumberInput
-                id={`${idPrefix}-equipment`}
-                value={fields.equipment}
-                onValueChange={(v) => setField("equipment", v)}
-                className="pl-7"
-              />
-            </div>
+            <MoneyInput
+              id={`${idPrefix}-equipment`}
+              valueCents={fields.equipment}
+              onValueCentsChange={(v) => setField("equipment", v)}
+            />
           </Field>
 
           <Field label="Delivery" htmlFor={`${idPrefix}-delivery`}>
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">$</span>
-              <NumberInput
-                id={`${idPrefix}-delivery`}
-                value={fields.delivery}
-                onValueChange={(v) => setField("delivery", v)}
-                className="pl-7"
-              />
-            </div>
+            <MoneyInput
+              id={`${idPrefix}-delivery`}
+              valueCents={fields.delivery}
+              onValueCentsChange={(v) => setField("delivery", v)}
+            />
           </Field>
 
           <Field label="Other costs" htmlFor={`${idPrefix}-other`} hint="Permits, disposal, subcontractors, etc.">
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">$</span>
-              <NumberInput
-                id={`${idPrefix}-other`}
-                value={fields.other}
-                onValueChange={(v) => setField("other", v)}
-                className="pl-7"
-              />
-            </div>
+            <MoneyInput
+              id={`${idPrefix}-other`}
+              valueCents={fields.other}
+              onValueCentsChange={(v) => setField("other", v)}
+            />
           </Field>
 
           <Field label="Overhead" htmlFor={`${idPrefix}-overhead`} hint="Trucks, insurance, admin — as % of direct cost">
             <div className="relative">
-              <NumberInput
+              <DraftNumberInput
                 id={`${idPrefix}-overhead`}
                 value={fields.overheadPercent}
                 onValueChange={(v) => setField("overheadPercent", v)}
+                validate={validateOverheadPercent}
                 className="pr-9"
               />
               <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">%</span>
@@ -136,10 +122,11 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
         <div className="mt-4 max-w-xs">
           <Field label="Target margin" htmlFor={`${idPrefix}-margin`} hint="The profit share of your selling price — not markup on cost">
             <div className="relative">
-              <NumberInput
+              <DraftNumberInput
                 id={`${idPrefix}-margin`}
                 value={fields.targetMarginPercent}
                 onValueChange={(v) => setField("targetMarginPercent", v)}
+                validate={validateTargetMarginPercent}
                 className="pr-9"
               />
               <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">%</span>
@@ -155,33 +142,33 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
             <div aria-live="polite" className="mt-4 space-y-3">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <span className="text-sm text-white/70">Direct cost</span>
-                <span className="font-semibold tabular-nums">{formatCurrency(cost.directCost)}</span>
+                <span className="font-semibold tabular-nums">{formatCurrency(pricing.directCostCents)}</span>
               </div>
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <span className="text-sm text-white/70">Overhead allocation</span>
-                <span className="font-semibold tabular-nums">{formatCurrency(cost.overheadAmount)}</span>
+                <span className="font-semibold tabular-nums">{formatCurrency(pricing.overheadAmountCents)}</span>
               </div>
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <span className="text-sm text-white/70">True project cost</span>
-                <span className="font-bold tabular-nums">{formatCurrency(pricing.trueCostRounded)}</span>
+                <span className="font-bold tabular-nums">{formatCurrency(pricing.trueCostCents)}</span>
               </div>
 
               <div className="rounded-xl bg-white/10 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-white/60">Required selling price</p>
                 <p className="mt-1 text-3xl font-extrabold tabular-nums text-lime">
-                  {formatCurrency(pricing.requiredSellingPrice, { cents: true })}
+                  {formatCurrency(pricing.exactRequiredPriceCents, { cents: true })}
                 </p>
-                <p className="mt-1 text-xs text-white/60">Display price: {formatCurrency(pricing.displayPrice)}</p>
+                <p className="mt-1 text-xs text-white/60">Display price: {formatCurrency(pricing.roundedRecommendedPriceCents)}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-white/60">Gross profit</p>
-                  <p className="mt-1 font-bold tabular-nums">{formatCurrency(pricing.expectedGrossProfit)}</p>
+                  <p className="mt-1 font-bold tabular-nums">{formatCurrency(pricing.expectedGrossProfitCents)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-white/60">Effective margin</p>
-                  <p className="mt-1 font-bold tabular-nums">{formatPercent(pricing.effectiveMargin)}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-white/60">Achieved margin</p>
+                  <p className="mt-1 font-bold tabular-nums">{formatPercent(pricing.achievedMargin)}</p>
                 </div>
               </div>
             </div>

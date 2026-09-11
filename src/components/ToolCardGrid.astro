@@ -1,5 +1,5 @@
 ---
-import { TOOL_LINKS } from "../data/site";
+import { PRICE_DISPLAY, TOOL_LINKS } from "../data/site";
 
 export interface Props {
   /** Hrefs to exclude (e.g. don't link a tool page to itself). */
@@ -40,7 +40,7 @@ const tools = TOOL_LINKS.filter((t) => !exclude.includes(t.href));
 
     {showProCard && (
       <a
-        href="/pricing/"
+        href="/app/"
         class="group flex flex-col rounded-2xl border border-forest-light bg-forest p-5 text-white transition-all hover:-translate-y-0.5 hover:shadow-md"
       >
         <span class="text-xs font-bold uppercase tracking-wider text-lime">Pro software</span>
@@ -49,7 +49,7 @@ const tools = TOOL_LINKS.filter((t) => !exclude.includes(t.href));
           Save materials, equipment, labor and production rates once — every future estimate calculates itself.
         </p>
         <span class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-lime group-hover:gap-1.5 transition-all">
-          Get Pro for $99
+          Try Pro free — {PRICE_DISPLAY} planned
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>

@@ -4,7 +4,7 @@ import Breadcrumbs from "../components/Breadcrumbs.astro";
 import FaqAccordion, { type FaqItem } from "../components/FaqAccordion.astro";
 import ToolCardGrid from "../components/ToolCardGrid.astro";
 import TrustBadges from "../components/TrustBadges.astro";
-import { SITE_URL } from "../data/site";
+import { PRICE_DISPLAY, SITE_URL } from "../data/site";
 
 export interface Props {
   title: string;
@@ -70,10 +70,10 @@ const schema = webApplicationSchema
         </p>
       </div>
       <a
-        href="/pricing/"
+        href="/app/"
         class="inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
       >
-        Get Pro — $99 Lifetime
+        Try Pro free — {PRICE_DISPLAY} planned
       </a>
     </div>
   </section>

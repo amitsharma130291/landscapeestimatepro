@@ -1,31 +1,33 @@
 import { useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
-import { snapshotCostImpact, type CostImpactKind, type CostImpactSnapshot, type CostImpactWorkspace } from "../../lib/estimateMath";
+import { classifyCostImpact, snapshotCostImpact, type CostImpactKind, type CostImpactSnapshot, type CostImpactWorkspace } from "../../lib/estimateMath";
 import { formatCurrency } from "../../lib/calc";
+import type { MoneyCents } from "../../lib/money";
 
 interface CostImpactResult {
   itemLabel: string;
-  previousValue: number;
-  newValue: number;
+  previousValue: MoneyCents;
+  newValue: MoneyCents;
   before: CostImpactSnapshot;
   after: CostImpactSnapshot;
 }
 
-/** Tracks a rate field across a focus→blur edit and reports what it touched
- * (brief killer features #16-18: material/labor/equipment cost-impact). Call
- * `startTracking` on focus (captures the "before" picture), `finishTracking`
- * on blur/change-committed (captures "after" and diffs). */
+/** Tracks a rate field (in cents) across a focus→blur edit and reports what
+ * it touched (brief killer features #16-18: material/labor/equipment
+ * cost-impact). Call `startTracking` on focus (captures the "before"
+ * picture), `finishTracking` on blur/change-committed (captures "after" and
+ * diffs). */
 export function useCostImpactAlert() {
-  const [pending, setPending] = useState<{ kind: CostImpactKind; itemId?: string; before: CostImpactSnapshot; previousValue: number } | null>(
+  const [pending, setPending] = useState<{ kind: CostImpactKind; itemId?: string; before: CostImpactSnapshot; previousValue: MoneyCents } | null>(
     null
   );
   const [result, setResult] = useState<CostImpactResult | null>(null);
 
-  function startTracking(kind: CostImpactKind, itemId: string | undefined, previousValue: number, workspace: CostImpactWorkspace) {
+  function startTracking(kind: CostImpactKind, itemId: string | undefined, previousValue: MoneyCents, workspace: CostImpactWorkspace) {
     setPending({ kind, itemId, before: snapshotCostImpact(kind, itemId, workspace), previousValue });
   }
 
-  function finishTracking(newValue: number, workspace: CostImpactWorkspace, itemLabel: string) {
+  function finishTracking(newValue: MoneyCents, workspace: CostImpactWorkspace, itemLabel: string) {
     if (!pending) return;
     if (newValue === pending.previousValue) {
       setPending(null);
@@ -45,7 +47,10 @@ export function useCostImpactAlert() {
 export function CostImpactBanner({ result, onDismiss }: { result: CostImpactResult | null; onDismiss: () => void }) {
   if (!result) return null;
   const pctChange = result.previousValue > 0 ? ((result.newValue - result.previousValue) / result.previousValue) * 100 : null;
-  const newlyBelowTarget = result.after.belowTargetProjectIds.filter((id) => !result.before.belowTargetProjectIds.includes(id));
+  const impacts = classifyCostImpact(result.before, result.after);
+  const newlyBelowTarget = impacts.filter((i) => i.thresholdTransition === "newly-below");
+  const recovered = impacts.filter((i) => i.thresholdTransition === "recovered-above");
+  const worsened = impacts.filter((i) => i.impactDirection === "worsened");
 
   return (
     <div role="status" className="mb-6 rounded-2xl border border-amber-light bg-amber-light/60 p-4 sm:p-5">
@@ -62,7 +67,7 @@ export function CostImpactBanner({ result, onDismiss }: { result: CostImpactResu
                 </span>
               )}
             </p>
-            <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink sm:grid-cols-4">
+            <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink sm:grid-cols-3 lg:grid-cols-6">
               <div>
                 <dt className="text-xs text-muted">Assemblies affected</dt>
                 <dd className="font-semibold">{result.after.affectedAssemblyIds.length}</dd>
@@ -76,8 +81,16 @@ export function CostImpactBanner({ result, onDismiss }: { result: CostImpactResu
                 <dd className="font-semibold">{result.after.affectedProjectIds.length}</dd>
               </div>
               <div>
+                <dt className="text-xs text-muted">Margin worsened</dt>
+                <dd className={`font-semibold ${worsened.length > 0 ? "text-amber" : ""}`}>{worsened.length}</dd>
+              </div>
+              <div>
                 <dt className="text-xs text-muted">Now below target</dt>
                 <dd className={`font-semibold ${newlyBelowTarget.length > 0 ? "text-red" : ""}`}>{newlyBelowTarget.length}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Recovered above target</dt>
+                <dd className={`font-semibold ${recovered.length > 0 ? "text-mint-ink" : ""}`}>{recovered.length}</dd>
               </div>
             </dl>
           </div>

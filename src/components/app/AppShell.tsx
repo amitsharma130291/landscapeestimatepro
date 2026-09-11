@@ -1,6 +1,8 @@
 import { useState, type ReactElement } from "react";
 import { LayoutGrid, Package, Settings, ClipboardList, FileText, Activity, ArrowLeft, Menu, X } from "lucide-react";
 import { WorkspaceProvider } from "../../lib/workspaceContext";
+import { APP_RELEASE_MODE } from "../../data/salesConfig";
+import SaveStatusIndicator from "./SaveStatusIndicator";
 import OverviewTab from "./tabs/OverviewTab";
 import CatalogTab from "./tabs/CatalogTab";
 import SettingsTab from "./tabs/SettingsTab";
@@ -61,10 +63,21 @@ export default function AppShell({ activeTab }: { activeTab: AppTab }) {
                 <img src="/brand/logo-lockup.png" alt="Landscape Estimate Pro" width="230" height="50" className="h-8 w-auto" />
               </picture>
             </a>
+            {APP_RELEASE_MODE === "free-beta" && (
+              <span
+                className="rounded-full bg-amber-light px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-amber"
+                title="This is an open beta — anyone with this link can use it. There is no purchase, account, or access control yet."
+              >
+                Free beta
+              </span>
+            )}
           </div>
-          <a href="/" className="flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-forest">
-            <ArrowLeft size={16} aria-hidden="true" /> Back to site
-          </a>
+          <div className="flex items-center gap-4">
+            <SaveStatusIndicator />
+            <a href="/" className="flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-forest">
+              <ArrowLeft size={16} aria-hidden="true" /> Back to site
+            </a>
+          </div>
         </header>
 
         <div className="mx-auto flex max-w-[90rem]">

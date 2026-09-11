@@ -1,11 +1,24 @@
 ---
 import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
 import ProjectCalculatorIsland from "../../components/calculator/ProjectCalculatorIsland.tsx";
-import { calculateMargin, calculatePriceFromMarkup, calculateQuotePricing, formatCurrency, formatPercent } from "../../lib/calc";
+import { calculateExactPricingChainCents, calculateMargin, calculatePriceFromMarkupCents, formatCurrency, formatPercent } from "../../lib/calc";
+import type { MoneyCents } from "../../lib/money";
 
-const pricing = calculateQuotePricing(2849.7, 35, "dollar");
-const trueCost = pricing.trueCostRounded;
-const markupPrice = calculatePriceFromMarkup(trueCost, 35);
+// Same Smith Residence reference numbers as the homepage and EstimatePreviewCard.astro.
+const pricing = calculateExactPricingChainCents(
+  {
+    materialsCostCents: 125000 as MoneyCents,
+    laborCostCents: 76800 as MoneyCents,
+    equipmentCostCents: 18000 as MoneyCents,
+    deliveryCostCents: 18000 as MoneyCents,
+    otherCostCents: 10000 as MoneyCents,
+    overheadPercent: 15,
+  },
+  35,
+  100
+);
+const trueCost = pricing.trueCostCents;
+const markupPrice = calculatePriceFromMarkupCents(trueCost, 35);
 const markupMargin = calculateMargin(markupPrice, trueCost);
 
 const faqs = [
@@ -91,7 +104,7 @@ const faqs = [
         <div class="rounded-2xl border border-lime-surface bg-mint p-5">
           <p class="text-sm font-bold uppercase tracking-wider text-mint-ink">35% margin</p>
           <p class="mt-2 text-sm text-mint-ink">
-            {formatCurrency(trueCost)} true cost ÷ 0.65 = <strong>{formatCurrency(pricing.requiredSellingPrice, { cents: true })}</strong>
+            {formatCurrency(trueCost)} true cost ÷ 0.65 = <strong>{formatCurrency(pricing.exactRequiredPriceCents, { cents: true })}</strong>
           </p>
           <p class="mt-1 text-sm text-mint-ink/80">A true {formatPercent(35, 0)} margin, exactly.</p>
         </div>

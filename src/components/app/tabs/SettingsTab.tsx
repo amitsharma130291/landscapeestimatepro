@@ -1,14 +1,33 @@
-import { useId, useRef, useState } from "react";
-import { Download, Upload, RotateCcw, Image as ImageIcon, X } from "lucide-react";
+import { useId, useMemo, useRef, useState } from "react";
+import { AlertTriangle, Download, Upload, RotateCcw, Image as ImageIcon, ShieldAlert, X } from "lucide-react";
 import { useWorkspace } from "../../../lib/workspaceContext";
 import { exportWorkspaceJson, parseWorkspaceJson } from "../../../lib/persistence";
 import { createSampleWorkspace } from "../../../lib/sampleData";
-import { Button, Card, Field, NumberInput, TextInput } from "../../ui/primitives";
+import { evaluateOverheadScenario } from "../../../lib/estimateMath";
+import { Button, Card, DraftNumberInput, Field, MoneyInput, TextInput } from "../../ui/primitives";
+import { HelpTooltip } from "../../ui/HelpTooltip";
 import { CostImpactBanner, useCostImpactAlert } from "../CostImpactBanner";
+import { ROUNDING_INCREMENTS, formatCurrency, formatPercent } from "../../../lib/calc";
+import { ZERO_CENTS, type MoneyCents } from "../../../lib/money";
+import { validateOverheadPercent, validateTargetMarginPercent, validateTaxRatePercent } from "../../../lib/validation";
+import type { RoundingIncrementCents } from "../../../lib/types";
 
 function n(value: number | ""): number {
   return value === "" ? 0 : value;
 }
+
+/** Absolute, locale-formatted timestamp for the Data & Backup section —
+ * deliberately more precise than SaveStatusIndicator's relative "4m ago"
+ * (which is right for a glanceable header chip), since this is the place a
+ * user checks specifically to decide "do I need to back up right now?" or to
+ * report an exact time to support. `null` means the event has never
+ * happened in this browser, not "unknown". */
+function formatTimestamp(ms: number | null): string {
+  if (ms === null) return "Never";
+  return new Date(ms).toLocaleString();
+}
+
+const RESET_CONFIRM_PHRASE = "RESET";
 
 /** Downscales an uploaded logo to a small square-ish PNG data URL (no
  * backend to store files, so it lives inline in the workspace — keeping it
@@ -37,13 +56,14 @@ function resizeImageToDataUrl(file: File, maxDimension = 240): Promise<string> {
 }
 
 export default function SettingsTab() {
-  const { workspace, updateBusiness, replaceWorkspace } = useWorkspace();
+  const { workspace, updateBusiness, replaceWorkspace, lastSavedAt, lastBackupAt, recordBackupDownloaded } = useWorkspace();
   const { business } = workspace;
   const idPrefix = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [resetConfirmText, setResetConfirmText] = useState("");
   const costImpact = useCostImpactAlert();
 
   async function handleLogoFile(file: File) {
@@ -67,6 +87,11 @@ export default function SettingsTab() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    // Same "last backup" timestamp BackupReminderBanner reads — recorded
+    // here too so exporting from this button (not just the banner's own
+    // "Download backup" action) resets its nag timer and updates the Data &
+    // Backup section below without a second, separately-tracked timestamp.
+    recordBackupDownloaded();
   }
 
   function handleImportFile(file: File) {
@@ -74,7 +99,13 @@ export default function SettingsTab() {
     reader.onload = () => {
       const result = parseWorkspaceJson(String(reader.result ?? ""));
       if (!result.ok || !result.workspace) {
-        setImportMessage({ type: "error", text: result.error ?? "Import failed." });
+        // A malformed money field produces a specific, itemized message
+        // (never a silent zero-substitution and never a partial import) —
+        // show exactly which records need correcting when we have them.
+        const detail = result.fieldErrors?.length
+          ? ` (${result.fieldErrors.map((e) => `${e.recordId}: ${e.field}`).join("; ")})`
+          : "";
+        setImportMessage({ type: "error", text: `${result.error ?? "Import failed."}${detail}` });
         return;
       }
       replaceWorkspace(result.workspace);
@@ -83,11 +114,20 @@ export default function SettingsTab() {
     reader.readAsText(file);
   }
 
+  // The one destructive "wipe and replace" operation in the app — reused by
+  // both the long-standing Reset card below (gated by a native `confirm()`)
+  // and the Data & Backup section's type-to-confirm control, so there is
+  // exactly one place that actually performs it, only two different
+  // confirmation gates in front of it.
+  function resetAllData() {
+    replaceWorkspace(createSampleWorkspace());
+  }
+
   function handleReset() {
     if (!window.confirm("Reset your workspace to the sample data? This replaces your current materials, equipment, assemblies, and estimates.")) {
       return;
     }
-    replaceWorkspace(createSampleWorkspace());
+    resetAllData();
   }
 
   return (
@@ -154,74 +194,234 @@ export default function SettingsTab() {
           Set these once — every estimate, assembly, and rate-health check in Pro uses these numbers by default.
         </p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <Field label="Loaded labor rate" htmlFor={`${idPrefix}-labor`} hint="Wages + payroll tax + benefits, per person-hour">
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">$</span>
-              <NumberInput
-                id={`${idPrefix}-labor`}
-                value={business.loadedLaborRate}
-                onValueChange={(v) => updateBusiness({ loadedLaborRate: n(v) })}
-                onFocus={() => costImpact.startTracking("labor", undefined, business.loadedLaborRate, workspace)}
-                onBlur={() => costImpact.finishTracking(business.loadedLaborRate, workspace, "Loaded labor rate")}
-                className="pl-7"
-              />
-            </div>
+          <Field
+            label="Loaded labor rate"
+            htmlFor={`${idPrefix}-labor`}
+            hint="Wages + payroll tax + benefits, per person-hour"
+            labelExtra={
+              <HelpTooltip label="Loaded labor rate">
+                The fully-loaded cost of one person-hour of labor — wages plus payroll tax, workers' comp, and
+                benefits. This app multiplies it by person-hours to get labor cost on every assembly and ad-hoc crew
+                labor line.
+              </HelpTooltip>
+            }
+          >
+            <MoneyInput
+              id={`${idPrefix}-labor`}
+              valueCents={business.loadedLaborRateCents}
+              onValueCentsChange={(v) => updateBusiness({ loadedLaborRateCents: v === "" ? ZERO_CENTS : v })}
+              onFocus={() => costImpact.startTracking("labor", undefined, business.loadedLaborRateCents, workspace)}
+              onCommit={(v) => {
+                const committedCents = v === "" ? ZERO_CENTS : v;
+                // `workspace`/`business` here are still the PRE-commit
+                // snapshot (React hasn't re-rendered yet) — build the
+                // "after" picture by hand instead of trusting that closure.
+                const afterWorkspace = { ...workspace, business: { ...business, loadedLaborRateCents: committedCents } };
+                costImpact.finishTracking(committedCents, afterWorkspace, "Loaded labor rate");
+              }}
+            />
           </Field>
-          <Field label="Overhead" htmlFor={`${idPrefix}-overhead`} hint="As % of direct job cost">
+          <Field
+            label="Labor rate basis"
+            htmlFor={`${idPrefix}-labor-basis`}
+            hint="Documents how the rate above was derived — doesn't change the math, but stops burden from accidentally being added twice later"
+          >
+            <select
+              id={`${idPrefix}-labor-basis`}
+              value={business.laborRateBasis}
+              onChange={(e) => updateBusiness({ laborRateBasis: e.target.value as typeof business.laborRateBasis })}
+              className="block w-full rounded-lg border border-border bg-white px-3.5 py-2.5 text-[15px] text-ink focus:outline-none focus:ring-2 focus:ring-lime-surface"
+            >
+              <option value="already-loaded">Already fully loaded (wages + burden combined)</option>
+              <option value="base-plus-percentage-burden">Base wage + a % burden on top</option>
+              <option value="base-plus-component-burden">Base wage + itemized burden (taxes, comp, benefits)</option>
+            </select>
+          </Field>
+          <Field
+            label="Overhead"
+            htmlFor={`${idPrefix}-overhead`}
+            hint="As % of direct job cost"
+            labelExtra={
+              <HelpTooltip label="Overhead percentage">
+                A percent of direct job cost (materials + labor + equipment + delivery + other) added on top to get
+                true cost — covers costs like insurance, vehicles, and admin that aren't tied to any one job.
+              </HelpTooltip>
+            }
+          >
             <div className="relative">
-              <NumberInput
+              <DraftNumberInput
                 id={`${idPrefix}-overhead`}
                 value={business.overheadPercent}
                 onValueChange={(v) => updateBusiness({ overheadPercent: n(v) })}
+                validate={validateOverheadPercent}
                 className="pr-9"
               />
               <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">%</span>
             </div>
           </Field>
-          <Field label="Target margin" htmlFor={`${idPrefix}-margin`} hint="Profit share of selling price">
+          <Field
+            label="Target margin"
+            htmlFor={`${idPrefix}-margin`}
+            hint="Profit share of selling price, not markup on cost"
+            labelExtra={
+              <HelpTooltip label="Target margin">
+                Your target profit as a share of the selling price, not a markup on cost — a 30% margin means 30% of
+                the final price is profit. This is what the recommended quote is priced to hit.
+              </HelpTooltip>
+            }
+          >
             <div className="relative">
-              <NumberInput
+              <DraftNumberInput
                 id={`${idPrefix}-margin`}
                 value={business.targetMarginPercent}
                 onValueChange={(v) => updateBusiness({ targetMarginPercent: n(v) })}
+                validate={validateTargetMarginPercent}
                 className="pr-9"
               />
               <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">%</span>
             </div>
           </Field>
           <Field label="Default delivery cost" htmlFor={`${idPrefix}-delivery`}>
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">$</span>
-              <NumberInput
-                id={`${idPrefix}-delivery`}
-                value={business.defaultDeliveryCost}
-                onValueChange={(v) => updateBusiness({ defaultDeliveryCost: n(v) })}
-                className="pl-7"
-              />
-            </div>
+            <MoneyInput
+              id={`${idPrefix}-delivery`}
+              valueCents={business.defaultDeliveryCostCents}
+              onValueCentsChange={(v) => updateBusiness({ defaultDeliveryCostCents: v === "" ? ZERO_CENTS : v })}
+            />
           </Field>
           <Field label="Minimum project price" htmlFor={`${idPrefix}-minimum`}>
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">$</span>
-              <NumberInput
-                id={`${idPrefix}-minimum`}
-                value={business.minimumProjectPrice}
-                onValueChange={(v) => updateBusiness({ minimumProjectPrice: n(v) })}
-                className="pl-7"
-              />
-            </div>
+            <MoneyInput
+              id={`${idPrefix}-minimum`}
+              valueCents={business.minimumProjectPriceCents}
+              onValueCentsChange={(v) => updateBusiness({ minimumProjectPriceCents: v === "" ? ZERO_CENTS : v })}
+            />
           </Field>
-          <Field label="Round prices to" htmlFor={`${idPrefix}-round`}>
+          <Field
+            label="Round quotes up to"
+            htmlFor={`${idPrefix}-round`}
+            hint="Always rounds UP, never to nearest — a rounded-down price could miss your target margin"
+            labelExtra={
+              <HelpTooltip label="Rounding increment">
+                Your recommended quote is always rounded UP (never down, never to nearest) to this amount, so
+                rounding can never quietly push a price below your target margin.
+              </HelpTooltip>
+            }
+          >
             <select
               id={`${idPrefix}-round`}
-              value={business.roundDisplayTo}
-              onChange={(e) => updateBusiness({ roundDisplayTo: e.target.value as "dollar" | "cent" })}
+              value={business.roundingIncrementCents}
+              onChange={(e) => updateBusiness({ roundingIncrementCents: Number(e.target.value) as RoundingIncrementCents })}
               className="block w-full rounded-lg border border-border bg-white px-3.5 py-2.5 text-[15px] text-ink focus:outline-none focus:ring-2 focus:ring-lime-surface"
             >
-              <option value="dollar">Nearest dollar</option>
-              <option value="cent">Nearest cent</option>
+              {ROUNDING_INCREMENTS.map((inc) => (
+                <option key={inc} value={inc}>
+                  {inc === 1 ? "Nearest cent (no rounding)" : `Nearest ${formatCurrency(inc as MoneyCents)}`}
+                </option>
+              ))}
             </select>
           </Field>
+          <Field label="Sales tax rate" htmlFor={`${idPrefix}-tax`} hint="Applied on top of the quote — margin is always calculated pre-tax">
+            <div className="relative">
+              <DraftNumberInput
+                id={`${idPrefix}-tax`}
+                value={business.taxRatePercent}
+                onValueChange={(v) => updateBusiness({ taxRatePercent: n(v) })}
+                validate={validateTaxRatePercent}
+                className="pr-9"
+              />
+              <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">%</span>
+            </div>
+          </Field>
+          <Field
+            label="Typical small-job true cost"
+            htmlFor={`${idPrefix}-min-job-cost`}
+            hint="Used only by the Minimum Job Audit — your own designated 'typical' job, not an average of every saved project"
+            labelExtra={
+              <HelpTooltip label="Minimum job audit">
+                The representative true cost of a typical small job, which you set yourself. The Minimum Job Audit
+                (Rate Health tab) compares your minimum project price against this figure — never an average across
+                every saved project, since a few large jobs would quietly distort what "small job" means.
+              </HelpTooltip>
+            }
+          >
+            <MoneyInput
+              id={`${idPrefix}-min-job-cost`}
+              valueCents={business.representativeMinimumJobTrueCostCents ?? ""}
+              onValueCentsChange={(v) => updateBusiness({ representativeMinimumJobTrueCostCents: v === "" ? undefined : v })}
+              placeholder="Not set"
+            />
+          </Field>
+        </div>
+      </Card>
+
+      <OverheadScenarioCard />
+
+      <Card>
+        <h2 className="text-lg font-bold text-ink">Data &amp; Backup</h2>
+        <p className="mt-1 text-sm text-muted">
+          Stored locally in this browser only — not backed up to any server or cloud. Clearing your browser's site
+          data, using a different browser, or switching computers will lose it unless you've exported a backup file.
+        </p>
+
+        <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wider text-muted">Storage location</dt>
+            <dd className="mt-1 text-sm font-medium text-ink">This browser's local storage (no account, no cloud)</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wider text-muted">Schema version</dt>
+            <dd className="mt-1 text-sm font-medium text-ink" title="For support: include this number if you report a data problem.">
+              v{workspace.version}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wider text-muted">Last saved</dt>
+            <dd className="mt-1 text-sm font-medium text-ink">{formatTimestamp(lastSavedAt)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wider text-muted">Last backup</dt>
+            <dd className="mt-1 text-sm font-medium text-ink">{formatTimestamp(lastBackupAt)}</dd>
+          </div>
+        </dl>
+
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Button type="button" variant="secondary" onClick={handleExport}>
+            <Download size={18} aria-hidden="true" /> Export / Download backup
+          </Button>
+          <Button type="button" variant="ghost" onClick={() => fileInputRef.current?.click()}>
+            <Upload size={18} aria-hidden="true" /> Restore from backup
+          </Button>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-red/30 bg-red-light/40 p-4">
+          <p className="flex items-center gap-2 text-sm font-bold text-red">
+            <ShieldAlert size={16} aria-hidden="true" /> Reset all data
+          </p>
+          <p className="mt-1 text-sm text-red">
+            Replaces everything in this workspace — materials, equipment, assemblies, projects, and estimates — with
+            the sample starting data. This cannot be undone, and anything you haven't exported will be lost. Type{" "}
+            <strong>{RESET_CONFIRM_PHRASE}</strong> to confirm.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <TextInput
+              aria-label={`Type ${RESET_CONFIRM_PHRASE} to confirm resetting all data`}
+              placeholder={`Type ${RESET_CONFIRM_PHRASE}`}
+              value={resetConfirmText}
+              onChange={(e) => setResetConfirmText(e.target.value)}
+              className="max-w-[180px]"
+            />
+            <Button
+              type="button"
+              variant="danger"
+              disabled={resetConfirmText.trim().toUpperCase() !== RESET_CONFIRM_PHRASE}
+              onClick={() => {
+                if (resetConfirmText.trim().toUpperCase() !== RESET_CONFIRM_PHRASE) return;
+                resetAllData();
+                setResetConfirmText("");
+              }}
+            >
+              <RotateCcw size={16} aria-hidden="true" /> Reset all data
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -267,5 +467,90 @@ export default function SettingsTab() {
         </div>
       </Card>
     </div>
+  );
+}
+
+/**
+ * "What if I quoted at a different overhead percent?" — a pure hypothetical
+ * (see `evaluateOverheadScenario` in estimateMath.ts) run against every open
+ * and locked project in the workspace, using each project's OWN current
+ * overhead as the baseline (never assumed to match the business-wide
+ * default above, since a project can carry its own value). Nothing here
+ * changes any project or revision — it's read-only exploration.
+ */
+function OverheadScenarioCard() {
+  const { workspace } = useWorkspace();
+  const idPrefix = useId();
+  const [scenarioPercent, setScenarioPercent] = useState<number | "">(workspace.business.overheadPercent);
+
+  const results = useMemo(() => {
+    if (scenarioPercent === "" || validateOverheadPercent(scenarioPercent)) return null;
+    return evaluateOverheadScenario(scenarioPercent, workspace);
+  }, [scenarioPercent, workspace]);
+
+  const crossing = results?.filter((r) => r.crossesBelowTarget) ?? [];
+
+  return (
+    <Card>
+      <h2 className="text-lg font-bold text-ink">Overhead scenario</h2>
+      <p className="mt-1 text-sm text-muted">
+        See what a different overhead percent would do to your open estimates and already-quoted jobs, before you
+        change anything. This never edits any project — it's exploration only.
+      </p>
+      <div className="mt-4 max-w-xs">
+        <Field label="Scenario overhead" htmlFor={`${idPrefix}-scenario-overhead`} hint="Compared against each project's own current overhead">
+          <div className="relative">
+            <DraftNumberInput
+              id={`${idPrefix}-scenario-overhead`}
+              value={scenarioPercent}
+              onValueChange={setScenarioPercent}
+              validate={validateOverheadPercent}
+              className="pr-9"
+            />
+            <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">%</span>
+          </div>
+        </Field>
+      </div>
+
+      {results && results.length === 0 && <p className="mt-4 text-sm text-muted">No projects to evaluate yet.</p>}
+
+      {results && results.length > 0 && (
+        <>
+          {crossing.length > 0 ? (
+            <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl bg-amber-light p-3 text-sm font-medium text-amber">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              {crossing.length} project{crossing.length === 1 ? "" : "s"} would drop below its own target margin at this overhead rate.
+            </p>
+          ) : (
+            <p className="mt-4 text-sm text-mint-ink">No project would cross below its own target margin at this rate.</p>
+          )}
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[520px] border-collapse text-sm">
+              <thead>
+                <tr className="border-y border-border bg-paper text-left text-xs font-bold uppercase tracking-wider text-muted">
+                  <th scope="col" className="px-3 py-2.5">Project</th>
+                  <th scope="col" className="px-3 py-2.5">Locked?</th>
+                  <th scope="col" className="px-3 py-2.5">Current overhead</th>
+                  <th scope="col" className="px-3 py-2.5">Baseline margin</th>
+                  <th scope="col" className="px-3 py-2.5">Scenario margin</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r) => (
+                  <tr key={r.projectId} className={`border-b border-border last:border-b-0 ${r.crossesBelowTarget ? "bg-amber-light/40" : ""}`}>
+                    <td className="px-3 py-2.5 font-semibold text-ink">{r.projectName}</td>
+                    <td className="px-3 py-2.5 text-muted">{r.isLocked ? "Quoted" : "Draft"}</td>
+                    <td className="px-3 py-2.5 tabular-nums">{formatPercent(r.baselineOverheadPercent)}</td>
+                    <td className="px-3 py-2.5 tabular-nums">{formatPercent(r.baselineMargin)}</td>
+                    <td className={`px-3 py-2.5 font-semibold tabular-nums ${r.crossesBelowTarget ? "text-amber" : ""}`}>{formatPercent(r.scenarioMargin)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </Card>
   );
 }

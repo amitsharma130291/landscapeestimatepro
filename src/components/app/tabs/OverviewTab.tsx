@@ -2,16 +2,17 @@ import { useMemo } from "react";
 import { calculateAssemblyCost, evaluateRateHealth } from "../../../lib/estimateMath";
 import { useWorkspace } from "../../../lib/workspaceContext";
 import { Card, StatTile } from "../../ui/primitives";
+import FirstRunChecklist from "../FirstRunChecklist";
 
 export default function OverviewTab() {
   const { workspace } = useWorkspace();
   const { materials, equipment, assemblies, projects, business } = workspace;
 
   const rateHealthCounts = useMemo(() => {
-    const counts = { healthy: 0, attention: 0, critical: 0 };
+    const counts = { healthy: 0, attention: 0, critical: 0, invalid: 0 };
     for (const assembly of assemblies) {
-      const cost = calculateAssemblyCost(assembly, materials, equipment, business.loadedLaborRate);
-      const health = evaluateRateHealth(cost.trueCostPerUnit, assembly.currentRate ?? 0, business.targetMarginPercent);
+      const cost = calculateAssemblyCost(assembly, materials, equipment, business.loadedLaborRateCents, business.overheadPercent);
+      const health = evaluateRateHealth(cost.trueCostPerUnitCents, assembly.currentRateCents ?? 0, business.targetMarginPercent);
       counts[health.status] += 1;
     }
     return counts;
@@ -19,6 +20,8 @@ export default function OverviewTab() {
 
   return (
     <div className="space-y-6">
+      <FirstRunChecklist workspace={workspace} />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card><StatTile label="Materials" value={materials.length} /></Card>
         <Card><StatTile label="Equipment" value={equipment.length} /></Card>
@@ -46,17 +49,6 @@ export default function OverviewTab() {
         <a href="/app/rate-health/" className="mt-4 inline-block text-sm font-semibold text-forest hover:underline">
           Open Service Rate Health →
         </a>
-      </Card>
-
-      <Card>
-        <h2 className="text-lg font-bold text-ink">Get started</h2>
-        <ol className="mt-3 space-y-2 text-sm text-muted">
-          <li>1. Set your business assumptions on <a href="/app/settings/" className="font-semibold text-forest hover:underline">Settings</a>.</li>
-          <li>2. Add your materials and equipment on <a href="/app/catalog/" className="font-semibold text-forest hover:underline">Catalog</a>.</li>
-          <li>3. Bundle them into services on <a href="/app/templates/" className="font-semibold text-forest hover:underline">Assemblies &amp; Templates</a>.</li>
-          <li>4. Build a project on <a href="/app/estimates/" className="font-semibold text-forest hover:underline">Estimates</a>.</li>
-          <li>5. Check pricing health on <a href="/app/rate-health/" className="font-semibold text-forest hover:underline">Rate Health</a>, and track results on <a href="/app/actuals/" className="font-semibold text-forest hover:underline">Estimate vs. Actual</a>.</li>
-        </ol>
       </Card>
     </div>
   );

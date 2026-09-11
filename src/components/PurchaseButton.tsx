@@ -1,55 +1,42 @@
-import { useState } from "react";
-import { ArrowRight } from "lucide-react";
-import { Button } from "./ui/primitives";
-import { track } from "../lib/analytics";
+import { Clock } from "lucide-react";
+import { SALES_CONFIG } from "../data/salesConfig";
 import { PRICE_DISPLAY } from "../data/site";
 
 /**
- * TODO: wire this button to the real Dodo Payments checkout link once this
- * product's Dodo product/checkout URL exists (see the Dodo Payments
- * integration used by this author's other sites). Until PUBLIC_DODO_CHECKOUT_URL
- * is set, this renders as an honest placeholder — it never collects payment
- * details and never claims a purchase has completed.
+ * Purchasing is not active — this app has no backend, no payment provider,
+ * and no entitlement system (a deliberate product decision, not a gap to
+ * patch over). This component's whole job is to say that honestly: no fake
+ * checkout, no pretending a click unlocks anything, no claim that access is
+ * "protected." When SALES_CONFIG.salesEnabled ever flips true with a real
+ * checkoutUrl, this becomes a real link and nothing else about this file
+ * needs to change.
  */
-export default function PurchaseButton({
-  checkoutUrl,
-  label,
-}: {
-  checkoutUrl?: string;
-  label?: string;
-}) {
-  const [clicked, setClicked] = useState(false);
-  const buttonLabel = label ?? `Get Landscape Estimate Pro — ${PRICE_DISPLAY} Lifetime`;
-
-  if (checkoutUrl) {
+export default function PurchaseButton({ label, variant = "dark" }: { label?: string; variant?: "dark" | "light" }) {
+  if (SALES_CONFIG.salesEnabled && SALES_CONFIG.checkoutUrl) {
     return (
       <a
-        href={checkoutUrl}
-        data-track="checkout_started"
-        className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
+        href={SALES_CONFIG.checkoutUrl}
+        className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
       >
-        {buttonLabel}
-        <ArrowRight size={18} aria-hidden="true" />
+        {label ?? `Get Landscape Estimate Pro — ${PRICE_DISPLAY} Lifetime`}
       </a>
     );
   }
 
-  function handleClick() {
-    track("checkout_started", { price: 99 });
-    setClicked(true);
-  }
+  const disabledClasses =
+    variant === "dark" ? "bg-white/15 text-white/70 border border-white/20" : "bg-paper-dim text-muted border border-border";
+  const captionClass = variant === "dark" ? "text-white/60" : "text-muted";
 
   return (
     <div>
-      <Button size="lg" onClick={handleClick} aria-describedby={clicked ? "checkout-not-connected" : undefined}>
-        {buttonLabel}
-        <ArrowRight size={18} aria-hidden="true" />
-      </Button>
-      {clicked && (
-        <p id="checkout-not-connected" role="status" className="mt-2 text-sm text-muted">
-          Checkout isn't connected yet. This is a placeholder — no payment has been taken.
-        </p>
-      )}
+      <button type="button" disabled aria-disabled="true" className={`inline-flex min-h-[52px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl px-7 py-4 text-base font-bold ${disabledClasses}`}>
+        <Clock size={18} aria-hidden="true" />
+        Purchasing not yet open
+      </button>
+      <p className={`mt-2 text-sm ${captionClass}`}>
+        Pro is planned at {PRICE_DISPLAY} lifetime. Use the free tools below in the meantime — the same estimating math runs
+        under all of them.
+      </p>
     </div>
   );
 }

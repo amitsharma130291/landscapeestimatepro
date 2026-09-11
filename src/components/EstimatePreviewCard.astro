@@ -1,26 +1,26 @@
 ---
-import { calculateProjectCost, calculateQuotePricing, formatCurrency } from "../lib/calc";
+import { calculateExactPricingChainCents, formatCurrency } from "../lib/calc";
+import type { MoneyCents } from "../lib/money";
 
 // The Smith Residence reference project used throughout the marketing site —
 // consistent numbers everywhere (hero, underpricing, markup-vs-margin).
 const inputs = {
-  materialsCost: 1250,
-  laborCost: 768,
-  equipmentCost: 180,
-  deliveryCost: 180,
-  otherCost: 100,
+  materialsCostCents: 125000 as MoneyCents,
+  laborCostCents: 76800 as MoneyCents,
+  equipmentCostCents: 18000 as MoneyCents,
+  deliveryCostCents: 18000 as MoneyCents,
+  otherCostCents: 10000 as MoneyCents,
   overheadPercent: 15,
 };
 
-const cost = calculateProjectCost(inputs);
-const pricing = calculateQuotePricing(cost.trueCost, 35, "dollar");
+const pricing = calculateExactPricingChainCents(inputs, 35, 100);
 
 const lineItems = [
-  { label: "Materials", value: inputs.materialsCost },
-  { label: "Labor", value: inputs.laborCost },
-  { label: "Equipment", value: inputs.equipmentCost },
-  { label: "Delivery", value: inputs.deliveryCost },
-  { label: "Other", value: inputs.otherCost },
+  { label: "Materials", value: inputs.materialsCostCents },
+  { label: "Labor", value: inputs.laborCostCents },
+  { label: "Equipment", value: inputs.equipmentCostCents },
+  { label: "Delivery", value: inputs.deliveryCostCents },
+  { label: "Other", value: inputs.otherCostCents },
 ];
 const maxValue = Math.max(...lineItems.map((l) => l.value));
 ---
@@ -39,7 +39,7 @@ const maxValue = Math.max(...lineItems.map((l) => l.value));
   <div class="mt-4 flex items-baseline justify-between">
     <div>
       <p class="text-[11px] font-bold uppercase tracking-wider text-muted">Project total</p>
-      <p class="text-4xl font-extrabold tabular-nums text-ink">{formatCurrency(pricing.displayPrice)}</p>
+      <p class="text-4xl font-extrabold tabular-nums text-ink">{formatCurrency(pricing.roundedRecommendedPriceCents)}</p>
     </div>
     <span class="rounded-full bg-mint px-3 py-1 text-xs font-bold text-mint-ink">35% margin</span>
   </div>
@@ -64,17 +64,17 @@ const maxValue = Math.max(...lineItems.map((l) => l.value));
 
   <div class="mt-5 flex items-center justify-between text-sm">
     <span class="text-muted">Overhead allocation (15%)</span>
-    <span class="font-semibold tabular-nums text-ink">{formatCurrency(cost.overheadAmount)}</span>
+    <span class="font-semibold tabular-nums text-ink">{formatCurrency(pricing.overheadAmountCents)}</span>
   </div>
 
   <div class="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-paper-dim p-4">
     <div>
       <p class="text-[11px] font-bold uppercase tracking-wider text-muted">True cost</p>
-      <p class="mt-0.5 text-xl font-extrabold tabular-nums text-ink">{formatCurrency(pricing.trueCostRounded)}</p>
+      <p class="mt-0.5 text-xl font-extrabold tabular-nums text-ink">{formatCurrency(pricing.trueCostCents)}</p>
     </div>
     <div class="text-right">
       <p class="text-[11px] font-bold uppercase tracking-wider text-muted">Selling price</p>
-      <p class="mt-0.5 text-xl font-extrabold tabular-nums text-ink">{formatCurrency(pricing.requiredSellingPrice, { cents: true })}</p>
+      <p class="mt-0.5 text-xl font-extrabold tabular-nums text-ink">{formatCurrency(pricing.exactRequiredPriceCents, { cents: true })}</p>
     </div>
   </div>
 

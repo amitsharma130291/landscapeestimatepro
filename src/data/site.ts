@@ -1,7 +1,11 @@
+import { SALES_CONFIG } from "./salesConfig";
+
 export const SITE_NAME = "Landscape Estimate Pro";
 export const SITE_URL = "https://landscapeestimatepro.com";
-export const PRICE_USD = 99;
-export const PRICE_DISPLAY = "$99";
+// Derived from the one source of truth (salesConfig.ts) so every page/CTA/
+// structured-data block that mentions price agrees with it automatically.
+export const PRICE_USD = SALES_CONFIG.plannedLifetimePriceCents / 100;
+export const PRICE_DISPLAY = `$${PRICE_USD}`;
 
 export const NAV_ITEMS = [
   { label: "Free Calculator", href: "/landscaping-cost-calculator/" },
