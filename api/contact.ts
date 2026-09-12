@@ -1,7 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import nodemailer from "nodemailer";
-import { isHoneypotFilled, validateContactSubmission } from "../src/lib/contactValidation";
-import { SITE_NAME, SITE_URL } from "../src/data/site";
 
 /**
  * A plain Vercel Node.js serverless function — deliberately NOT an Astro API
@@ -12,6 +10,18 @@ import { SITE_NAME, SITE_URL } from "../src/data/site";
  * build sitting next to it, so this is the only backend endpoint in an
  * otherwise fully static, local-first app — it never touches the Pro
  * workspace's data model, it only relays a public visitor's message.
+ *
+ * Deliberately fully self-contained — no imports from ../src. This project
+ * is ESM ("type": "module" in package.json), and Vercel's Node.js builder
+ * does not bundle a TypeScript function's local relative imports the way
+ * ncc/esbuild normally would for it; it transpiles this file alone and
+ * leaves cross-directory imports to Node's own ESM resolver at runtime,
+ * which then fails outright (`ERR_MODULE_NOT_FOUND`) reaching anything
+ * under /src, since only /api is known to be part of the function's
+ * deployment. The validation rules below are intentionally a duplicate of
+ * `src/lib/contactValidation.ts` (which the client-side form still imports
+ * normally through Vite) — small and stable enough that keeping this
+ * function deployable outweighs sharing the one file across that boundary.
  *
  * Vercel's Node runtime auto-parses a JSON request body into `req.body` and
  * layers `.status()`/`.json()` helpers onto the response — but those are
@@ -25,7 +35,60 @@ interface VercelStyleRequest extends IncomingMessage {
   body?: unknown;
 }
 
-const CONTACT_DOMAIN = new URL(SITE_URL).hostname;
+const SITE_NAME = "Landscape Estimate Pro";
+const CONTACT_DOMAIN = "landscapeestimatepro.com";
+const MAX_SUBJECT_LENGTH = 200;
+const MAX_MESSAGE_LENGTH = 5000;
+
+interface ContactSubmission {
+  subject: string;
+  email: string;
+  message: string;
+}
+
+type ContactValidationResult = { valid: true; data: ContactSubmission } | { valid: false; error: string };
+
+function validateEmailFormat(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function validateContactSubmission(payload: unknown): ContactValidationResult {
+  if (typeof payload !== "object" || payload === null) {
+    return { valid: false, error: "Invalid request." };
+  }
+  const { subject, email, message } = payload as Record<string, unknown>;
+
+  if (typeof subject !== "string" || subject.trim() === "") {
+    return { valid: false, error: "Please enter a subject." };
+  }
+  if (typeof email !== "string" || email.trim() === "") {
+    return { valid: false, error: "Please enter your email address." };
+  }
+  if (typeof message !== "string" || message.trim() === "") {
+    return { valid: false, error: "Please enter a message." };
+  }
+  if (!validateEmailFormat(email)) {
+    return { valid: false, error: "Doesn't look like a valid email address." };
+  }
+  if (subject.length > MAX_SUBJECT_LENGTH) {
+    return { valid: false, error: `Subject must be ${MAX_SUBJECT_LENGTH} characters or fewer.` };
+  }
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return { valid: false, error: `Message must be ${MAX_MESSAGE_LENGTH} characters or fewer.` };
+  }
+
+  return { valid: true, data: { subject: subject.trim(), email: email.trim(), message: message.trim() } };
+}
+
+/** A real visitor never sees or fills the honeypot field (positioned
+ * off-screen, not tab-reachable) — a bot filling every field fills this
+ * too. Checked separately so a filled honeypot can return a plain success
+ * without ever sending mail, giving a bot no signal to adapt against. */
+function isHoneypotFilled(payload: unknown): boolean {
+  if (typeof payload !== "object" || payload === null) return false;
+  const { company } = payload as Record<string, unknown>;
+  return typeof company === "string" && company.trim() !== "";
+}
 
 function sendJson(res: ServerResponse, status: number, body: Record<string, unknown>): void {
   res.statusCode = status;
