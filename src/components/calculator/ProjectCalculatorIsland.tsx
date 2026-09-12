@@ -4,6 +4,7 @@ import { calculateExactPricingChainCents, formatCurrency, formatPercent } from "
 import { ZERO_CENTS, type MoneyCents } from "../../lib/money";
 import { validateOverheadPercent, validateTargetMarginPercent } from "../../lib/validation";
 import { Button, Card, DraftNumberInput, Field, MoneyInput } from "../ui/primitives";
+import { useDialog } from "../ui/Dialog";
 
 interface FieldState {
   materials: MoneyCents | "";
@@ -36,6 +37,7 @@ function c(value: MoneyCents | ""): MoneyCents {
 export default function ProjectCalculatorIsland({ compact = false }: { compact?: boolean }) {
   const [fields, setFields] = useState<FieldState>(DEFAULTS);
   const idPrefix = useId();
+  const { confirm, dialog } = useDialog();
 
   // A cost field can individually be a safe, representable amount and still
   // overflow once summed/divided through the pricing chain (e.g. dividing a
@@ -78,8 +80,8 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
   // they share this one component.
   const isDirty = JSON.stringify(fields) !== JSON.stringify(DEFAULTS);
 
-  function handleReset() {
-    if (isDirty && !window.confirm("Reset this calculator to its starting values? Anything you've entered will be lost.")) {
+  async function handleReset() {
+    if (isDirty && !(await confirm("Reset this calculator to its starting values? Anything you've entered will be lost.", { confirmLabel: "Reset" }))) {
       return;
     }
     setFields(DEFAULTS);
@@ -91,6 +93,7 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
   // grid into the page's own scrollable width on narrow viewports.
   return (
     <div className={`grid gap-6 ${compact ? "" : "lg:grid-cols-[minmax(0,1fr)_23rem]"}`}>
+      {dialog}
       <Card className="min-w-0">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

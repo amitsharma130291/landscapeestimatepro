@@ -122,12 +122,6 @@ test.describe("FLOW-02 Repeat estimate (P1)", () => {
     const started = Date.now();
     const ic = new InteractionCounter();
 
-    // handleSaveAsTemplate uses window.prompt for the template's name —
-    // without a handler Playwright auto-dismisses it (returns null), and
-    // the app correctly no-ops on a cancelled prompt, so no template would
-    // ever be created. Accept it with a real name.
-    page.on("dialog", (d) => d.accept("Mulch Refresh Template"));
-
     // Build and save a template from a first estimate.
     await page.goto("/app/estimates/");
     await page.getByRole("button", { name: "New estimate" }).click();
@@ -136,6 +130,12 @@ test.describe("FLOW-02 Repeat estimate (P1)", () => {
     ic.tick();
     await page.getByRole("button", { name: "Save as template" }).click();
     ic.tick();
+    // handleSaveAsTemplate opens an in-app prompt dialog for the template's
+    // name — fill it, confirm, then dismiss the confirmation ALERT dialog
+    // (role="alertdialog", distinct from the prompt's role="dialog") that follows.
+    await page.getByRole("dialog").getByRole("textbox").fill("Mulch Refresh Template");
+    await page.getByRole("dialog").getByRole("button", { name: "OK" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "OK" }).click();
 
     // A second estimate started FROM that template needs only quantities,
     // never the standard cost assumptions re-typed.
@@ -259,7 +259,6 @@ test.describe("FLOW-06 Close a job and learn from actuals (P0)", () => {
   test("accepting a quote, entering actuals, and viewing variance/profitability produces reconciled, actionable figures", async ({ page }) => {
     const started = Date.now();
     const ic = new InteractionCounter();
-    page.on("dialog", (d) => d.accept());
 
     await page.goto("/app/estimates/");
     await page.getByRole("button", { name: "New estimate" }).click();
@@ -278,6 +277,8 @@ test.describe("FLOW-06 Close a job and learn from actuals (P0)", () => {
 
     const statusSelect = page.locator("#project-status");
     await statusSelect.selectOption("won");
+    // Marking a project "won" opens an in-app confirm dialog.
+    await page.getByRole("dialog").getByRole("button", { name: "Confirm" }).click();
     ic.tick();
     await expect(statusSelect).toHaveValue("won");
 
@@ -305,7 +306,6 @@ test.describe("FLOW-07 Protect business data — backup and restore (P0)", () =>
   test("export, reset, and restore round-trips the workspace with no value drift", async ({ page }) => {
     const started = Date.now();
     const ic = new InteractionCounter();
-    page.on("dialog", (d) => d.accept());
 
     await page.goto("/app/settings/");
     const businessName = page.getByLabel("Business name");
@@ -322,6 +322,7 @@ test.describe("FLOW-07 Protect business data — backup and restore (P0)", () =>
     expect(backupPath).not.toBeNull();
 
     await page.getByRole("button", { name: "Reset workspace" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Reset workspace" }).click();
     ic.tick();
     await page.waitForTimeout(300);
     // Reset replaces the workspace with sample data — the custom name is gone.

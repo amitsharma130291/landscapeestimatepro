@@ -75,14 +75,14 @@ test("LEP-115 recording an actual price below the configured minimum warns but n
   await page.getByRole("button", { name: "Review and quote" }).click();
   await expect(page.getByText("Locked", { exact: true })).toBeVisible();
 
-  // window.prompt's return value is scripted via accept(text) — this
-  // repo's own established pattern for exercising window.prompt-based
-  // flows (see EstimatesTab's other prompt-driven actions in other specs).
-  page.on("dialog", (d) => {
-    if (d.type() === "prompt") d.accept("450.00"); // below the $500 minimum
-    else d.accept(); // the below-minimum window.confirm that follows
-  });
+  // "Record actual price" opens an in-app prompt dialog, then (since
+  // $450 is below the $500 configured minimum) a below-minimum confirm
+  // dialog — both resolved in sequence, the repo's established pattern for
+  // exercising these prompt/confirm-driven actions (see other specs).
   await page.getByRole("button", { name: "Record actual price" }).click();
+  await page.getByRole("dialog").getByRole("textbox").fill("450.00"); // below the $500 minimum
+  await page.getByRole("dialog").getByRole("button", { name: "OK" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Record anyway" }).click(); // the below-minimum confirm that follows
   await page.waitForTimeout(300);
 
   await expect(page.getByText(/Quoted at\s*\$450\.00/)).toBeVisible(); // exactly what was entered, never bumped to $500

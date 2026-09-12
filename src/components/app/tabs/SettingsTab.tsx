@@ -5,6 +5,7 @@ import { exportWorkspaceJson, parseWorkspaceJson } from "../../../lib/persistenc
 import { createSampleWorkspace } from "../../../lib/sampleData";
 import { evaluateOverheadScenario } from "../../../lib/estimateMath";
 import { Button, Card, DraftNumberInput, Field, MoneyInput, TextInput } from "../../ui/primitives";
+import { useDialog } from "../../ui/Dialog";
 import { HelpTooltip } from "../../ui/HelpTooltip";
 import { CostImpactBanner, useCostImpactAlert } from "../CostImpactBanner";
 import { ROUNDING_INCREMENTS, formatCurrency, formatPercent } from "../../../lib/calc";
@@ -65,6 +66,7 @@ export default function SettingsTab() {
   const [logoError, setLogoError] = useState<string | null>(null);
   const [resetConfirmText, setResetConfirmText] = useState("");
   const costImpact = useCostImpactAlert();
+  const { confirm, dialog } = useDialog();
 
   async function handleLogoFile(file: File) {
     setLogoError(null);
@@ -123,8 +125,8 @@ export default function SettingsTab() {
     replaceWorkspace(createSampleWorkspace());
   }
 
-  function handleReset() {
-    if (!window.confirm("Reset your workspace to the sample data? This replaces your current materials, equipment, assemblies, and estimates.")) {
+  async function handleReset() {
+    if (!(await confirm("Reset your workspace to the sample data? This replaces your current materials, equipment, assemblies, and estimates.", { tone: "danger", confirmLabel: "Reset workspace" }))) {
       return;
     }
     resetAllData();
@@ -132,6 +134,7 @@ export default function SettingsTab() {
 
   return (
     <div className="space-y-6">
+      {dialog}
       <CostImpactBanner result={costImpact.result} onDismiss={costImpact.dismiss} />
 
       <Card>

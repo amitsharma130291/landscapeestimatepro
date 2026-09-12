@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { calculateAssemblyCost, evaluateRateHealth } from "../../../lib/estimateMath";
 import { useWorkspace } from "../../../lib/workspaceContext";
 import { Card, StatTile } from "../../ui/primitives";
-import FirstRunChecklist from "../FirstRunChecklist";
+import GettingStartedSection from "../GettingStartedSection";
 
 export default function OverviewTab() {
   const { workspace } = useWorkspace();
@@ -20,7 +20,7 @@ export default function OverviewTab() {
 
   return (
     <div className="space-y-6">
-      <FirstRunChecklist workspace={workspace} />
+      <GettingStartedSection workspace={workspace} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card><StatTile label="Materials" value={materials.length} /></Card>

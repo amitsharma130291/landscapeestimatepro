@@ -121,13 +121,13 @@ for (const viewport of VIEWPORTS) {
       }
     });
 
-    test("first-run checklist (fresh workspace) renders without overflow and shows real completion count", async ({ page, context }) => {
+    test("getting-started section (fresh workspace) renders without overflow and shows real completion count", async ({ page, context }) => {
       await context.clearCookies();
       await page.goto("/app/");
       await page.evaluate(() => localStorage.clear());
       await page.reload();
-      await expect(page.getByText(/of 10 done/)).toBeVisible();
-      await assertNoPageOverflow(page, `${viewport.name} first-run-checklist`);
+      await expect(page.getByText(/of 5 steps complete/)).toBeVisible();
+      await assertNoPageOverflow(page, `${viewport.name} getting-started`);
     });
 
     test("Data & Backup section renders without overflow and long validation-style text wraps", async ({ page }) => {

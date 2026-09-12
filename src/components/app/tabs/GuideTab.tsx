@@ -3,9 +3,10 @@ import { ArrowRight } from "lucide-react";
 import { Badge, Card } from "../../ui/primitives";
 
 /**
- * The comprehensive "how to use Pro" reference — linked FIRST in the app's
- * own sidebar nav (see AppShell.tsx's NAV array) so it's the first thing
- * anyone lands on. Purely static/instructional: it reads no workspace data
+ * The comprehensive "how to use Pro" reference — linked last in the app's
+ * own sidebar nav (see AppShell.tsx's NAV array), reachable from any tab
+ * whenever a contractor wants the full walkthrough. Purely static/
+ * instructional: it reads no workspace data
  * and writes nothing, so it's safe to link from anywhere without side
  * effects. Every worked example below uses one consistent running example —
  * a Smith Residence mulch/shrub/edging job — so a reader can follow the

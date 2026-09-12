@@ -299,10 +299,6 @@ test("LEP-074 [PASS, DEF-14 fixed] Business profile: name, address, contact, and
 });
 
 test("LEP-092 [PASS] Project template: two independent instantiations of a 4-service template inherit values without mutating each other or the template", async ({ page }) => {
-  // handleSaveAsTemplate uses window.prompt for the template's name — an
-  // empty-string accept() is still falsy and gets treated as "cancelled",
-  // so a real name must be supplied.
-  page.on("dialog", (d) => d.accept("Four-Service Template"));
   await page.goto("/app/estimates/");
   await page.getByRole("button", { name: "New estimate" }).click();
 
@@ -325,6 +321,13 @@ test("LEP-092 [PASS] Project template: two independent instantiations of a 4-ser
   await page.waitForTimeout(300);
 
   await page.getByRole("button", { name: "Save as template" }).click();
+  // handleSaveAsTemplate opens an in-app prompt dialog for the template's
+  // name — fill it, confirm, then dismiss the confirmation alert that follows.
+  await page.getByRole("dialog").getByRole("textbox").fill("Four-Service Template");
+  await page.getByRole("dialog").getByRole("button", { name: "OK" }).click();
+  // The confirmation that follows is an ALERT dialog (role="alertdialog"),
+  // distinct from the prompt's role="dialog".
+  await page.getByRole("alertdialog").getByRole("button", { name: "OK" }).click();
 
   await page.getByRole("button", { name: "← Back to estimates" }).click();
   const templateSelect = page.getByLabel("Start from a saved template");

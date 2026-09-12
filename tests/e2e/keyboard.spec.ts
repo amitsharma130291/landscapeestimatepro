@@ -30,28 +30,34 @@ test.describe("Keyboard navigation — Pro app", () => {
   test("app tab navigation is reachable and operable via Tab + Enter", async ({ page }) => {
     await page.goto("/app/");
     // Tab into the sidebar nav and activate "Catalog" with Enter only.
-    const catalogLink = page.getByRole("link", { name: "Catalog" });
+    // exact:true disambiguates from the Overview tab's own "Build Your
+    // Catalog" getting-started action link, whose accessible name also
+    // contains "Catalog".
+    const catalogLink = page.getByRole("link", { name: "Catalog", exact: true });
     await catalogLink.focus();
     await expect(catalogLink).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/app\/catalog\//);
   });
 
-  test("first-run checklist: collapse toggle and a confirm button both operate via Enter/Space", async ({ page }) => {
+  test("getting-started section: collapse toggle and a step action link both operate via Enter", async ({ page }) => {
     await page.goto("/app/");
     await page.evaluate(() => localStorage.clear());
     await page.reload();
-    const toggle = page.getByRole("button", { name: /Setup checklist/ });
+    // Queried by its stable aria-controls target, not by name — the
+    // accessible name itself flips between "How to get started" and "Show
+    // getting-started guide" depending on collapsed state.
+    const toggle = page.locator('button[aria-controls="getting-started-body"]');
     await toggle.focus();
     await page.keyboard.press("Enter");
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await page.keyboard.press("Enter");
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
 
-    const confirmButtons = page.getByRole("button", { name: /Already reviewed/ });
-    await confirmButtons.first().focus();
-    await page.keyboard.press(" ");
-    await expect(page.getByText(/\d of 10 done/)).toBeVisible();
+    const settingsAction = page.getByRole("link", { name: /Open Settings/ });
+    await settingsAction.focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/app\/settings\//);
   });
 
   test("HelpTooltip: open on Enter, close on Escape, focus returns to trigger", async ({ page }) => {

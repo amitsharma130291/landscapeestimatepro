@@ -3,6 +3,8 @@ import { LayoutGrid, Package, Settings, ClipboardList, FileText, Activity, Arrow
 import { WorkspaceProvider } from "../../lib/workspaceContext";
 import { APP_RELEASE_MODE } from "../../data/salesConfig";
 import SaveStatusIndicator from "./SaveStatusIndicator";
+import NewEstimateButton from "./NewEstimateButton";
+import ScrollToTopButton from "../ui/ScrollToTopButton";
 import GuideTab from "./tabs/GuideTab";
 import OverviewTab from "./tabs/OverviewTab";
 import CatalogTab from "./tabs/CatalogTab";
@@ -14,10 +16,7 @@ import ActualsTab from "./tabs/ActualsTab";
 
 export type AppTab = "guide" | "overview" | "catalog" | "templates" | "estimates" | "rate-health" | "actuals" | "settings";
 
-// "Guide" is listed FIRST, deliberately — it's the one link every new Pro
-// user should see before anything else the moment they land in the app.
 const NAV: { id: AppTab; label: string; href: string; icon: typeof LayoutGrid }[] = [
-  { id: "guide", label: "Guide", href: "/app/guide/", icon: BookOpen },
   { id: "overview", label: "Overview", href: "/app/", icon: LayoutGrid },
   { id: "catalog", label: "Catalog", href: "/app/catalog/", icon: Package },
   { id: "templates", label: "Assemblies & Templates", href: "/app/templates/", icon: FileText },
@@ -25,6 +24,7 @@ const NAV: { id: AppTab; label: string; href: string; icon: typeof LayoutGrid }[
   { id: "rate-health", label: "Rate Health", href: "/app/rate-health/", icon: Activity },
   { id: "actuals", label: "Estimate vs. Actual", href: "/app/actuals/", icon: Activity },
   { id: "settings", label: "Settings", href: "/app/settings/", icon: Settings },
+  { id: "guide", label: "Guide", href: "/app/guide/", icon: BookOpen },
 ];
 
 const TAB_COMPONENTS: Record<AppTab, () => ReactElement> = {
@@ -77,9 +77,13 @@ export default function AppShell({ activeTab }: { activeTab: AppTab }) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* The Estimates tab already has its own prominent "New estimate"
+                button — showing this global shortcut there too would be a
+                redundant duplicate control with a colliding accessible name. */}
+            {activeTab !== "estimates" && <NewEstimateButton />}
             <SaveStatusIndicator />
-            <a href="/" className="flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-forest">
+            <a href="/" className="hidden items-center gap-1.5 text-sm font-semibold text-muted hover:text-forest sm:flex">
               <ArrowLeft size={16} aria-hidden="true" /> Back to site
             </a>
           </div>
@@ -120,6 +124,8 @@ export default function AppShell({ activeTab }: { activeTab: AppTab }) {
             </div>
           </main>
         </div>
+
+        <ScrollToTopButton />
       </div>
     </WorkspaceProvider>
   );

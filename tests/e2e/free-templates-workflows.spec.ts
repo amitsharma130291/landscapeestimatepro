@@ -121,7 +121,6 @@ test("LEP-065 Free Estimate Calculator category isolation: only Materials = $100
 });
 
 test("LEP-066 Free Estimate Calculator reset returns every input/output to documented defaults", async ({ page }) => {
-  page.on("dialog", (d) => d.accept()); // resetting a dirty form asks for confirmation — accept it
   await page.goto("/landscaping-estimate-calculator/");
   const materials = page.getByLabel(/^Materials/);
   const originalValue = await materials.inputValue();
@@ -131,6 +130,8 @@ test("LEP-066 Free Estimate Calculator reset returns every input/output to docum
 
   const resetButton = page.getByRole("button", { name: /reset calculator/i });
   await resetButton.click();
+  // Resetting a dirty form opens an in-app confirm dialog — accept it.
+  await page.getByRole("dialog").getByRole("button", { name: "Reset" }).click();
   // Reset returns to the tool's own documented starting values — which are
   // real sample defaults, not necessarily blank — never leaving the just
   // -typed 12345 behind.
@@ -150,7 +151,6 @@ test("LEP-072 Free Cost Calculator category isolation: only Materials = $100, di
 });
 
 test("LEP-073 Free Cost Calculator reset returns every input/output to documented defaults", async ({ page }) => {
-  page.on("dialog", (d) => d.accept());
   await page.goto("/landscaping-cost-calculator/");
   const materials = page.getByLabel(/^Materials/);
   const originalValue = await materials.inputValue();
@@ -160,6 +160,7 @@ test("LEP-073 Free Cost Calculator reset returns every input/output to documente
 
   const resetButton = page.getByRole("button", { name: /reset calculator/i });
   await resetButton.click();
+  await page.getByRole("dialog").getByRole("button", { name: "Reset" }).click();
   await expect(materials).not.toHaveValue("54321");
   await expect(materials).toHaveValue(originalValue);
 });

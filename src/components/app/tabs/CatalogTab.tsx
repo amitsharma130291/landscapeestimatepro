@@ -6,6 +6,7 @@ import { findCatalogItemReferences, type CatalogItemReferences } from "../../../
 import { ZERO_CENTS, type MoneyCents } from "../../../lib/money";
 import { getMaterialValidationErrors, getEquipmentValidationErrors } from "../../../lib/validation";
 import { Button, Card, MoneyInput, Select, TextInput } from "../../ui/primitives";
+import { useDialog } from "../../ui/Dialog";
 import { CostImpactBanner, useCostImpactAlert } from "../CostImpactBanner";
 import type { EquipmentRateType, MaterialUnit } from "../../../lib/types";
 
@@ -28,25 +29,28 @@ export default function CatalogTab() {
   const { workspace, addMaterial, updateMaterial, removeMaterial, addEquipment, updateEquipment, removeEquipment } = useWorkspace();
   const idPrefix = useId();
   const costImpact = useCostImpactAlert();
+  const { confirm, dialog } = useDialog();
 
-  function handleRemoveMaterial(id: string, name: string) {
+  async function handleRemoveMaterial(id: string, name: string) {
     const refs = findCatalogItemReferences("material", id, workspace);
     const isReferenced = refs.assemblies.length > 0 || refs.templates.length > 0 || refs.projects.length > 0;
     if (isReferenced) {
-      const proceed = window.confirm(
-        `"${name}" is still used by ${describeReferences(refs)}. Deleting it will leave those referencing it unable to cost this material — their quotes would need to be corrected before they can be quoted again.\n\nDelete "${name}" anyway?`
+      const proceed = await confirm(
+        `"${name}" is still used by ${describeReferences(refs)}. Deleting it will leave those referencing it unable to cost this material — their quotes would need to be corrected before they can be quoted again.\n\nDelete "${name}" anyway?`,
+        { tone: "danger", confirmLabel: "Delete anyway" }
       );
       if (!proceed) return;
     }
     removeMaterial(id);
   }
 
-  function handleRemoveEquipment(id: string, name: string) {
+  async function handleRemoveEquipment(id: string, name: string) {
     const refs = findCatalogItemReferences("equipment", id, workspace);
     const isReferenced = refs.assemblies.length > 0 || refs.templates.length > 0 || refs.projects.length > 0;
     if (isReferenced) {
-      const proceed = window.confirm(
-        `"${name}" is still used by ${describeReferences(refs)}. Deleting it will leave those referencing it unable to cost this equipment — their quotes would need to be corrected before they can be quoted again.\n\nDelete "${name}" anyway?`
+      const proceed = await confirm(
+        `"${name}" is still used by ${describeReferences(refs)}. Deleting it will leave those referencing it unable to cost this equipment — their quotes would need to be corrected before they can be quoted again.\n\nDelete "${name}" anyway?`,
+        { tone: "danger", confirmLabel: "Delete anyway" }
       );
       if (!proceed) return;
     }
@@ -55,6 +59,7 @@ export default function CatalogTab() {
 
   return (
     <div className="space-y-8">
+      {dialog}
       <CostImpactBanner result={costImpact.result} onDismiss={costImpact.dismiss} />
 
       <Card padded={false}>

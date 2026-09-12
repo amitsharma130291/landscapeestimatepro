@@ -21,6 +21,7 @@ import { buildCustomerDocumentFromDraft, buildCustomerDocumentFromRevision } fro
 import { formatCurrency, formatPercent } from "../../../lib/calc";
 import { centsToDecimal, fromDollarInputToCents, ZERO_CENTS, type MoneyCents } from "../../../lib/money";
 import { Badge, Button, Card, DraftNumberInput, EmptyState, MoneyInput, Select, TextInput } from "../../ui/primitives";
+import { useDialog } from "../../ui/Dialog";
 import { HelpTooltip } from "../../ui/HelpTooltip";
 import CrewSizeScenarioPanel from "../CrewSizeScenarioPanel";
 import CustomerEstimateView from "../CustomerEstimateView";
@@ -48,8 +49,17 @@ const STAGE_TONE: Record<LifecycleStage, "neutral" | "mint" | "amber" | "red"> =
 export default function EstimatesTab() {
   const { workspace, addProject, removeProject, duplicateProject } = useWorkspace();
   const { projects, assemblies, materials, equipment, business, templates } = workspace;
-  const [openProjectId, setOpenProjectId] = useState<string | null>(null);
+  // The header's global "New Estimate" button creates a project from
+  // anywhere in the app, then lands here with ?open=<id> so the contractor
+  // drops straight into editing it instead of landing on the bare list.
+  // Lazy initializer only (read once, on mount) — `onClose` below is what
+  // returns to the list afterward, not a re-read of a since-changed URL.
+  const [openProjectId, setOpenProjectId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("open");
+  });
   const [templateId, setTemplateId] = useState("");
+  const { confirm, dialog } = useDialog();
 
   const openProject = projects.find((p) => p.id === openProjectId) ?? null;
 
@@ -79,6 +89,7 @@ export default function EstimatesTab() {
 
   return (
     <div>
+      {dialog}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">{projects.length} saved project{projects.length === 1 ? "" : "s"}</p>
         <div className="flex flex-wrap items-center gap-2">
@@ -150,8 +161,8 @@ export default function EstimatesTab() {
                       <button
                         type="button"
                         className="tap-target flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-light hover:text-red"
-                        onClick={() => {
-                          if (window.confirm(`Delete "${project.name}"? This can't be undone.`)) removeProject(project.id);
+                        onClick={async () => {
+                          if (await confirm(`Delete "${project.name}"? This can't be undone.`, { tone: "danger", confirmLabel: "Delete" })) removeProject(project.id);
                         }}
                         aria-label={`Delete ${project.name}`}
                       >
@@ -184,6 +195,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
   const addServiceButtonRef = useRef<HTMLButtonElement>(null);
   const addLaborButtonRef = useRef<HTMLButtonElement>(null);
   const addCostButtonRef = useRef<HTMLButtonElement>(null);
+  const { alert, confirm, prompt, dialog } = useDialog();
 
   const result = useMemo(
     () => evaluateProject(project, assemblies, materials, equipment, business),
@@ -244,7 +256,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
     updateProject(project.id, p);
   }
 
-  function appendRevision(options?: { reason?: string; actualQuotedPriceOverrideCents?: number }): QuoteRevision | null {
+  async function appendRevision(options?: { reason?: string; actualQuotedPriceOverrideCents?: number }): Promise<QuoteRevision | null> {
     try {
       const revision = buildQuoteRevision(project, assemblies, materials, equipment, business, options);
       updateProject(project.id, {
@@ -254,7 +266,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
       return revision;
     } catch (err) {
       if (err instanceof QuoteBlockedError) {
-        window.alert(`Can't create a quote:\n\n${err.errors.map((e) => `• ${e}`).join("\n")}`);
+        await alert(`Can't create a quote:\n\n${err.errors.map((e) => `• ${e}`).join("\n")}`);
       } else {
         throw err;
       }
@@ -262,8 +274,8 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
     }
   }
 
-  function handleSaveAsTemplate() {
-    const name = window.prompt("Name this template (e.g. \"Mulch refresh\"):", project.name);
+  async function handleSaveAsTemplate() {
+    const name = await prompt("Name this template (e.g. \"Mulch refresh\"):", { defaultValue: project.name });
     if (!name) return;
     addTemplate({
       name,
@@ -272,7 +284,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
       deliveryCostCents: project.deliveryCostCents,
       extraCosts: project.extraCosts,
     });
-    window.alert(`Saved "${name}" to Assemblies & Templates.`);
+    await alert(`Saved "${name}" to Assemblies & Templates.`);
   }
 
   function updateServiceLine(id: string, next: Partial<ProjectServiceLine>) {
@@ -302,13 +314,13 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
     downloadCsv(`${project.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.csv`, buildCsv(rows));
   }
 
-  function handleRecordActualPrice() {
+  async function handleRecordActualPrice() {
     if (!activeRevision) return;
-    const raw = window.prompt("What did you actually charge the customer (pre-tax)?", centsToDecimal(activeRevision.actualQuotedPriceCents).toFixed(2));
+    const raw = await prompt("What did you actually charge the customer (pre-tax)?", { defaultValue: centsToDecimal(activeRevision.actualQuotedPriceCents).toFixed(2) });
     if (raw === null) return;
     const error = validateDollarInput(raw);
     if (error) {
-      window.alert(error);
+      await alert(error);
       return;
     }
     const enteredCents = fromDollarInputToCents(raw);
@@ -318,22 +330,24 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
     // way a below-target-margin price already does below.
     const configuredMinimumCents = business.minimumProjectPriceCents;
     if (enteredCents < configuredMinimumCents) {
-      const proceed = window.confirm(
+      const proceed = await confirm(
         `This is ${formatCurrency((configuredMinimumCents - enteredCents) as MoneyCents, { cents: true })} below your configured minimum project price of ${formatCurrency(configuredMinimumCents, { cents: true })}.\n\n` +
-          `You can still record it — this only asks you to confirm before locking in a below-minimum price.`
+          `You can still record it — this only asks you to confirm before locking in a below-minimum price.`,
+        { tone: "danger", confirmLabel: "Record anyway" }
       );
       if (!proceed) return;
     }
     const check = evaluateQuoteAgainstTarget(enteredCents, activeRevision.trueCostCents, result.requiredSellingPriceCents, project.targetMarginPercent);
     if (check.isBelowTarget && check.shortfallCents !== null && check.achievedMargin !== null) {
-      const proceed = window.confirm(
+      const proceed = await confirm(
         `This price is ${formatCurrency(check.shortfallCents, { cents: true })} short of your target margin.\n\n` +
           `Achieved margin: ${formatPercent(check.achievedMargin)}\nTarget margin: ${formatPercent(check.targetMarginPercent)}\n\n` +
-          `You can still record it — this only asks you to confirm before locking in a below-target price.`
+          `You can still record it — this only asks you to confirm before locking in a below-target price.`,
+        { tone: "danger", confirmLabel: "Record anyway" }
       );
       if (!proceed) return;
     }
-    appendRevision({ actualQuotedPriceOverrideCents: enteredCents, reason: "Recorded actual price charged" });
+    await appendRevision({ actualQuotedPriceOverrideCents: enteredCents, reason: "Recorded actual price charged" });
   }
 
   const canPrintCustomerEstimate = canQuote && (activeRevision !== null || result.displayPriceCents !== null);
@@ -342,7 +356,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
   // the compact WorkflowStatusBar's quick actions both call this, so "Draft"
   // never has two different sets of rules for what it can become depending on
   // which button was clicked.
-  function changeStatus(nextStatus: Project["status"]) {
+  async function changeStatus(nextStatus: Project["status"]) {
     if (nextStatus === project.status) return;
 
     // Create the FIRST quote revision the moment a project leaves "draft" —
@@ -352,20 +366,20 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
     let workingProject = project;
     if (nextStatus !== "draft" && project.quoteRevisions.length === 0) {
       if (!canQuote) {
-        window.alert(`Can't quote this project yet:\n\n${blockingErrors.map((e) => `• ${e}`).join("\n")}`);
+        await alert(`Can't quote this project yet:\n\n${blockingErrors.map((e) => `• ${e}`).join("\n")}`);
         return;
       }
-      const revision = appendRevision();
+      const revision = await appendRevision();
       if (!revision) return; // appendRevision already surfaced the error
       workingProject = { ...project, quoteRevisions: [...project.quoteRevisions, revision], activeQuoteRevisionId: revision.id };
     }
 
     const check = describeStatusTransition(workingProject, nextStatus);
     if (!check.allowed) {
-      window.alert(check.reason ?? "That status change isn't allowed right now.");
+      await alert(check.reason ?? "That status change isn't allowed right now.");
       return;
     }
-    if (check.requiresConfirmation && !window.confirm(check.confirmationMessage ?? `Change status to "${nextStatus}"?`)) {
+    if (check.requiresConfirmation && !(await confirm(check.confirmationMessage ?? `Change status to "${nextStatus}"?`))) {
       return;
     }
 
@@ -376,7 +390,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
       // to be newest.
       const acceptancePatch = buildAcceptancePatch(workingProject);
       if (!acceptancePatch) {
-        window.alert("Can't mark this accepted — no locked quote revision found.");
+        await alert("Can't mark this accepted — no locked quote revision found.");
         return;
       }
       patch(acceptancePatch);
@@ -386,14 +400,15 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
     patch({ status: nextStatus });
   }
 
-  function handleReQuote() {
-    if (window.confirm("Re-quote this project at today's calculated price? This creates a NEW revision — the current one stays exactly as it is, in history.")) {
-      appendRevision({ reason: "Re-quoted at current costs" });
+  async function handleReQuote() {
+    if (await confirm("Re-quote this project at today's calculated price? This creates a NEW revision — the current one stays exactly as it is, in history.", { confirmLabel: "Re-quote" })) {
+      await appendRevision({ reason: "Re-quoted at current costs" });
     }
   }
 
   return (
     <div>
+      {dialog}
       <div className="no-print flex flex-wrap items-center justify-between gap-3">
         <button type="button" onClick={onClose} className="tap-target text-sm font-semibold text-forest hover:underline">
           ← Back to estimates

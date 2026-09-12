@@ -112,8 +112,8 @@ test("DEF-13 quote-revision behavior: the mode is frozen in a locked revision â€
   await expect(page.locator("#customer-estimate-print-root")).toContainText("Mulch Installation");
 
   // Re-quoting appends a NEW revision, which freezes the CURRENT live mode.
-  page.on("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Re-quote", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Re-quote" }).click();
   await page.waitForTimeout(200);
   await page.getByRole("button", { name: "Print customer estimate" }).click();
   await expect(page.locator("#customer-estimate-print-root")).not.toContainText("Mulch Installation");

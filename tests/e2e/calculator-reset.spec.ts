@@ -40,6 +40,14 @@ async function fields(page: Page) {
   };
 }
 
+/** The Reset button now opens an in-app confirm dialog (see src/components/
+ * ui/Dialog.tsx) instead of a native window.confirm() — this clicks its
+ * "Reset" button to accept it, the equivalent of the old
+ * `page.on("dialog", (d) => d.accept())`. */
+async function confirmResetDialog(page: Page) {
+  await page.getByRole("dialog").getByRole("button", { name: "Reset" }).click();
+}
+
 async function expectDefaults(page: Page) {
   const f = await fields(page);
   await expect(f.materials).toHaveValue(DEFAULTS.materials);
@@ -54,7 +62,6 @@ async function expectDefaults(page: Page) {
 for (const { url, name } of PAGES) {
   test.describe(`${name} — Reset control (DEF-12)`, () => {
     test("1. Reset from a fully populated, all-valid state returns every field to its documented default", async ({ page }) => {
-      page.on("dialog", (d) => d.accept());
       await page.goto(url);
       const f = await fields(page);
       await f.materials.fill("9999");
@@ -73,6 +80,7 @@ for (const { url, name } of PAGES) {
       await f.margin.blur();
 
       await page.getByRole("button", { name: "Reset calculator to starting values" }).click();
+      await confirmResetDialog(page);
       await expectDefaults(page);
     });
 
@@ -92,7 +100,6 @@ for (const { url, name } of PAGES) {
     });
 
     test("3. Reset after a realistic contractor sequence (money AND percentage fields, in the order a contractor would fill them)", async ({ page }) => {
-      page.on("dialog", (d) => d.accept());
       await page.goto(url);
       const f = await fields(page);
       // A contractor typically fills money fields first, then sets their
@@ -108,11 +115,11 @@ for (const { url, name } of PAGES) {
       await expect(f.margin).toHaveValue("30");
 
       await page.getByRole("button", { name: "Reset calculator to starting values" }).click();
+      await confirmResetDialog(page);
       await expectDefaults(page);
     });
 
     test("4. Reset after a calculated result clears the stale figures — the results panel shows the DEFAULT calculation, not a leftover custom one", async ({ page }) => {
-      page.on("dialog", (d) => d.accept());
       await page.goto(url);
       const f = await fields(page);
       await f.materials.fill("50000");
@@ -121,6 +128,7 @@ for (const { url, name } of PAGES) {
       expect(customDirect).toMatch(/\$51,228/); // materials dominate the new direct cost
 
       await page.getByRole("button", { name: "Reset calculator to starting values" }).click();
+      await confirmResetDialog(page);
       await expectDefaults(page);
       const afterReset = await page.locator("main").innerText();
       expect(afterReset).not.toMatch(/\$51,228/);
@@ -129,7 +137,6 @@ for (const { url, name } of PAGES) {
     });
 
     test("5. Reset is keyboard-activatable: Tab to focus it, Enter to activate, no mouse", async ({ page }) => {
-      page.on("dialog", (d) => d.accept());
       await page.goto(url);
       const f = await fields(page);
       await f.materials.fill("42424242");
@@ -138,6 +145,11 @@ for (const { url, name } of PAGES) {
       const resetButton = page.getByRole("button", { name: "Reset calculator to starting values" });
       await resetButton.focus();
       await expect(resetButton).toBeFocused();
+      await page.keyboard.press("Enter"); // opens the in-app confirm dialog
+      // The dialog's own "Reset" button auto-focuses on open, so confirming
+      // it is ALSO reachable purely by keyboard — no mouse anywhere in this test.
+      const dialogResetButton = page.getByRole("dialog").getByRole("button", { name: "Reset" });
+      await expect(dialogResetButton).toBeFocused();
       await page.keyboard.press("Enter");
       await expectDefaults(page);
     });
@@ -155,12 +167,12 @@ for (const { url, name } of PAGES) {
       // visitor would have both open across different sessions/tabs, but at
       // minimum this proves the calculator writes nothing to the same
       // storage key or mutates the existing Pro record).
-      page.on("dialog", (d) => d.accept());
       await page.goto(url);
       const f = await fields(page);
       await f.materials.fill("13579");
       await f.materials.blur();
       await page.getByRole("button", { name: "Reset calculator to starting values" }).click();
+      await confirmResetDialog(page);
       await expectDefaults(page);
 
       const proStorageAfter = await page.evaluate(() => localStorage.getItem("landscapeEstimateProWorkspace:v1"));
@@ -168,7 +180,6 @@ for (const { url, name } of PAGES) {
     });
 
     test("7. Repeated Reset clicks are safe and idempotent — no error, no drift, state stays at defaults", async ({ page }) => {
-      page.on("dialog", (d) => d.accept());
       await page.goto(url);
       const f = await fields(page);
       await f.materials.fill("777");
@@ -176,6 +187,7 @@ for (const { url, name } of PAGES) {
 
       const resetButton = page.getByRole("button", { name: "Reset calculator to starting values" });
       await resetButton.click();
+      await confirmResetDialog(page);
       await expectDefaults(page);
       // Click it again (and again) from an ALREADY-default state — this
       // path also has nothing to lose, so no confirmation should block it,

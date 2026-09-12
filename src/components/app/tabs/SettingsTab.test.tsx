@@ -7,7 +7,7 @@
  * trigger it.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { loadWorkspace } from "../../../lib/persistence";
 import { WorkspaceProvider } from "../../../lib/workspaceContext";
 import SettingsTab from "./SettingsTab";
@@ -138,10 +138,18 @@ describe("SettingsTab — Data & Backup section", () => {
     await waitFor(() => expect(screen.getByLabelText("Business name")).toHaveValue(""));
   });
 
-  it("does not touch the pre-existing Reset card's own window.confirm-gated action", async () => {
+  it("gates the pre-existing Reset card's action behind an in-app confirm dialog, not window.confirm", async () => {
     renderSettings();
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
-    fireEvent.click(screen.getByRole("button", { name: /reset workspace/i }));
-    expect(confirmSpy).toHaveBeenCalled();
+    const nameInput = await screen.findByLabelText("Business name");
+    fireEvent.change(nameInput, { target: { value: "Custom Test Business" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset workspace" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent(/reset your workspace/i);
+
+    // Cancelling the in-app dialog must not reset anything.
+    fireEvent.click(within(dialog).getByRole("button", { name: /cancel/i }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Business name")).toHaveValue("Custom Test Business");
   });
 });

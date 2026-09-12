@@ -90,12 +90,15 @@ test("axe: below-target-margin warning (dark summary card) has no serious/critic
   // Lock a quote, then record a deliberately low actual price to trigger the
   // below-target warning box on the dark "Estimate summary" card.
   await page.getByRole("button", { name: "Review and quote" }).click();
-  // One persistent handler that responds correctly regardless of which of
-  // the two dialogs (the price prompt(), then the below-target confirm())
-  // fires next — window.prompt/confirm block page JS until answered, so
-  // each must be resolved before the next one can even appear.
-  page.on("dialog", (d) => (d.type() === "prompt" ? d.accept("1.00") : d.accept()));
+  // "Record actual price" opens an in-app prompt dialog first, then — since
+  // $1.00 is below both the $500 configured minimum AND the target margin —
+  // TWO below-* confirm dialogs in sequence, each must be resolved before
+  // the warning banner appears.
   await page.getByRole("button", { name: "Record actual price" }).click();
+  await page.getByRole("dialog").getByRole("textbox").fill("1.00");
+  await page.getByRole("dialog").getByRole("button", { name: "OK" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Record anyway" }).click(); // below-minimum
+  await page.getByRole("dialog").getByRole("button", { name: "Record anyway" }).click(); // below-target
   await expect(page.locator('[role="alert"]').filter({ hasText: "target margin" })).toBeVisible();
   const results = await new AxeBuilder({ page }).withTags(["wcag2aa"]).include('[role="alert"]').analyze();
   const contrastViolations = results.violations.filter((v) => v.id === "color-contrast");

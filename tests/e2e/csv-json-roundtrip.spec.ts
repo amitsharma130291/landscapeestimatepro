@@ -148,8 +148,6 @@ test("CSV export handles commas, quotes, newlines, and Unicode in a material nam
 });
 
 test("JSON backup/restore round trip through the real UI: every entity type survives export -> reset -> import unchanged", async ({ page }) => {
-  page.on("dialog", (d) => d.accept());
-
   // Touch every major entity type before exporting: a business setting, a
   // material, an equipment item, an assembly (via the seeded catalog), and
   // a won project with a locked revision and recorded actuals.
@@ -176,6 +174,8 @@ test("JSON backup/restore round trip through the real UI: every entity type surv
   await expect(page.getByText("Locked", { exact: true })).toBeVisible();
   const statusSelect = page.locator("#project-status");
   await statusSelect.selectOption("won");
+  // Marking a project "won" opens an in-app confirm dialog.
+  await page.getByRole("dialog").getByRole("button", { name: "Confirm" }).click();
 
   const preExportState = {
     businessName: await (async () => {
@@ -207,6 +207,7 @@ test("JSON backup/restore round trip through the real UI: every entity type surv
   expect(wonProject.activeQuoteRevisionId).toBeTruthy();
 
   await page.getByRole("button", { name: "Reset workspace" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Reset workspace" }).click();
   await page.waitForTimeout(300);
   await expect(page.getByLabel("Business name")).not.toHaveValue("Round-Trip Test Co.");
 

@@ -3,6 +3,7 @@ import { AlertTriangle, Download, RefreshCw, Upload } from "lucide-react";
 import { downloadTextFile } from "../../lib/download";
 import type { ImportResult, WorkspaceLoadFailureReason } from "../../lib/persistence";
 import { Button, Card } from "../ui/primitives";
+import { useDialog } from "../ui/Dialog";
 
 /**
  * Blocks the whole app when the saved workspace couldn't be migrated because
@@ -39,6 +40,7 @@ export default function WorkspaceMigrationError({
   const [retrying, setRetrying] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { confirm, dialog } = useDialog();
 
   const fieldErrors = reason.kind === "field-errors" ? reason.errors : [];
 
@@ -86,6 +88,7 @@ export default function WorkspaceMigrationError({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      {dialog}
       <Card>
         <div className="flex items-start gap-3">
           <AlertTriangle size={22} className="mt-0.5 shrink-0 text-red" aria-hidden="true" />
@@ -187,10 +190,11 @@ export default function WorkspaceMigrationError({
               variant="danger"
               disabled={!hasDownloadedOriginal}
               title={hasDownloadedOriginal ? undefined : "Download the original workspace first"}
-              onClick={() => {
+              onClick={async () => {
                 if (
-                  window.confirm(
-                    "This will PERMANENTLY replace all your local materials, equipment, assemblies, and projects with fresh sample data. This cannot be undone. Are you sure you want to reset?"
+                  await confirm(
+                    "This will PERMANENTLY replace all your local materials, equipment, assemblies, and projects with fresh sample data. This cannot be undone. Are you sure you want to reset?",
+                    { tone: "danger", confirmLabel: "Reset to sample workspace" }
                   )
                 ) {
                   onReset();

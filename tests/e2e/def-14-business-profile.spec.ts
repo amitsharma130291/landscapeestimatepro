@@ -286,7 +286,6 @@ test("DEF-14 customer preview, Estimate PDF, and Quote PDF all display the full 
 });
 
 test("DEF-14 backup and restore round-trips every new business field exactly", async ({ page }) => {
-  page.on("dialog", (d) => d.accept());
   await page.goto("/app/settings/");
   const fields: Record<string, string> = {
     "Business name": "Backup Restore Co.",
@@ -319,6 +318,7 @@ test("DEF-14 backup and restore round-trips every new business field exactly", a
   }
 
   await page.getByRole("button", { name: "Reset workspace" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Reset workspace" }).click();
   await page.waitForTimeout(300);
   await expect(page.getByLabel("Business name", { exact: true })).not.toHaveValue("Backup Restore Co.");
 
