@@ -131,7 +131,7 @@ export default function SettingsTab() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <CostImpactBanner result={costImpact.result} onDismiss={costImpact.dismiss} />
 
       <Card>
