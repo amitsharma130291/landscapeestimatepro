@@ -85,11 +85,11 @@ const faqs = [
           { title: "Production-rate labor", desc: "Estimate crew hours from your own production rates — the software never assumes a universal number." },
           { title: "Reusable assemblies", desc: "Bundle materials, labor, and equipment into one service you can drop into any project." },
           { title: "Job costing", desc: "See direct cost, overhead allocation, and true cost for every project, every time." },
-          { title: "Service Rate Health", desc: "Instantly see which standard services are priced below your target margin." },
+          { id: "service-rate-health", title: "Service Rate Health", desc: "Instantly see which standard services are priced below your target margin." },
           { title: "Cost-impact scenarios", desc: "See what a material, labor, or equipment price change does to your saved estimates." },
           { title: "Estimate vs. actual", desc: "Compare what you quoted to what the job actually cost once it's done." },
         ].map((item) => (
-          <div class="rounded-2xl border border-border bg-paper p-5">
+          <div id={item.id} class:list={["scroll-mt-24 rounded-2xl border border-border bg-paper p-5", item.id && "border-lime-surface bg-mint"]}>
             <h3 class="font-bold text-ink">{item.title}</h3>
             <p class="mt-1.5 text-sm text-muted">{item.desc}</p>
           </div>

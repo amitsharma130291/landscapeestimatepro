@@ -10,7 +10,7 @@ export const PRICE_DISPLAY = `$${PRICE_USD}`;
 export const NAV_ITEMS = [
   { label: "Free Calculator", href: "/landscaping-cost-calculator/" },
   { label: "Estimate Template", href: "/landscaping-estimate-template/" },
-  { label: "Features", href: "/#pro-features" },
+  { label: "Estimating Software", href: "/landscaping-estimating-software/" },
   { label: "Pricing", href: "/pricing/" },
   { label: "Resources", href: "/resources/" },
 ] as const;

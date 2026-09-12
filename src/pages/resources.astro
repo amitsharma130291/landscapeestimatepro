@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import Breadcrumbs from "../components/Breadcrumbs.astro";
 import ToolCardGrid from "../components/ToolCardGrid.astro";
+import { PRICE_DISPLAY } from "../data/site";
 
 const title = "Free Landscaping Estimating Resources — Calculators & Templates";
 const description =
@@ -18,10 +19,51 @@ const description =
     </h1>
     <p class="mt-3 max-w-2xl text-muted">
       Every calculator and template below runs the same true-cost-and-margin math Landscape Estimate Pro is built on.
+      Start with a calculator to find your price, use a template to put it in front of a customer, then read the
+      guide for the reasoning behind the numbers.
     </p>
   </section>
 
+  <section class="mx-auto max-w-content px-4 pb-8 sm:px-6 lg:px-8">
+    <ToolCardGrid
+      heading="Calculators"
+      intro="Turn your costs into a true cost and a required selling price."
+      exclude={["/landscaping-estimate-template/", "/landscaping-quote-template/", "/landscaping-invoice-template/", "/landscape-pricing-guide/"]}
+      showProCard={false}
+    />
+  </section>
+
+  <section class="mx-auto max-w-content px-4 pb-8 sm:px-6 lg:px-8">
+    <ToolCardGrid
+      heading="Templates"
+      intro="Fill in your numbers and print or save a customer-ready document."
+      exclude={["/landscaping-cost-calculator/", "/landscaping-estimate-calculator/", "/landscaping-price-list/", "/landscape-pricing-guide/"]}
+      showProCard={false}
+    />
+  </section>
+
   <section class="mx-auto max-w-content px-4 pb-16 sm:px-6 lg:px-8">
-    <ToolCardGrid />
+    <ToolCardGrid
+      heading="Guide"
+      exclude={["/landscaping-cost-calculator/", "/landscaping-estimate-calculator/", "/landscaping-estimate-template/", "/landscaping-quote-template/", "/landscaping-invoice-template/", "/landscaping-price-list/"]}
+    />
+  </section>
+
+  <section class="border-t border-border bg-forest py-14 text-white">
+    <div class="mx-auto flex max-w-content flex-col items-start gap-5 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+      <div>
+        <h2 class="text-2xl font-extrabold sm:text-3xl">Ready to stop re-entering the same numbers?</h2>
+        <p class="mt-2 max-w-xl text-white/75">
+          <a href="/landscaping-estimating-software/" class="font-semibold text-lime underline">Landscape Estimate Pro</a> saves
+          your materials, equipment, labor and production rates once — every future estimate calculates itself.
+        </p>
+      </div>
+      <a
+        href="/landscaping-estimating-software/"
+        class="inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
+      >
+        Try Pro free — {PRICE_DISPLAY} planned
+      </a>
+    </div>
   </section>
 </Layout>

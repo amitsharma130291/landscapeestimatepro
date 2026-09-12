@@ -96,7 +96,7 @@ export default function PriceListBuilderIsland() {
           Rate Health checks every rate above against your real cost and target margin, and flags anything priced
           below {formatCurrency(minimumProjectCents === "" ? ZERO_CENTS : minimumProjectCents)} minimum or below target.
         </p>
-        <a href="/pricing/" className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-forest px-5 text-sm font-bold text-white hover:bg-forest-light">
+        <a href="/landscaping-estimating-software/#service-rate-health" className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-forest px-5 text-sm font-bold text-white hover:bg-forest-light">
           See Service Rate Health in Pro
         </a>
       </div>
