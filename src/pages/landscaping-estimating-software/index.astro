@@ -7,6 +7,7 @@ import PurchaseButton from "../../components/PurchaseButton.tsx";
 import EstimatePreviewCard from "../../components/EstimatePreviewCard.astro";
 import { PRICE_DISPLAY, SITE_URL } from "../../data/site";
 import { buildOfferSchema } from "../../data/salesConfig";
+import { PRODUCT_IMAGE_URL } from "../../data/structuredData";
 
 const title = "Landscape Estimating Software — Free Tools, Pro Planned";
 const description =
@@ -20,6 +21,7 @@ const schema = {
   applicationCategory: "BusinessApplication",
   operatingSystem: "Any (runs in browser)",
   url: `${SITE_URL}/landscaping-estimating-software/`,
+  image: PRODUCT_IMAGE_URL,
   ...(offer ? { offers: offer } : {}),
   description,
 };

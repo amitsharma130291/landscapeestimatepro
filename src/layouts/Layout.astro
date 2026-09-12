@@ -3,6 +3,7 @@ import "../styles/global.css";
 import PublicHeader from "../components/PublicHeader.astro";
 import PublicFooter from "../components/PublicFooter.astro";
 import { SITE_NAME } from "../data/site";
+import { ORGANIZATION_LOGO, ORGANIZATION_SAME_AS } from "../data/structuredData";
 
 export interface Props {
   title: string;
@@ -14,6 +15,7 @@ export interface Props {
 const { title, description, noIndex = false, ogImage = "/og-default.png" } = Astro.props;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
+const ogImageUrl = new URL(ogImage, Astro.site).toString();
 const GA_ID = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
 
 const websiteSchema = {
@@ -30,6 +32,10 @@ const organizationSchema = {
   "@type": "Organization",
   name: SITE_NAME,
   url: Astro.site?.toString(),
+  logo: ORGANIZATION_LOGO,
+  // Omitted entirely (never an empty array) unless real, verified profiles
+  // are configured — see structuredData.ts's ORGANIZATION_SAME_AS.
+  ...(ORGANIZATION_SAME_AS.length > 0 ? { sameAs: ORGANIZATION_SAME_AS } : {}),
 };
 ---
 
@@ -50,11 +56,12 @@ const organizationSchema = {
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE_NAME} />
-    <meta property="og:image" content={new URL(ogImage, Astro.site).toString()} />
+    <meta property="og:image" content={ogImageUrl} />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
 
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

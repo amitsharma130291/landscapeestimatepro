@@ -1,0 +1,26 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import ContactFormIsland from "../components/ContactFormIsland.tsx";
+import { SITE_NAME } from "../data/site";
+
+const title = `Contact — ${SITE_NAME}`;
+const description = "Questions about Landscape Estimate Pro? Send a message and we'll get back to you by email.";
+---
+
+<Layout title={title} description={description}>
+  <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Contact", href: "/contact/" }]} />
+
+  <section class="mx-auto max-w-narrow px-4 py-12 sm:px-6 lg:px-8">
+    <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">Get in touch</p>
+    <h1 class="mt-2 text-3xl font-extrabold text-ink">Contact us</h1>
+    <p class="mt-3 text-base text-muted">
+      Questions about the free tools, Landscape Estimate Pro, or anything else on this site — send a message below
+      and we'll reply by email.
+    </p>
+
+    <div class="mt-8">
+      <ContactFormIsland client:load />
+    </div>
+  </section>
+</Layout>

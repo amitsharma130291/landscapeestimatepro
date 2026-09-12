@@ -11,6 +11,7 @@ import { evaluateRateHealth } from "../lib/estimateMath";
 import type { MoneyCents } from "../lib/money";
 import { PRICE_DISPLAY, SITE_URL } from "../data/site";
 import { buildOfferSchema } from "../data/salesConfig";
+import { PRODUCT_IMAGE_URL } from "../data/structuredData";
 
 const title = "Landscape Estimate Pro — Know Your True Cost, Quote With Confidence";
 const description =
@@ -52,6 +53,7 @@ const productSchema = {
   applicationCategory: "BusinessApplication",
   operatingSystem: "Any (runs in browser)",
   url: SITE_URL,
+  image: PRODUCT_IMAGE_URL,
   ...(offer ? { offers: offer } : {}),
   description,
 };

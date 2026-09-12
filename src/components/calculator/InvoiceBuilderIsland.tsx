@@ -15,11 +15,24 @@ interface LineItem {
 /** Exact line total, in cents, from a possibly-in-progress line item —
  * cleared/blank quantity or unit price contribute 0 rather than NaN. Uses
  * Decimal.js under the hood (via `multiplyCentsByQuantity`) so a fractional
- * quantity never introduces floating-point drift. */
+ * quantity never introduces floating-point drift.
+ *
+ * A unit price can individually be a safe, representable amount and still
+ * overflow once multiplied by quantity — `multiplyCentsByQuantity` throws in
+ * that case. With `MoneyInput`'s `liveUpdate` (see `ui/primitives.tsx`) this
+ * island commits a price the instant each keystroke parses to a valid
+ * amount, so an extreme value typed digit-by-digit can transiently reach
+ * this multiplication before the user finishes typing. Treat that as "not
+ * computable yet" rather than crashing the calculator — it self-corrects
+ * the moment the amount lands back in a representable range. */
 function lineTotalCents(line: LineItem): MoneyCents {
   const quantity = line.quantity === "" ? 0 : line.quantity;
   const unitPriceCents = line.unitPriceCents === "" ? ZERO_CENTS : line.unitPriceCents;
-  return multiplyCentsByQuantity(unitPriceCents, quantity);
+  try {
+    return multiplyCentsByQuantity(unitPriceCents, quantity);
+  } catch {
+    return ZERO_CENTS;
+  }
 }
 
 export default function InvoiceBuilderIsland() {
@@ -35,12 +48,27 @@ export default function InvoiceBuilderIsland() {
     { id: crypto.randomUUID(), description: "Shrub planting — 18 each", quantity: 1, unitPriceCents: 117000 as MoneyCents },
   ]);
 
-  const subtotalCents = useMemo(() => sumCents(lines.map(lineTotalCents)), [lines]);
-  const taxAmountCents = useMemo(
-    () => multiplyCentsByRate(subtotalCents, percentToFraction(taxPercent === "" ? 0 : taxPercent)),
-    [subtotalCents, taxPercent]
-  );
-  const totalCents = useMemo(() => addCents(subtotalCents, taxAmountCents), [subtotalCents, taxAmountCents]);
+  const subtotalCents = useMemo(() => {
+    try {
+      return sumCents(lines.map(lineTotalCents));
+    } catch {
+      return ZERO_CENTS;
+    }
+  }, [lines]);
+  const taxAmountCents = useMemo(() => {
+    try {
+      return multiplyCentsByRate(subtotalCents, percentToFraction(taxPercent === "" ? 0 : taxPercent));
+    } catch {
+      return ZERO_CENTS;
+    }
+  }, [subtotalCents, taxPercent]);
+  const totalCents = useMemo(() => {
+    try {
+      return addCents(subtotalCents, taxAmountCents);
+    } catch {
+      return ZERO_CENTS;
+    }
+  }, [subtotalCents, taxAmountCents]);
 
   function updateLine(id: string, patch: Partial<LineItem>) {
     setLines((prev) => prev.map((line) => (line.id === id ? { ...line, ...patch } : line)));
@@ -121,6 +149,7 @@ export default function InvoiceBuilderIsland() {
                         onValueChange={(v) => updateLine(line.id, { quantity: v })}
                         validate={validateQuantity}
                         className="w-20 text-left"
+                        liveUpdate
                       />
                     </td>
                     <td className="px-3 py-2.5 align-top">
@@ -130,6 +159,7 @@ export default function InvoiceBuilderIsland() {
                         valueCents={line.unitPriceCents}
                         onValueCentsChange={(v) => updateLine(line.id, { unitPriceCents: v })}
                         className="w-28"
+                        liveUpdate
                       />
                     </td>
                     <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-ink">{formatCurrency(lineTotalCents(line), { cents: true })}</td>
@@ -170,6 +200,7 @@ export default function InvoiceBuilderIsland() {
                 onValueChange={setTaxPercent}
                 validate={validateTaxRatePercent}
                 className="w-20 text-right"
+                liveUpdate
               />
               <span>%</span>
               <span className="w-24 font-semibold text-ink">{formatCurrency(taxAmountCents, { cents: true })}</span>

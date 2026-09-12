@@ -593,7 +593,16 @@ function ProjectActualsCard({ project }: { project: Project }) {
           size="sm"
           disabled={actualsErrors.length > 0}
           onClick={() => {
-            updateProject(project.id, { actual: { ...draft, actualLaborPersonHours: totalActualLaborHours }, status: "won" });
+            // `draft.actualLaborPersonHours` itself is never kept in sync while
+            // typing — only the per-line `actualLaborHours` fields are, and
+            // `totalActualLaborHours` derives from those at render time. Without
+            // also updating local `draft` here, the category-comparison table
+            // below (computed from `draft`, not from the just-saved workspace
+            // value) would render ONE stale frame showing 0 actual labor hours —
+            // a false "-100% labor variance" — until the next remount.
+            const withLaborHours = { ...draft, actualLaborPersonHours: totalActualLaborHours };
+            updateProject(project.id, { actual: withLaborHours, status: "won" });
+            setDraft(withLaborHours);
             setSaved(true);
           }}
         >

@@ -5,6 +5,7 @@ import FaqAccordion, { type FaqItem } from "../components/FaqAccordion.astro";
 import ToolCardGrid from "../components/ToolCardGrid.astro";
 import TrustBadges from "../components/TrustBadges.astro";
 import { PRICE_DISPLAY, SITE_URL } from "../data/site";
+import { buildFreeToolOfferSchema } from "../data/structuredData";
 
 export interface Props {
   title: string;
@@ -29,7 +30,7 @@ const schema = webApplicationSchema
       url: new URL(currentHref, SITE_URL).toString(),
       applicationCategory: "BusinessApplication",
       operatingSystem: "Any (runs in browser)",
-      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      offers: buildFreeToolOfferSchema(),
       description,
     }
   : null;

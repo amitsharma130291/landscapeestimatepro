@@ -5,6 +5,7 @@ import FaqAccordion from "../components/FaqAccordion.astro";
 import PurchaseButton from "../components/PurchaseButton.tsx";
 import { PRICE_DISPLAY, SITE_URL } from "../data/site";
 import { buildOfferSchema } from "../data/salesConfig";
+import { PRODUCT_IMAGE_URL } from "../data/structuredData";
 
 const title = `Pricing — Landscape Estimate Pro (${PRICE_DISPLAY} Lifetime, Planned)`;
 const description = `Landscape Estimate Pro's planned price is ${PRICE_DISPLAY}, one time — purchasing isn't open yet, and the app is fully usable today for building and testing. Local-first storage, no account.`;
@@ -15,6 +16,7 @@ const schema = {
   "@type": "Product",
   name: "Landscape Estimate Pro",
   description,
+  image: PRODUCT_IMAGE_URL,
   ...(offer ? { offers: offer } : {}),
 };
 

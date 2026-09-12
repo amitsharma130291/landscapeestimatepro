@@ -18,7 +18,44 @@ export const SALES_CONFIG = {
    * exists. null while salesEnabled is false — nothing in this codebase
    * should ever construct a fake checkout destination on its own. */
   checkoutUrl: null as string | null,
+  /** An optional, REAL price-expiration date for the planned lifetime
+   * price, as a valid future ISO `YYYY-MM-DD` string — or `null` when the
+   * price has no scheduled expiration (the ordinary case for a "lifetime"
+   * price; a permanent price has nothing to set here). Only ever surfaces
+   * in structured data via `buildOfferSchema()`, and only when it is a
+   * genuinely valid future date AND sales are enabled — see
+   * `getValidPriceValidUntil()`. Set this only when a real deadline exists
+   * and that SAME deadline is also visibly disclosed on the sales page;
+   * never set it merely to make a price look more urgent. */
+  priceValidUntil: null as string | null,
 } as const;
+
+/**
+ * Validates `SALES_CONFIG.priceValidUntil` before it is ever allowed into a
+ * structured-data `Offer` — must be present, in strict `YYYY-MM-DD` form,
+ * a real calendar date (not one `Date` silently "corrects", e.g.
+ * 2026-02-30), and strictly in the future relative to `referenceDate`
+ * (defaults to now; overridable so tests are never time-dependent/flaky).
+ * A missing, malformed, or past date returns `null` rather than throwing —
+ * this represents "no valid expiration to disclose," not an error, since a
+ * permanent lifetime price legitimately has none.
+ */
+export function getValidPriceValidUntil(referenceDate: Date = new Date()): string | null {
+  const raw = SALES_CONFIG.priceValidUntil;
+  if (!raw) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+
+  const [year, month, day] = raw.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  // Date's own constructor silently rolls an invalid day/month forward
+  // (e.g. 2026-02-30 -> 2026-03-02) instead of rejecting it — comparing the
+  // parsed fields back against the input catches that rather than trusting
+  // a "corrected" date the config never actually specified.
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) return null;
+
+  if (parsed.getTime() <= referenceDate.getTime()) return null;
+  return raw;
+}
 
 /**
  * The one place every page decides whether it may include a JSON-LD `offers`
@@ -33,14 +70,21 @@ export const SALES_CONFIG = {
  * `"offers": undefined`. Once `salesEnabled` is true (with a real
  * `checkoutUrl`), this returns the real InStock offer.
  */
-export function buildOfferSchema(url?: string): { "@type": "Offer"; price: string; priceCurrency: string; availability: string; url?: string } | undefined {
+export function buildOfferSchema(
+  url?: string
+): { "@type": "Offer"; price: string; priceCurrency: string; availability: string; url?: string; priceValidUntil?: string } | undefined {
   if (!SALES_CONFIG.salesEnabled || !SALES_CONFIG.checkoutUrl) return undefined;
+  const priceValidUntil = getValidPriceValidUntil();
   return {
     "@type": "Offer",
     price: String(SALES_CONFIG.plannedLifetimePriceCents / 100),
     priceCurrency: "USD",
     availability: "https://schema.org/InStock",
     ...(url ? { url } : {}),
+    // Omitted entirely for a permanent lifetime price with no scheduled
+    // expiration — see getValidPriceValidUntil()'s own doc comment for
+    // exactly which conditions must hold before this is ever included.
+    ...(priceValidUntil ? { priceValidUntil } : {}),
   };
 }
 

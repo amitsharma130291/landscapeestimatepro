@@ -1,8 +1,9 @@
 import { useState, type ReactElement } from "react";
-import { LayoutGrid, Package, Settings, ClipboardList, FileText, Activity, ArrowLeft, Menu, X } from "lucide-react";
+import { LayoutGrid, Package, Settings, ClipboardList, FileText, Activity, ArrowLeft, Menu, X, BookOpen } from "lucide-react";
 import { WorkspaceProvider } from "../../lib/workspaceContext";
 import { APP_RELEASE_MODE } from "../../data/salesConfig";
 import SaveStatusIndicator from "./SaveStatusIndicator";
+import GuideTab from "./tabs/GuideTab";
 import OverviewTab from "./tabs/OverviewTab";
 import CatalogTab from "./tabs/CatalogTab";
 import SettingsTab from "./tabs/SettingsTab";
@@ -11,9 +12,12 @@ import EstimatesTab from "./tabs/EstimatesTab";
 import RateHealthTab from "./tabs/RateHealthTab";
 import ActualsTab from "./tabs/ActualsTab";
 
-export type AppTab = "overview" | "catalog" | "templates" | "estimates" | "rate-health" | "actuals" | "settings";
+export type AppTab = "guide" | "overview" | "catalog" | "templates" | "estimates" | "rate-health" | "actuals" | "settings";
 
+// "Guide" is listed FIRST, deliberately — it's the one link every new Pro
+// user should see before anything else the moment they land in the app.
 const NAV: { id: AppTab; label: string; href: string; icon: typeof LayoutGrid }[] = [
+  { id: "guide", label: "Guide", href: "/app/guide/", icon: BookOpen },
   { id: "overview", label: "Overview", href: "/app/", icon: LayoutGrid },
   { id: "catalog", label: "Catalog", href: "/app/catalog/", icon: Package },
   { id: "templates", label: "Assemblies & Templates", href: "/app/templates/", icon: FileText },
@@ -24,6 +28,7 @@ const NAV: { id: AppTab; label: string; href: string; icon: typeof LayoutGrid }[
 ];
 
 const TAB_COMPONENTS: Record<AppTab, () => ReactElement> = {
+  guide: GuideTab,
   overview: OverviewTab,
   catalog: CatalogTab,
   templates: TemplatesTab,

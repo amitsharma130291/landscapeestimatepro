@@ -30,11 +30,24 @@ function newLine(): LineItem {
 /** Exact line total, in cents, from a possibly-in-progress line item —
  * cleared/blank quantity or unit price contribute 0 rather than NaN. Uses
  * Decimal.js under the hood (via `multiplyCentsByQuantity`) so a fractional
- * quantity (e.g. 2.5 yd³) never introduces floating-point drift. */
+ * quantity (e.g. 2.5 yd³) never introduces floating-point drift.
+ *
+ * A unit price can individually be a safe, representable amount and still
+ * overflow once multiplied by quantity — `multiplyCentsByQuantity` throws in
+ * that case. With `MoneyInput`'s `liveUpdate` (see `ui/primitives.tsx`) this
+ * island commits a price the instant each keystroke parses to a valid
+ * amount, so an extreme value typed digit-by-digit can transiently reach
+ * this multiplication before the user finishes typing. Treat that as "not
+ * computable yet" rather than crashing the calculator — it self-corrects
+ * the moment the amount lands back in a representable range. */
 function lineTotalCents(line: LineItem): MoneyCents {
   const quantity = line.quantity === "" ? 0 : line.quantity;
   const unitPriceCents = line.unitPriceCents === "" ? ZERO_CENTS : line.unitPriceCents;
-  return multiplyCentsByQuantity(unitPriceCents, quantity);
+  try {
+    return multiplyCentsByQuantity(unitPriceCents, quantity);
+  } catch {
+    return ZERO_CENTS;
+  }
 }
 
 export default function EstimateBuilderIsland({ variant = "estimate" }: { variant?: "estimate" | "quote" }) {
@@ -53,7 +66,13 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
     { id: crypto.randomUUID(), description: "Shrub planting", quantity: 18, unit: "each", unitPriceCents: 6500 as MoneyCents },
   ]);
 
-  const totalCents = useMemo(() => sumCents(lines.map(lineTotalCents)), [lines]);
+  const totalCents = useMemo(() => {
+    try {
+      return sumCents(lines.map(lineTotalCents));
+    } catch {
+      return ZERO_CENTS;
+    }
+  }, [lines]);
   // LEP-041: a dedicated, allowlisted print root — printingDocument gates
   // BOTH the body class (which hides everything else on the page via
   // global.css) and the print-root's own presence in the DOM, mirroring the
@@ -204,6 +223,7 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
                             onValueChange={(v) => updateLine(line.id, { quantity: v })}
                             validate={validateQuantity}
                             className="w-24 text-left"
+                            liveUpdate
                           />
                         </td>
                         <td className="px-3 py-2.5 align-top">
@@ -222,6 +242,7 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
                             valueCents={line.unitPriceCents}
                             onValueCentsChange={(v) => updateLine(line.id, { unitPriceCents: v })}
                             className="w-28"
+                            liveUpdate
                           />
                         </td>
                       </>

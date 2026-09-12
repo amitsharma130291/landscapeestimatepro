@@ -63,7 +63,7 @@ export default function PriceListBuilderIsland() {
                   </td>
                   <td className="px-3 py-2.5 align-top">
                     <label className="sr-only" htmlFor={`${idPrefix}-rate-${index}`}>Rate, row {index + 1}</label>
-                    <MoneyInput id={`${idPrefix}-rate-${index}`} valueCents={row.rateCents} onValueCentsChange={(v) => updateRow(row.id, { rateCents: v })} className="w-28" />
+                    <MoneyInput id={`${idPrefix}-rate-${index}`} valueCents={row.rateCents} onValueCentsChange={(v) => updateRow(row.id, { rateCents: v })} className="w-28" liveUpdate />
                   </td>
                   <td className="px-3 py-2.5 align-top">
                     <label className="sr-only" htmlFor={`${idPrefix}-unit-${index}`}>Unit, row {index + 1}</label>
@@ -83,7 +83,7 @@ export default function PriceListBuilderIsland() {
         <div className="border-t border-border p-5 sm:p-6">
           <Field label="Minimum project price" htmlFor={`${idPrefix}-minimum`} hint="The lowest price you'll quote for any job, regardless of size">
             <div className="max-w-[10rem]">
-              <MoneyInput id={`${idPrefix}-minimum`} valueCents={minimumProjectCents} onValueCentsChange={setMinimumProjectCents} />
+              <MoneyInput id={`${idPrefix}-minimum`} valueCents={minimumProjectCents} onValueCentsChange={setMinimumProjectCents} liveUpdate />
             </div>
           </Field>
         </div>

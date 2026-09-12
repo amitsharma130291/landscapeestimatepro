@@ -1,5 +1,5 @@
 import { RotateCcw } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { calculateExactPricingChainCents, formatCurrency, formatPercent } from "../../lib/calc";
 import { ZERO_CENTS, type MoneyCents } from "../../lib/money";
 import { validateOverheadPercent, validateTargetMarginPercent } from "../../lib/validation";
@@ -37,9 +37,19 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
   const [fields, setFields] = useState<FieldState>(DEFAULTS);
   const idPrefix = useId();
 
-  const pricing = useMemo(
-    () =>
-      calculateExactPricingChainCents(
+  // A cost field can individually be a safe, representable amount and still
+  // overflow once summed/divided through the pricing chain (e.g. dividing a
+  // huge true cost by a thin margin remainder). With `MoneyInput`'s
+  // `liveUpdate` (see `ui/primitives.tsx`) this island commits each field
+  // the instant a keystroke parses to a valid amount, so an extreme value
+  // typed digit-by-digit can transiently reach this calculation before the
+  // user finishes typing. Rather than crash, hold the last successfully
+  // computed result — it self-corrects the moment every field is back in a
+  // representable range.
+  const lastGoodPricingRef = useRef<ReturnType<typeof calculateExactPricingChainCents> | null>(null);
+  const pricing = useMemo(() => {
+    try {
+      const result = calculateExactPricingChainCents(
         {
           materialsCostCents: c(fields.materials),
           laborCostCents: c(fields.labor),
@@ -50,9 +60,13 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
         },
         n(fields.targetMarginPercent),
         100
-      ),
-    [fields]
-  );
+      );
+      lastGoodPricingRef.current = result;
+      return result;
+    } catch {
+      return lastGoodPricingRef.current ?? calculateExactPricingChainCents({ materialsCostCents: ZERO_CENTS, laborCostCents: ZERO_CENTS, equipmentCostCents: ZERO_CENTS, deliveryCostCents: ZERO_CENTS, otherCostCents: ZERO_CENTS, overheadPercent: 0 }, 0, 100);
+    }
+  }, [fields]);
 
   function setField<K extends keyof FieldState>(key: K, value: FieldState[K]) {
     setFields((prev) => ({ ...prev, [key]: value }));
@@ -95,6 +109,7 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
               valueCents={fields.materials}
               onValueCentsChange={(v) => setField("materials", v)}
               aria-describedby={`${idPrefix}-materials-hint`}
+              liveUpdate
             />
           </Field>
 
@@ -103,6 +118,7 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
               id={`${idPrefix}-labor`}
               valueCents={fields.labor}
               onValueCentsChange={(v) => setField("labor", v)}
+              liveUpdate
             />
           </Field>
 
@@ -111,6 +127,7 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
               id={`${idPrefix}-equipment`}
               valueCents={fields.equipment}
               onValueCentsChange={(v) => setField("equipment", v)}
+              liveUpdate
             />
           </Field>
 
@@ -119,6 +136,7 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
               id={`${idPrefix}-delivery`}
               valueCents={fields.delivery}
               onValueCentsChange={(v) => setField("delivery", v)}
+              liveUpdate
             />
           </Field>
 
@@ -127,6 +145,7 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
               id={`${idPrefix}-other`}
               valueCents={fields.other}
               onValueCentsChange={(v) => setField("other", v)}
+              liveUpdate
             />
           </Field>
 
@@ -138,6 +157,7 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
                 onValueChange={(v) => setField("overheadPercent", v)}
                 validate={validateOverheadPercent}
                 className="pr-9"
+                liveUpdate
               />
               <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">%</span>
             </div>
@@ -153,6 +173,7 @@ export default function ProjectCalculatorIsland({ compact = false }: { compact?:
                 onValueChange={(v) => setField("targetMarginPercent", v)}
                 validate={validateTargetMarginPercent}
                 className="pr-9"
+                liveUpdate
               />
               <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">%</span>
             </div>

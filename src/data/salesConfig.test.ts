@@ -1,5 +1,17 @@
-import { describe, expect, it } from "vitest";
-import { APP_RELEASE_MODE, buildOfferSchema, SALES_CONFIG } from "./salesConfig";
+import { afterEach, describe, expect, it } from "vitest";
+import { APP_RELEASE_MODE, buildOfferSchema, getValidPriceValidUntil, SALES_CONFIG } from "./salesConfig";
+
+// SALES_CONFIG is typed readonly (`as const`) so nothing in the app can
+// accidentally mutate it, but these tests need to exercise states other
+// than today's real config — cast past the readonly type and always
+// restore the original values afterward so no other test file/case sees a
+// mutated singleton.
+const mutableSalesConfig = SALES_CONFIG as {
+  salesEnabled: boolean;
+  checkoutUrl: string | null;
+  priceValidUntil: string | null;
+};
+const originalSalesConfig = { ...SALES_CONFIG };
 
 describe("SALES_CONFIG", () => {
   it("sales are disabled and there is no checkout destination configured", () => {
@@ -22,6 +34,67 @@ describe("buildOfferSchema — sales-disabled structured data contains no active
     const schema = { "@type": "Product", name: "x", ...(offer ? { offers: offer } : {}) };
     expect("offers" in schema).toBe(false);
     expect(JSON.stringify(schema)).not.toContain("offers");
+  });
+});
+
+describe("buildOfferSchema — once sales are enabled", () => {
+  afterEach(() => {
+    mutableSalesConfig.salesEnabled = originalSalesConfig.salesEnabled;
+    mutableSalesConfig.checkoutUrl = originalSalesConfig.checkoutUrl;
+    mutableSalesConfig.priceValidUntil = originalSalesConfig.priceValidUntil;
+  });
+
+  it("includes priceValidUntil only when a real, valid future date is configured", () => {
+    mutableSalesConfig.salesEnabled = true;
+    mutableSalesConfig.checkoutUrl = "https://checkout.example.com/lep";
+    mutableSalesConfig.priceValidUntil = null;
+    expect(buildOfferSchema()).not.toHaveProperty("priceValidUntil");
+
+    mutableSalesConfig.priceValidUntil = "2099-12-31";
+    expect(buildOfferSchema()).toHaveProperty("priceValidUntil", "2099-12-31");
+  });
+
+  it("never includes priceValidUntil for an invalid or past configured date", () => {
+    mutableSalesConfig.salesEnabled = true;
+    mutableSalesConfig.checkoutUrl = "https://checkout.example.com/lep";
+
+    mutableSalesConfig.priceValidUntil = "2020-01-01"; // past
+    expect(buildOfferSchema()).not.toHaveProperty("priceValidUntil");
+
+    mutableSalesConfig.priceValidUntil = "2026-02-30"; // calendar-invalid
+    expect(buildOfferSchema()).not.toHaveProperty("priceValidUntil");
+  });
+});
+
+describe("getValidPriceValidUntil", () => {
+  afterEach(() => {
+    mutableSalesConfig.priceValidUntil = originalSalesConfig.priceValidUntil;
+  });
+
+  it("returns null when no price expiration is configured (the default, permanent-price state)", () => {
+    mutableSalesConfig.priceValidUntil = null;
+    expect(getValidPriceValidUntil()).toBeNull();
+  });
+
+  it("returns null for a malformed (non YYYY-MM-DD) date string", () => {
+    mutableSalesConfig.priceValidUntil = "12/31/2027";
+    expect(getValidPriceValidUntil()).toBeNull();
+  });
+
+  it("returns null for a calendar-invalid date (Feb 30) rather than trusting Date's silent roll-forward", () => {
+    mutableSalesConfig.priceValidUntil = "2026-02-30";
+    expect(getValidPriceValidUntil(new Date("2026-01-01T00:00:00Z"))).toBeNull();
+  });
+
+  it("returns null for a date that is today or already in the past relative to referenceDate", () => {
+    mutableSalesConfig.priceValidUntil = "2026-01-01";
+    expect(getValidPriceValidUntil(new Date("2026-06-01T00:00:00Z"))).toBeNull(); // past
+    expect(getValidPriceValidUntil(new Date("2026-01-01T00:00:00Z"))).toBeNull(); // same day, not strictly future
+  });
+
+  it("returns the raw ISO string for a valid, strictly-future date", () => {
+    mutableSalesConfig.priceValidUntil = "2027-12-31";
+    expect(getValidPriceValidUntil(new Date("2026-01-01T00:00:00Z"))).toBe("2027-12-31");
   });
 });
 

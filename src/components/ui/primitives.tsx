@@ -1,4 +1,4 @@
-import { useId, useState, type ButtonHTMLAttributes, type FocusEvent, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type SelectHTMLAttributes } from "react";
+import { useId, useState, type ButtonHTMLAttributes, type FocusEvent, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { resolveDraftCommit, resolveDraftDisplay } from "../../lib/draftNumberInputLogic";
 import type { MoneyCents } from "../../lib/money";
 import { resolveMoneyCommit, resolveMoneyDraftDisplay } from "../../lib/moneyInputLogic";
@@ -10,6 +10,7 @@ export function Card({
   className = "",
   padded = true,
   tone = "light",
+  id,
 }: {
   children: ReactNode;
   className?: string;
@@ -21,10 +22,13 @@ export function Card({
    * reliably override by attribute order — only one enum's classes are ever
    * emitted at a time, so there's nothing to conflict with. */
   tone?: "light" | "dark";
+  /** Optional DOM id, e.g. for an in-page anchor link (the Guide tab's
+   * section jump list) or a scroll-to target. */
+  id?: string;
 }) {
   const toneClasses = tone === "dark" ? "bg-forest text-white border-forest-light" : "bg-white text-ink border-border";
   return (
-    <div className={`rounded-2xl border shadow-sm ${toneClasses} ${padded ? "p-5 sm:p-6" : ""} ${className}`}>
+    <div id={id} className={`rounded-2xl border shadow-sm ${toneClasses} ${padded ? "p-5 sm:p-6" : ""} ${className}`}>
       {children}
     </div>
   );
@@ -91,6 +95,22 @@ export function TextInput({
   return (
     <input
       className={`${baseControlClasses} ${invalid ? "border-red focus:ring-red focus:border-red" : ""} ${className}`}
+      aria-invalid={invalid || undefined}
+      {...props}
+    />
+  );
+}
+
+export function TextArea({
+  className = "",
+  invalid,
+  rows = 6,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean }) {
+  return (
+    <textarea
+      rows={rows}
+      className={`${baseControlClasses} resize-y ${invalid ? "border-red focus:ring-red focus:border-red" : ""} ${className}`}
       aria-invalid={invalid || undefined}
       {...props}
     />
@@ -200,6 +220,24 @@ export function NumberInput({
  * low-stakes (e.g. already behind its own explicit-save step, like
  * `ActualsTab`'s per-line actual quantity/hours, which only ever reach
  * workspace state when "Save actuals" is clicked).
+ *
+ * `liveUpdate` opts OUT of the commit-on-blur delay for fields that have
+ * nothing to protect — the free, unsaved marketing calculators (there is no
+ * workspace, backup, PDF, or CSV for an in-progress keystroke to leak into
+ * there). When true, every keystroke that parses to a currently-valid,
+ * NON-BLANK value ALSO calls `onValueChange` immediately, in addition to the
+ * normal blur/Enter commit — the displayed text still only reformats on
+ * blur/Enter, exactly as without this flag. A momentary blank (the user
+ * selecting-all-and-deleting before typing a replacement) deliberately never
+ * live-fires — otherwise every edit would flash the result to zero the
+ * instant the field is cleared, before the replacement is even typed. And
+ * because a live keystroke CAN change persisted state before the user
+ * finishes, an edit session that ends invalid (blurred or Entered while the
+ * draft is malformed/out of range) rolls the value all the way back to
+ * whatever it was when the field was first focused — not merely refusing to
+ * commit that last keystroke, which would leave behind whatever the last
+ * valid-looking intermediate digit happened to produce. Never pass this for
+ * a field backed by persisted workspace state.
  */
 export function DraftNumberInput({
   id,
@@ -209,6 +247,7 @@ export function DraftNumberInput({
   validate,
   className = "",
   invalid,
+  liveUpdate = false,
   onFocus,
   onBlur,
   onKeyDown,
@@ -229,10 +268,19 @@ export function DraftNumberInput({
    * about what "valid" means for that field. */
   validate: (n: number) => string | null;
   invalid?: boolean;
+  /** See the doc comment above — only ever true for an unsaved, no-workspace
+   * calculator field. Defaults to false, preserving the original
+   * commit-on-blur-only behavior everywhere else. */
+  liveUpdate?: boolean;
 }) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const [draft, setDraft] = useState<string | null>(null);
+  // Captured on focus, only when liveUpdate is on — the value to roll all
+  // the way back to if this whole edit session ends invalid. Without this,
+  // an invalid final entry would only undo its OWN last keystroke, leaving
+  // behind whatever a mid-typing intermediate digit had already committed.
+  const [editBaseline, setEditBaseline] = useState<number | "" | null>(null);
   const { display, error } = resolveDraftDisplay(draft, value, validate);
 
   function commit() {
@@ -241,11 +289,14 @@ export function DraftNumberInput({
     if (result.commit) {
       onValueChange(result.value);
       onCommit?.(result.value);
+    } else if (liveUpdate && editBaseline !== null) {
+      onValueChange(editBaseline);
     }
     // Whether committed or discarded, the draft is done — the field goes
     // back to reflecting persisted state (the just-committed value, or the
     // prior one if the draft was invalid).
     setDraft(null);
+    setEditBaseline(null);
   }
 
   return (
@@ -265,8 +316,24 @@ export function DraftNumberInput({
           // commit.
           if (!/^-?\d*\.?\d*$/.test(raw)) return;
           setDraft(raw);
+          // Live mode: fire the same commit resolution the blur/Enter path
+          // uses, straight off the raw keystroke — an incomplete value
+          // (a lone "-", a trailing ".") simply doesn't commit yet, it
+          // never sends a wrong value. A blank draft is deliberately
+          // excluded even though `resolveDraftCommit` would treat it as a
+          // valid "clear" — live-firing it would zero out the result the
+          // instant the field is selected-and-cleared, before the
+          // replacement digits are even typed. The draft (and therefore the
+          // displayed text) is untouched either way.
+          if (liveUpdate && raw.trim() !== "") {
+            const result = resolveDraftCommit(raw, validate);
+            if (result.commit) onValueChange(result.value);
+          }
         }}
-        onFocus={(e: FocusEvent<HTMLInputElement>) => onFocus?.(e)}
+        onFocus={(e: FocusEvent<HTMLInputElement>) => {
+          if (liveUpdate) setEditBaseline(value);
+          onFocus?.(e);
+        }}
         onBlur={(e: FocusEvent<HTMLInputElement>) => {
           commit();
           onBlur?.(e);
@@ -306,6 +373,24 @@ export function DraftNumberInput({
  * last valid PERSISTED value — never coerced to zero, never left showing
  * garbage. See `lib/moneyInputLogic.ts` for the underlying pure rules and
  * their tests.
+ *
+ * `liveUpdate` opts OUT of the commit-on-blur delay for fields that have
+ * nothing to protect — the free, unsaved marketing calculators (there is no
+ * workspace, backup, or export for an in-progress keystroke to leak into
+ * there). When true, every keystroke that parses to a currently-valid,
+ * NON-BLANK amount ALSO calls `onValueCentsChange` immediately, in addition
+ * to the normal blur/Enter commit — the displayed text still only reformats
+ * on blur/Enter, exactly as without this flag. A momentary blank (the user
+ * selecting-all-and-deleting before typing a replacement) deliberately
+ * never live-fires — otherwise every edit would flash the result to $0 the
+ * instant the field is cleared, before the replacement is even typed. And
+ * because a live keystroke CAN change persisted state before the user
+ * finishes, an edit session that ends invalid (blurred or Entered while the
+ * draft is malformed/negative/unsafe-large) rolls the amount all the way
+ * back to whatever it was when the field was first focused — not merely
+ * refusing to commit that last keystroke, which would leave behind whatever
+ * valid-looking intermediate digit happened to commit along the way. Never
+ * pass this for a field backed by persisted workspace state.
  */
 export function MoneyInput({
   id,
@@ -314,6 +399,7 @@ export function MoneyInput({
   onCommit,
   className = "",
   invalid,
+  liveUpdate = false,
   onFocus,
   onBlur,
   onKeyDown,
@@ -328,10 +414,18 @@ export function MoneyInput({
    * applied to the caller's props yet at that point in the same event). */
   onCommit?: (value: MoneyCents | "") => void;
   invalid?: boolean;
+  /** See the doc comment above — only ever true for an unsaved, no-workspace
+   * calculator field. Defaults to false, preserving the original
+   * commit-on-blur-only behavior everywhere else. */
+  liveUpdate?: boolean;
 }) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const [draft, setDraft] = useState<string | null>(null);
+  // Captured on focus, only when liveUpdate is on — see the doc comment
+  // above: what to roll all the way back to if this edit session ends
+  // invalid, rather than leaving behind a mid-typing intermediate commit.
+  const [editBaseline, setEditBaseline] = useState<MoneyCents | "" | null>(null);
   const { display, error } = resolveMoneyDraftDisplay(draft, valueCents);
 
   function commit() {
@@ -340,11 +434,14 @@ export function MoneyInput({
     if (result.commit) {
       onValueCentsChange(result.cents);
       onCommit?.(result.cents);
+    } else if (liveUpdate && editBaseline !== null) {
+      onValueCentsChange(editBaseline);
     }
     // Whether committed or discarded, the draft is done — the field goes
     // back to reflecting persisted state (the just-committed value, or the
     // prior one if the draft was invalid).
     setDraft(null);
+    setEditBaseline(null);
   }
 
   return (
@@ -366,8 +463,24 @@ export function MoneyInput({
           // silently reformatted mid-edit).
           if (!/^-?\d*\.?\d*$/.test(raw)) return;
           setDraft(raw);
+          // Live mode: fire the same commit resolution the blur/Enter path
+          // uses, straight off the raw keystroke — an incomplete value (a
+          // lone "-", a trailing ".") simply doesn't commit yet, it never
+          // sends a wrong amount. A blank draft is deliberately excluded
+          // even though `resolveMoneyCommit` would treat it as a valid
+          // "clear" — live-firing it would zero out the result the instant
+          // the field is selected-and-cleared, before the replacement
+          // digits are even typed. The draft (and therefore the displayed
+          // text) is untouched either way.
+          if (liveUpdate && raw.trim() !== "") {
+            const result = resolveMoneyCommit(raw);
+            if (result.commit) onValueCentsChange(result.cents);
+          }
         }}
-        onFocus={(e: FocusEvent<HTMLInputElement>) => onFocus?.(e)}
+        onFocus={(e: FocusEvent<HTMLInputElement>) => {
+          if (liveUpdate) setEditBaseline(valueCents);
+          onFocus?.(e);
+        }}
         onBlur={(e: FocusEvent<HTMLInputElement>) => {
           commit();
           onBlur?.(e);

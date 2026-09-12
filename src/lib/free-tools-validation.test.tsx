@@ -7,17 +7,29 @@
  *
  * The fix wires each island onto the same draft/validate/commit primitives
  * (`MoneyInput`/`DraftNumberInput`, see `components/ui/primitives.tsx`) the
- * paid Pro app already uses. These tests render the actual island
- * components (not the underlying primitives in isolation — that's already
- * covered by `moneyInputLogic.test.ts`/`draftNumberInputLogic.test.ts`) and
- * prove, per field, that:
+ * paid Pro app already uses, plus these islands' own `liveUpdate` opt-in
+ * (added for the "results should update as you type, not just on
+ * blur/Enter" free-calculator UX — there is no saved workspace here for an
+ * in-progress keystroke to corrupt, unlike the Pro app). These tests render
+ * the actual island components (not the underlying primitives in isolation
+ * — that's already covered by `moneyInputLogic.test.ts`/
+ * `draftNumberInputLogic.test.ts`) and prove, per field, that:
  *  - a negative amount, an out-of-range percent, or malformed/partial text
- *    shows a visible inline error (`role="alert"`) and is never committed
- *    into the displayed total/price.
- *  - on blur with the bad text still in the field, the field reverts to the
- *    last valid persisted value.
+ *    shows a visible inline error (`role="alert"`) and the field's FINAL
+ *    typed value is never committed into the displayed total/price.
+ *  - on blur with the bad text still in the field, the field — and any
+ *    total/price derived from it — rolls all the way back to whatever was
+ *    persisted before this edit began, not merely to whatever a mid-typing
+ *    intermediate digit happened to commit live (`liveUpdate` can commit a
+ *    genuinely valid-looking intermediate, e.g. typing "100" one keystroke
+ *    at a time passes through the individually-valid "1" and "10" before
+ *    the final "100" turns out invalid — that transient live preview is the
+ *    intended feature, not a bug, so these tests assert the END state, not
+ *    that nothing ever moved while typing).
  *  - an "unsafe large" money value (over Number.MAX_SAFE_INTEGER once
- *    converted to cents) is rejected the same way a negative amount is.
+ *    converted to cents, or once multiplied through a derived total) is
+ *    rejected the same way a negative amount is, and never crashes the
+ *    calculator even as a transient live-typed intermediate.
  */
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
@@ -109,10 +121,19 @@ describe("ProjectCalculatorIsland validation (DEF-01)", () => {
 
     await user.clear(input);
     await user.type(input, UNSAFE_LARGE_DOLLARS);
+    // liveUpdate can commit a smaller, still-safe intermediate digit prefix
+    // as you type (e.g. the first several digits of this number, before it
+    // grows unsafe) — that transient live preview is the intended feature,
+    // and doesn't crash the calculator (the real regression risk here).
+    // What must hold is the alert, and that blurring the final, fully-typed
+    // unsafe amount fully reverts — checked below.
     expect(fieldAlert(input)).toBeInTheDocument();
-    expect(screen.getByText("Direct cost").nextElementSibling!.textContent).toBe(directCostBefore);
 
     await user.tab();
+    // An ultimately-invalid entry rolls the WHOLE edit session back — not
+    // just its last keystroke — so this reverts all the way to what the
+    // field held before editing began, not to whatever safe-but-huge
+    // intermediate value briefly committed live along the way.
     expect(input.value).toBe("100"); // reverted to the last persisted $100.00
     expect(screen.getByText("Direct cost").nextElementSibling!.textContent).toBe(directCostBefore);
   });
@@ -141,10 +162,17 @@ describe("ProjectCalculatorIsland validation (DEF-01)", () => {
 
     await user.clear(input);
     await user.type(input, "100");
+    // liveUpdate legitimately commits "1" and "10" as you type them — both
+    // are individually valid margins — before the final "100" turns out
+    // invalid. That transient live preview is the intended feature; what
+    // must hold is the alert, and that blurring the final, fully-typed
+    // invalid 100% margin fully reverts — checked below.
     expect(fieldAlert(input)).toBeInTheDocument();
-    expect(screen.getByText("Required selling price").nextElementSibling!.textContent).toBe(priceBefore);
 
     await user.tab();
+    // An ultimately-invalid entry rolls the WHOLE edit session back — not
+    // just its last keystroke — so this reverts all the way to the
+    // original 35%, not to the "10" that briefly committed live mid-typing.
     expect(input.value).toBe("35");
     expect(screen.getByText("Required selling price").nextElementSibling!.textContent).toBe(priceBefore);
   });
@@ -245,10 +273,17 @@ describe("InvoiceBuilderIsland validation (DEF-01)", () => {
 
     await user.clear(input);
     await user.type(input, "150");
+    // liveUpdate legitimately commits "1" and "15" as you type them — both
+    // are valid tax rates — before the final "150" turns out invalid. That
+    // transient live preview is the intended feature; what must hold is the
+    // alert, and that blurring the final, fully-typed invalid 150% rate
+    // fully reverts — checked below.
     expect(fieldAlert(input)).toBeInTheDocument();
-    expect(screen.getByText("Total").nextElementSibling!.textContent).toBe(totalBefore);
 
     await user.tab();
+    // An ultimately-invalid entry rolls the WHOLE edit session back — not
+    // just its last keystroke — so this reverts all the way to the
+    // original 0%, not to the "15" that briefly committed live mid-typing.
     expect(input.value).toBe("0");
     expect(screen.getByText("Total").nextElementSibling!.textContent).toBe(totalBefore);
   });
