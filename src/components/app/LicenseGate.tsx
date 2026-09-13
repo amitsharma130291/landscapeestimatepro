@@ -77,7 +77,7 @@ export default function LicenseGate({ children }: { children: ReactNode }) {
               Enter your key below
             </a>
             . Haven't purchased yet?{" "}
-            <a href="/pricing/" className="font-semibold text-forest underline">
+            <a href="/landscaping-estimating-software/#pricing" className="font-semibold text-forest underline">
               See pricing
             </a>
             .

@@ -1,0 +1,71 @@
+/**
+ * /landscaping-estimating-software/ is the one page that tells the full,
+ * honest sales story and carries the real purchase flow — every "upsell to
+ * Pro" surface sitewide should land there, never on the bare, license-gated
+ * /app/ (which has no pitch at all for someone who hasn't bought yet) or on
+ * a stale/broken anchor. This file locks in the fix: ToolCardGrid.astro's
+ * and ToolPageLayout.astro's shared upsell CTAs, and the one page-specific
+ * link that had drifted to a dead anchor.
+ */
+import { test, expect } from "@playwright/test";
+
+const TOOL_PAGES_WITH_PRO_UPSELL = [
+  "/landscaping-cost-calculator/",
+  "/landscaping-estimate-calculator/",
+  "/landscaping-estimate-template/",
+  "/landscaping-invoice-template/",
+  "/landscaping-price-list/",
+  "/landscaping-quote-template/",
+  "/landscape-pricing-guide/",
+];
+
+for (const url of TOOL_PAGES_WITH_PRO_UPSELL) {
+  test(`${url}: the "More free tools" Pro card and the bottom Pro banner both link to the sales page, never /app/`, async ({ page }) => {
+    await page.goto(url);
+    const proLinks = page.locator('a[href="/landscaping-estimating-software/"]');
+    expect(await proLinks.count(), "expected at least the ToolCardGrid Pro card and the ToolPageLayout banner").toBeGreaterThanOrEqual(2);
+    await expect(page.locator('a[href="/app/"]')).toHaveCount(0);
+  });
+}
+
+test("homepage: the free-tools grid's Pro card links to the sales page, not /app/", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: /Try Pro free/ }).first()).toHaveAttribute("href", "/landscaping-estimating-software/");
+  await expect(page.locator('a[href="/app/"]')).toHaveCount(0);
+});
+
+test("resources page: none of the three tool grids (including the Guide grid, which doesn't opt out of the Pro card) link to /app/", async ({ page }) => {
+  await page.goto("/resources/");
+  await expect(page.locator('a[href="/app/"]')).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Try Pro free/ }).first()).toHaveAttribute("href", "/landscaping-estimating-software/");
+});
+
+test("price-list page: the Service Rate Health walkthrough link points at the real anchor on the sales page, not a dead homepage anchor", async ({ page }) => {
+  await page.goto("/landscaping-price-list/");
+  const links = page.locator('a[href="/landscaping-estimating-software/#service-rate-health"]');
+  expect(await links.count(), "expected both the inline copy link and the embedded Rate Health CTA to point here").toBeGreaterThanOrEqual(2);
+  await page.goto("/landscaping-estimating-software/");
+  await expect(page.locator("#service-rate-health")).toHaveCount(1);
+});
+
+test("main nav includes a direct link to the sales page on every page type", async ({ page }) => {
+  for (const url of ["/", "/pricing/", "/resources/", ...TOOL_PAGES_WITH_PRO_UPSELL]) {
+    await page.goto(url);
+    await expect(page.getByRole("link", { name: "Estimating Software" }).first()).toHaveAttribute("href", "/landscaping-estimating-software/");
+  }
+});
+
+test("footer's Product column links directly to the sales page", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("contentinfo").getByRole("link", { name: "Landscaping Estimating Software" })).toHaveAttribute("href", "/landscaping-estimating-software/");
+});
+
+test.describe("unlicensed visitor", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test("an unlicensed visitor on /app/ is offered the real sales page, not just the bare pricing page", async ({ page }) => {
+    await page.goto("/app/");
+    await expect(page.getByRole("heading", { name: "Activate Landscape Estimate Pro" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "See pricing" })).toHaveAttribute("href", "/landscaping-estimating-software/#pricing");
+  });
+});
