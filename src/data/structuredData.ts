@@ -18,8 +18,8 @@ import { SITE_URL } from "./site";
  * product's own schema — see salesConfig.ts's `buildOfferSchema` for that,
  * which instead omits `offers` entirely while sales are disabled.
  */
-export function buildFreeToolOfferSchema(): { "@type": "Offer"; price: number; priceCurrency: string } {
-  return { "@type": "Offer", price: 0, priceCurrency: "USD" };
+export function buildFreeToolOfferSchema(): { "@type": "Offer"; price: number; priceCurrency: string; availability: string } {
+  return { "@type": "Offer", price: 0, priceCurrency: "USD", availability: "https://schema.org/InStock" };
 }
 
 /**

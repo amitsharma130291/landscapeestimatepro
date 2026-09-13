@@ -23,7 +23,7 @@ function readPngDimensions(filePath: string): { width: number; height: number } 
 
 describe("buildFreeToolOfferSchema", () => {
   it("always returns a real $0 Offer, regardless of the paid product's sales state", () => {
-    expect(buildFreeToolOfferSchema()).toEqual({ "@type": "Offer", price: 0, priceCurrency: "USD" });
+    expect(buildFreeToolOfferSchema()).toEqual({ "@type": "Offer", price: 0, priceCurrency: "USD", availability: "https://schema.org/InStock" });
   });
 
   it("is independent of SALES_CONFIG.salesEnabled — a free tool's price never depends on paid-product state", () => {
@@ -32,7 +32,7 @@ describe("buildFreeToolOfferSchema", () => {
     // doesn't read it at all — the free tools' $0 price is unconditional.
     // Asserting the shape here regardless of that value documents the
     // independence for future readers.
-    expect(buildFreeToolOfferSchema()).toEqual({ "@type": "Offer", price: 0, priceCurrency: "USD" });
+    expect(buildFreeToolOfferSchema()).toEqual({ "@type": "Offer", price: 0, priceCurrency: "USD", availability: "https://schema.org/InStock" });
   });
 });
 

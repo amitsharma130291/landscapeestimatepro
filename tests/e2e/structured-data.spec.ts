@@ -29,7 +29,7 @@ test.describe("free tools retain a real $0 Offer", () => {
       const blocks = await readJsonLdBlocks(page);
       const app = blocks.find((b): b is Record<string, unknown> => (b as { "@type"?: string })["@type"] === "WebApplication");
       expect(app, `no WebApplication block found on ${url}`).toBeTruthy();
-      expect(app!.offers).toEqual({ "@type": "Offer", price: 0, priceCurrency: "USD" });
+      expect(app!.offers).toEqual({ "@type": "Offer", price: 0, priceCurrency: "USD", availability: "https://schema.org/InStock" });
     });
   }
 });
