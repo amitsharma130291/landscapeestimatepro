@@ -15,10 +15,20 @@ const description = LAUNCH_PRICE_ACTIVE
   : `Landscape Estimate Pro is ${PRICE_DISPLAY}, one time — no subscription. Local-first storage, no account required.`;
 
 const offer = buildOfferSchema(`${SITE_URL}/pricing/`);
+// SoftwareApplication, not Product — Product structured data puts a page
+// into Google's Merchant/Shopping graph (Merchant listings, product
+// snippets), which expects a real Merchant Center feed (shipping,
+// reviews, returns policy in a specific format) this site doesn't have
+// and shouldn't claim to. SoftwareApplication + offers is the correct,
+// intentional type for priced software — same as the other two pages
+// that carry this same offer (/ and /landscaping-estimating-software/).
 const schema = {
   "@context": "https://schema.org",
-  "@type": "Product",
+  "@type": "SoftwareApplication",
   name: "Landscape Estimate Pro",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Any (runs in browser)",
+  url: `${SITE_URL}/pricing/`,
   description,
   image: PRODUCT_IMAGE_URL,
   ...(offer ? { offers: offer } : {}),
@@ -98,6 +108,9 @@ const faqs = [
       <div class="mt-8">
         <PurchaseButton client:load />
       </div>
+      <p class="mt-3 text-center text-xs text-white/60">
+        Review the <a href="/refund/" class="underline">refund policy</a> before purchasing.
+      </p>
     </div>
 
     <div class="mx-auto mt-8 max-w-lg">

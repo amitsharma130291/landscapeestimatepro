@@ -41,8 +41,7 @@ test.describe("paid product pages carry a real, active $79 launch-price offer (D
       const blocks = await readJsonLdBlocks(page);
       const product = blocks.find(
         (b): b is Record<string, unknown> =>
-          ["Product", "SoftwareApplication"].includes((b as { "@type"?: string })["@type"] ?? "") &&
-          (b as { name?: string }).name === "Landscape Estimate Pro"
+          (b as { "@type"?: string })["@type"] === "SoftwareApplication" && (b as { name?: string }).name === "Landscape Estimate Pro"
       );
       expect(product, `no paid-product schema block found on ${url}`).toBeTruthy();
       expect(product!.offers).toMatchObject({ "@type": "Offer", price: "79", priceCurrency: "USD", availability: "https://schema.org/InStock" });
@@ -60,15 +59,14 @@ test.describe("paid product pages carry a real, active $79 launch-price offer (D
   }
 });
 
-test.describe("Product/SoftwareApplication image", () => {
+test.describe("SoftwareApplication image", () => {
   for (const url of PAID_PRODUCT_PAGES) {
     test(`${url} references an absolute, canonical-domain product image`, async ({ page }) => {
       await page.goto(url);
       const blocks = await readJsonLdBlocks(page);
       const product = blocks.find(
         (b): b is Record<string, unknown> =>
-          ["Product", "SoftwareApplication"].includes((b as { "@type"?: string })["@type"] ?? "") &&
-          (b as { name?: string }).name === "Landscape Estimate Pro"
+          (b as { "@type"?: string })["@type"] === "SoftwareApplication" && (b as { name?: string }).name === "Landscape Estimate Pro"
       );
       expect(product).toBeTruthy();
       expect(typeof product!.image).toBe("string");
@@ -106,6 +104,15 @@ test("no page emits AggregateRating or Review anywhere in its JSON-LD", async ({
   }
 });
 
+test("no page ever emits @type Product — that puts a page into Google's Merchant/Shopping graph (Merchant listings, product snippets), which this site is not set up for and shouldn't claim", async ({ page }) => {
+  for (const url of [...FREE_TOOL_PAGES, ...PAID_PRODUCT_PAGES]) {
+    await page.goto(url);
+    const blocks = await readJsonLdBlocks(page);
+    const hasProductType = blocks.some((b) => (b as { "@type"?: string })["@type"] === "Product");
+    expect(hasProductType, `${url} must not emit @type: "Product"`).toBe(false);
+  }
+});
+
 test("every JSON-LD block on the homepage is valid, parseable JSON", async ({ page }) => {
   await page.goto("/");
   const scripts = page.locator('script[type="application/ld+json"]');
@@ -122,10 +129,7 @@ test("the paid product's canonical name is identical across all three product pa
   for (const url of PAID_PRODUCT_PAGES) {
     await page.goto(url);
     const blocks = await readJsonLdBlocks(page);
-    const product = blocks.find(
-      (b): b is Record<string, unknown> =>
-        ["Product", "SoftwareApplication"].includes((b as { "@type"?: string })["@type"] ?? "")
-    );
+    const product = blocks.find((b): b is Record<string, unknown> => (b as { "@type"?: string })["@type"] === "SoftwareApplication");
     names.push((product?.name as string) ?? "");
   }
   expect(new Set(names).size).toBe(1);
