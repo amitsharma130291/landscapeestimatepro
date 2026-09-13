@@ -1,0 +1,110 @@
+---
+import { SALES_CONFIG } from "../../data/salesConfig";
+import { PRICE_DISPLAY } from "../../data/site";
+import BuyCtaButton from "./BuyCtaButton.astro";
+
+const { salesEnabled } = SALES_CONFIG;
+---
+
+<div
+  id="sales-sticky-cta"
+  class="no-print pointer-events-none fixed inset-x-0 bottom-0 z-40 translate-y-full opacity-0 transition-[transform,opacity] duration-300 motion-reduce:transition-none"
+  role="region"
+  aria-label="Purchase Landscape Estimate Pro"
+>
+  <div class="mx-auto flex max-w-content items-center justify-between gap-3 border-t border-border bg-white/95 px-4 py-3 shadow-[0_-4px_16px_rgba(14,42,30,0.08)] backdrop-blur sm:px-6" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));">
+    <div class="hidden min-w-0 sm:block">
+      <p class="truncate text-sm font-bold text-ink">Landscape Estimate Pro</p>
+      <p class="truncate text-xs text-muted">{salesEnabled ? `${PRICE_DISPLAY} lifetime — no subscription` : "Purchasing is not open yet"}</p>
+    </div>
+    <div class="flex min-w-0 flex-1 shrink items-center gap-2 sm:flex-none">
+      {salesEnabled ? (
+        <div class="min-w-0 flex-1 sm:w-56 sm:flex-none">
+          <BuyCtaButton compact label={`Get Pro — ${PRICE_DISPLAY}`} />
+        </div>
+      ) : (
+        <a
+          href="/landscaping-cost-calculator/"
+          data-track="cta_click"
+          data-cta-label="sticky_bar_explore_free_tools"
+          class="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-forest px-4 text-sm font-bold text-white transition-colors hover:bg-forest-light"
+        >
+          Explore the Free Tools
+        </a>
+      )}
+      <button
+        type="button"
+        id="sales-sticky-cta-dismiss"
+        aria-label="Hide this bar"
+        class="tap-target flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-paper-dim"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const bar = document.getElementById("sales-sticky-cta");
+  const dismissBtn = document.getElementById("sales-sticky-cta-dismiss");
+  const hero = document.getElementById("sales-page-hero");
+  const pricingSection = document.getElementById("pricing");
+  const DISMISS_KEY = "lepSalesStickyBarDismissed";
+
+  if (bar && hero) {
+    let dismissed = false;
+    try {
+      dismissed = sessionStorage.getItem(DISMISS_KEY) === "1";
+    } catch {
+      // sessionStorage unavailable (private mode) — never dismissed.
+    }
+
+    let heroVisible = true;
+    // The pricing section already has its own full purchase card — the
+    // sticky bar would be a redundant, content-obscuring duplicate while
+    // it's on screen, so it hides there and reappears once scrolled past.
+    let pricingVisible = false;
+
+    const setVisible = (visible: boolean) => {
+      if (dismissed) return;
+      bar.classList.toggle("translate-y-full", !visible);
+      bar.classList.toggle("opacity-0", !visible);
+      bar.classList.toggle("pointer-events-none", !visible);
+    };
+
+    const update = () => setVisible(!heroVisible && !pricingVisible);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const heroEntry = entries[0];
+        heroVisible = heroEntry.isIntersecting;
+        update();
+      },
+      { rootMargin: "0px 0px 0px 0px", threshold: 0 }
+    );
+    observer.observe(hero);
+
+    if (pricingSection) {
+      const pricingObserver = new IntersectionObserver(
+        (entries) => {
+          pricingVisible = entries[0].isIntersecting;
+          update();
+        },
+        { rootMargin: "0px 0px 0px 0px", threshold: 0 }
+      );
+      pricingObserver.observe(pricingSection);
+    }
+
+    dismissBtn?.addEventListener("click", () => {
+      dismissed = true;
+      bar.classList.add("translate-y-full", "opacity-0", "pointer-events-none");
+      try {
+        sessionStorage.setItem(DISMISS_KEY, "1");
+      } catch {
+        // Non-critical.
+      }
+    });
+  }
+</script>

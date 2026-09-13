@@ -1,0 +1,128 @@
+---
+import { costScenarios } from "../../lib/salesPageExamples";
+import { formatCurrency, formatPercent } from "../../lib/calc";
+
+const tabs = [
+  {
+    key: "material",
+    label: "Material",
+    scenarioLabel: "Mulch",
+    kind: "Material",
+    headline: "Mulch cost changes from $42 to $50 per yd³.",
+    response: "Update the mulch cost on the Catalog tab before quoting new jobs. Estimates already quoted keep their locked price.",
+  },
+  {
+    key: "labor",
+    label: "Labor",
+    scenarioLabel: "Loaded labor",
+    kind: "Labor",
+    headline: "Loaded labor changes from $32 to $36 per person-hour.",
+    response: "Update your loaded labor rate in Settings. Every service priced from production rates recalculates from the new rate going forward.",
+  },
+  {
+    key: "equipment",
+    label: "Equipment",
+    scenarioLabel: "Skid-steer",
+    kind: "Equipment",
+    headline: "Skid-steer cost changes from $45 to $55 per hour.",
+    response: "Update the equipment rate on the Catalog tab. Quotes that already went out to customers are unaffected.",
+  },
+];
+---
+
+<div class="mx-auto max-w-2xl">
+  <div role="tablist" aria-label="Cost-change scenario" class="flex gap-1 rounded-xl bg-paper-dim p-1">
+    {tabs.map((tab, i) => (
+      <button
+        type="button"
+        role="tab"
+        id={`scenario-tab-${tab.key}`}
+        aria-selected={i === 0 ? "true" : "false"}
+        aria-controls={`scenario-panel-${tab.key}`}
+        tabindex={i === 0 ? 0 : -1}
+        class="scenario-tab tap-target flex-1 rounded-lg px-3 py-2.5 text-sm font-bold text-muted transition-colors aria-selected:bg-white aria-selected:text-ink aria-selected:shadow-sm"
+      >
+        {tab.label}
+      </button>
+    ))}
+  </div>
+
+  {tabs.map((tab, i) => {
+    const scenario = costScenarios.find((s) => s.label === tab.scenarioLabel)!;
+    return (
+      <div role="tabpanel" id={`scenario-panel-${tab.key}`} aria-labelledby={`scenario-tab-${tab.key}`} hidden={i !== 0} class="scenario-panel mt-4 rounded-2xl border border-border bg-white p-5 sm:p-6">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-lime-surface">{tab.kind} scenario</p>
+        <p class="mt-2 text-base font-semibold text-ink">{tab.headline}</p>
+
+        <dl class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-wider text-muted">Original cost</dt>
+            <dd class="mt-1 text-lg font-bold tabular-nums text-ink">{formatCurrency(scenario.fromCents, { cents: true })}</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-wider text-muted">New cost</dt>
+            <dd class="mt-1 text-lg font-bold tabular-nums text-ink">{formatCurrency(scenario.toCents, { cents: true })}</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-wider text-muted">Rate increase</dt>
+            <dd class="mt-1 text-lg font-bold tabular-nums text-ink">{formatPercent(scenario.percentChange)}</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-wider text-muted">Cost impact on {scenario.quantityLabel}</dt>
+            <dd class="mt-1 text-lg font-bold tabular-nums text-ink">{formatCurrency(scenario.dollarImpactCents)}</dd>
+          </div>
+        </dl>
+
+        <div class="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-muted">Margin impact</p>
+            <p class="mt-1 text-sm text-ink">Estimates and services already priced from the old cost fall short of their target margin until updated.</p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-muted">Suggested response</p>
+            <p class="mt-1 text-sm text-ink">{tab.response}</p>
+          </div>
+        </div>
+
+        <p class="mt-4 text-xs text-muted">This is decision support, not a prediction — it only estimates the impact of a cost change you enter, without changing your saved data.</p>
+      </div>
+    );
+  })}
+</div>
+
+<script>
+  const tablist = document.querySelector('[role="tablist"][aria-label="Cost-change scenario"]');
+  if (tablist) {
+    const tabs = Array.from(tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const panels = tabs.map((tab) => document.getElementById(tab.getAttribute("aria-controls")!));
+
+    function activate(index: number, focus = true) {
+      tabs.forEach((tab, i) => {
+        const selected = i === index;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+        if (panels[i]) panels[i]!.hidden = !selected;
+      });
+      if (focus) tabs[index].focus();
+    }
+
+    tabs.forEach((tab, i) => {
+      tab.addEventListener("click", () => activate(i));
+      tab.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+          e.preventDefault();
+          activate((i + 1) % tabs.length);
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          e.preventDefault();
+          activate((i - 1 + tabs.length) % tabs.length);
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          activate(0);
+        } else if (e.key === "End") {
+          e.preventDefault();
+          activate(tabs.length - 1);
+        }
+      });
+    });
+  }
+</script>

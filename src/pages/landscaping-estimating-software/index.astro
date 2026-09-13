@@ -1,18 +1,26 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
-import TrustBadges from "../../components/TrustBadges.astro";
 import FaqAccordion from "../../components/FaqAccordion.astro";
 import PurchaseButton from "../../components/PurchaseButton.tsx";
 import CheckoutResultBanner from "../../components/CheckoutResultBanner.tsx";
-import EstimatePreviewCard from "../../components/EstimatePreviewCard.astro";
+import HeroProductDemo from "../../components/salespage/HeroProductDemo.astro";
+import ServiceSetupDemo from "../../components/salespage/ServiceSetupDemo.astro";
+import BuyCtaButton from "../../components/salespage/BuyCtaButton.astro";
+import MarginVsMarkupProof from "../../components/salespage/MarginVsMarkupProof.astro";
+import RateHealthDemo from "../../components/salespage/RateHealthDemo.astro";
+import CostScenarioCards from "../../components/salespage/CostScenarioCards.astro";
+import EstimateVsActualDemo from "../../components/salespage/EstimateVsActualDemo.astro";
+import StickyCtaBar from "../../components/salespage/StickyCtaBar.astro";
+import { SALES_CONFIG, buildOfferSchema } from "../../data/salesConfig";
 import { PRICE_DISPLAY, SITE_URL } from "../../data/site";
-import { buildOfferSchema } from "../../data/salesConfig";
 import { PRODUCT_IMAGE_URL } from "../../data/structuredData";
 
-const title = "Landscape Estimating Software — Free Tools, Pro $99 Lifetime";
+const { salesEnabled } = SALES_CONFIG;
+
+const title = "Landscaping Estimating Software | Landscape Estimate Pro";
 const description =
-  "Landscape estimating software built from your own materials, labor, equipment and production rates. Free tools now; Pro is $99 lifetime, no subscription. No account, local-first. Not aerial takeoff — real job costing.";
+  "Landscaping estimating software that turns your own material, labor and equipment costs into a required selling price — then compares it to what the job actually cost. $99 lifetime, no subscription.";
 
 const offer = buildOfferSchema(`${SITE_URL}/landscaping-estimating-software/`);
 const schema = {
@@ -27,25 +35,90 @@ const schema = {
   description,
 };
 
+const secondaryCtaLabel = salesEnabled ? "See how it works" : "See how Pro works";
+
+const omittedCosts = ["Owner labor", "Payroll burden", "Travel and loading time", "Equipment cost", "Delivery and disposal", "Overhead", "Waste", "Production assumptions"];
+
+const capabilities: { title: string; desc: string }[] = [
+  { title: "See your true job cost", desc: "Direct costs plus overhead, calculated automatically — not just materials and labor." },
+  { title: "Get the price your margin requires", desc: "Enter a target margin and Pro solves for the price that actually delivers it." },
+  { title: "Price labor the way you track it", desc: "Use your own production rates or direct crew hours. Pro never assumes a universal rate." },
+  { title: "Build a service once, reuse it everywhere", desc: "Bundle materials, labor and equipment into one saved service, priced per unit." },
+  { title: "Catch underpriced services early", desc: "Every saved service compared against the rate required to hit your target margin." },
+  { title: "See cost changes before they hit your margin", desc: "Test a material, labor or equipment price change without touching your saved data." },
+  { title: "Learn from every completed job", desc: "Compare what you quoted to what the job actually cost, and see where assumptions were off." },
+  { title: "Hand customers a clean estimate", desc: "Print or save a PDF that shows what they're paying for — never your internal costs or margin." },
+];
+
+const forYouIf = [
+  "You own or run a small landscaping company",
+  "You create your own estimates",
+  "You know your local costs and production rates",
+  "You want focused estimating without a monthly suite",
+];
+const notRightFitIf = [
+  "You need CRM or dispatch",
+  "You need crew GPS tracking",
+  "You need aerial measurements",
+  "You need integrated payments or accounting",
+  "You expect the software to supply universal local prices",
+];
+
+const everythingIncludedGroups: { title: string; items: string[] }[] = [
+  { title: "Estimating and pricing", items: ["True-cost and required-price calculations", "Minimum project price protection", "Multi-service estimates"] },
+  { title: "Catalogs and reusable services", items: ["Material and equipment catalogs", "Direct-hours and production-rate labor", "Reusable services and project templates"] },
+  {
+    title: "Profitability analysis",
+    items: ["Service Rate Health", "Minimum Job Audit", "Material, labor, equipment and overhead scenarios", "Estimate versus actual", "Actual margin and profitability reporting"],
+  },
+  { title: "Customer documents", items: ["Customer estimate print/PDF", "Locked quote revisions"] },
+  { title: "Data and backups", items: ["CSV export", "JSON backup and restore", "Local-first workspace"] },
+];
+
+const pricingHighlights = ["True-cost and required-price calculations", "Service Rate Health", "Estimate versus actual", "Customer estimate print/PDF", "JSON backup and restore"];
+
+// Only real, currently-decided policy values — nothing here is invented. A
+// field with no honest value to state (a device-count limit, for instance)
+// is simply omitted rather than guessed. "Browser support" and "Updates"
+// are stated because both are directly true of this app's actual
+// architecture (a client-side web app with no version gate), not policy
+// promises that could later be broken.
+const purchaseDetails: { label: string; value: string }[] = [
+  { label: "Price", value: "$99, one time" },
+  { label: "Subscription", value: "None — lifetime access" },
+  { label: "Updates", value: "Improvements to the live app are included automatically, at no extra charge" },
+  { label: "Browsers", value: "Any modern desktop or mobile browser — Chrome, Firefox, Safari or Edge" },
+  { label: "Account", value: "None required — a license key unlocks the app in your browser" },
+  { label: "Data storage", value: "Local to your device — export JSON backups regularly" },
+  { label: "Support", value: "Email, via the contact page" },
+  { label: "Refunds", value: "7 days, no questions asked" },
+];
+
+const trustCards: { title: string; desc: string; href?: string }[] = [
+  { title: "Exact money calculations", desc: "Project prices, allocations and totals are handled in exact cents rather than approximate floating-point dollars." },
+  { title: "Locked quote history", desc: "When you create a quote revision, the costs and assumptions used for that quote stay attached to it." },
+  { title: "Customer-safe documents", desc: "Customer estimates are created from an allowlisted document model that leaves out internal costs, overhead and margin." },
+  { title: "Backup and recovery", desc: "Export your complete workspace as JSON and restore it when moving devices or recovering local data.", href: "/privacy/" },
+];
+
 const faqs = [
+  { question: "Is this margin or markup?", answer: "Margin is calculated from your selling price; markup is calculated from cost. Pro solves for the price required to hit a target margin, not a markup guess." },
+  { question: "Does it supply local landscaping prices?", answer: "No. You enter your own material costs, labor rates, equipment costs and production rates — Pro never assumes a market average." },
+  { question: "Is this a CRM or scheduling platform?", answer: "No. It's focused on estimating, pricing and job costing. No scheduling, dispatch, or customer messaging." },
+  { question: "Where is my data stored?", answer: "Locally, in your browser, on your device. Nothing is uploaded to a server." },
+  { question: "What happens if browser storage is cleared?", answer: "Local workspace data may be removed. Export a backup regularly, especially before clearing browser storage or switching devices." },
+  { question: "Can I export a backup?", answer: "Yes. Export your complete workspace as a JSON file any time, and restore it on this or another device." },
+  { question: "Can I print customer estimates?", answer: "Yes. Customer documents are generated from an allowlisted model that excludes your internal costs, overhead and margin." },
+  { question: "Can I compare estimated and actual job costs?", answer: "Yes. Record actual labor, materials and equipment after a job, and compare them to what you quoted." },
+  { question: "Is this a subscription?", answer: salesEnabled ? "No. Pro is $99, once — not a subscription, ever." : "No. The planned price is $99 as a one-time purchase." },
+  { question: "What devices and browsers are supported?", answer: "Any modern desktop or mobile browser — Chrome, Firefox, Safari or Edge. There's nothing to install." },
+  { question: "What support is included?", answer: "Email support, via the contact page." },
+  { question: "What is the refund policy?", answer: "A 7-day, no-questions-asked refund — see the refund policy for details." },
   {
-    question: "Does this measure my project from photos or satellite imagery?",
-    answer:
-      "No. This is manual-measurement estimating and job-costing software — you supply your own quantities from a site visit or plan, and the software turns them into an accurate cost and price. There's no aerial or photo takeoff feature.",
-  },
-  {
-    question: "How is this different from generic landscaping business software?",
-    answer:
-      "Generic \"landscaping software\" often means CRM, scheduling, dispatch, and routing. Landscape Estimate Pro does one thing: estimating, pricing, and job costing. No CRM, no scheduling, no payroll.",
-  },
-  {
-    question: "Is Pro available to buy right now?",
-    answer: "Yes — Pro is $99, once, lifetime, no subscription. Payment unlocks the app immediately.",
-  },
-  {
-    question: "Can I see whether a completed job actually hit my target margin?",
-    answer:
-      "Yes — Pro's estimate-vs-actual tracking compares your estimated labor, materials, and cost against what the job actually took, and shows expected margin vs. actual margin.",
+    question: "Is purchasing available now?",
+    answer: salesEnabled
+      ? "Yes — Pro is $99, once, lifetime, no subscription. Payment unlocks the app immediately."
+      : "Not yet — purchasing isn't open. Explore the free tools below, or preview how Pro works in the sections above.",
   },
 ];
 ---
@@ -59,74 +132,420 @@ const faqs = [
 
   <CheckoutResultBanner client:load />
 
-  <section class="mx-auto grid max-w-content gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_24rem] lg:items-center lg:gap-14 lg:px-8 lg:py-16">
-    <div>
-      <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">Landscape estimating software</p>
-      <h1 class="mt-2 text-[clamp(1.9rem,4.5vw,3rem)] font-extrabold leading-[1.08] text-ink">
-        Landscape estimating software, without another monthly subscription.
+  <!-- 1. Hero — top-aligned, not vertically centered in the viewport; see
+       HeroProductDemo.astro for the preview column. -->
+  <section id="sales-page-hero" class="mx-auto grid max-w-[1200px] gap-x-16 gap-y-10 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[56fr_44fr] lg:items-start lg:px-8 lg:py-12">
+    <div class="max-w-[620px]">
+      <p class="text-sm font-semibold uppercase tracking-wide text-lime-surface">For small landscaping contractors</p>
+      <h1 class="mt-2 text-[clamp(1.9rem,4.5vw,3rem)] font-extrabold leading-[1.15] text-ink lg:max-w-[19ch]">
+        Know the cost before you quote. Protect the margin after the job.
       </h1>
-      <p class="mt-4 max-w-xl text-lg text-muted">
-        Build estimates from your own materials, labor, equipment, and production rates — then see whether the
-        completed project actually hit your margin.
+      <p class="mt-3 max-w-xl text-lg leading-relaxed text-muted">
+        Turn your material prices, labor, equipment, overhead and production rates into a customer-ready
+        quote—then compare the estimate with what the job actually cost.
       </p>
-      <div class="mt-7">
-        <PurchaseButton client:load variant="light" />
+      <p class="mt-2 max-w-xl text-base font-semibold text-ink">
+        Estimating, pricing and job costing. No CRM. No scheduling.
+      </p>
+
+      <div class="mt-7 max-w-sm">
+        <BuyCtaButton variant="light" fallbackCtaLabel="hero_explore_free_tools" secondaryLabel={secondaryCtaLabel} />
+        {salesEnabled && <p class="mt-2.5 text-sm text-muted">One payment. No monthly subscription.</p>}
       </div>
-      <div class="mt-6"><TrustBadges /></div>
+
+      {salesEnabled && (
+        <a href="#how-it-works" class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-forest hover:underline">
+          {secondaryCtaLabel}
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </a>
+      )}
+
+      <ul class="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-muted">
+        {["Uses your real costs", "Calculates margin—not markup", "Data stays on your device"].map((item) => (
+          <li class="flex items-center gap-2">
+            <svg class="h-4 w-4 shrink-0 text-lime-surface" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+            {item}
+          </li>
+        ))}
+      </ul>
     </div>
-    <div>
-      <EstimatePreviewCard />
+    <div class="flex justify-center lg:justify-end">
+      <HeroProductDemo />
     </div>
   </section>
 
+  <!-- 2. Problem recognition -->
   <section class="border-t border-border bg-white py-16">
+    <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">A busy schedule does not guarantee a profitable season.</h2>
+      <p class="mt-4 text-base leading-relaxed text-muted">
+        Material invoices arrive. Payroll clears. Equipment costs climb. The job looked profitable when you
+        quoted it—but the margin disappeared somewhere between the estimate and the final day on site.
+      </p>
+      <p class="mt-4 text-base leading-relaxed text-muted">
+        Good crews finish good work and still fall short of the profit they expected, because the quote never
+        accounted for everything the job actually costs:
+      </p>
+      <ul class="mt-5 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+        {omittedCosts.map((item) => (
+          <li class="flex items-start gap-2 text-sm font-semibold text-ink">
+            <svg class="mt-0.5 h-3.5 w-3.5 shrink-0 text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            {item}
+          </li>
+        ))}
+      </ul>
+      <p class="mt-6 text-lg font-semibold text-ink">
+        The problem is rarely the quality of the work. It is the cost that never made it into the quote.
+      </p>
+    </div>
+  </section>
+
+  <!-- 3. Concrete financial proof — the page's PRIMARY proof, given the
+       strongest visual weight outside the purchase CTA itself. -->
+  <section class="border-t-2 border-forest bg-paper py-16 sm:py-20">
     <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
-      <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">Built for estimating, not general business management</h2>
-      <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <h2 class="text-center text-3xl font-extrabold text-ink sm:text-4xl">
+        A familiar pricing shortcut can leave hundreds of dollars on the table.
+      </h2>
+      <div class="mt-10">
+        <MarginVsMarkupProof />
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. First contextual purchase CTA -->
+  <section class="border-t border-border bg-white py-10">
+    <div class="mx-auto max-w-md px-4 text-center sm:px-6 lg:px-8">
+      <BuyCtaButton label={`Protect My Margin for ${PRICE_DISPLAY}`} variant="light" fallbackCtaLabel="margin_proof_explore_free_tools" secondaryLabel="See how it works" />
+      {salesEnabled && <p class="mt-2.5 text-sm text-muted">Use your own costs, rates and target margin.</p>}
+    </div>
+  </section>
+
+  <!-- 5. Five-step workflow -->
+  <section id="how-it-works" class="scroll-mt-24 border-t border-border bg-white py-16">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <h2 class="text-center text-2xl font-extrabold text-ink sm:text-3xl">From job quantities to a customer-ready price</h2>
+      <ol class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
         {[
-          { title: "Production-rate labor", desc: "Estimate crew hours from your own production rates — the software never assumes a universal number." },
-          { title: "Reusable assemblies", desc: "Bundle materials, labor, and equipment into one service you can drop into any project." },
-          { title: "Job costing", desc: "See direct cost, overhead allocation, and true cost for every project, every time." },
-          { id: "service-rate-health", title: "Service Rate Health", desc: "Instantly see which standard services are priced below your target margin." },
-          { title: "Cost-impact scenarios", desc: "See what a material, labor, or equipment price change does to your saved estimates." },
-          { title: "Estimate vs. actual", desc: "Compare what you quoted to what the job actually cost once it's done." },
-        ].map((item) => (
-          <div id={item.id} class:list={["scroll-mt-24 rounded-2xl border border-border bg-paper p-5", item.id && "border-lime-surface bg-mint"]}>
+          { title: "Set your business costs", desc: "Enter your loaded labor rate, overhead, target margin and minimum price once." },
+          { title: "Build reusable services", desc: "Bundle materials, labor and equipment into services like mulch installation or edging." },
+          { title: "Enter project quantities", desc: "Pro expands every assembly for this job and totals the direct cost." },
+          { title: "Review true cost and required price", desc: "See true cost, the price your margin requires, and any minimum-price adjustment." },
+          { title: "Print the estimate and record actuals", desc: "Hand the customer a clean document, then log what the job actually cost." },
+        ].map((step, i) => (
+          <li class="reveal-item rounded-2xl border border-border bg-paper p-5">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-forest text-sm font-bold text-white">{i + 1}</span>
+            <h3 class="mt-3 font-bold text-ink">{step.title}</h3>
+            <p class="mt-1.5 text-base text-muted">{step.desc}</p>
+          </li>
+        ))}
+      </ol>
+
+      <div class="mx-auto mt-10 max-w-3xl">
+        <ServiceSetupDemo />
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Service Rate Health -->
+  <section id="service-rate-health" class="scroll-mt-24 border-t border-border bg-paper py-16">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <h2 class="text-center text-2xl font-extrabold text-ink sm:text-3xl">Find the services quietly weakening your margin.</h2>
+      <div class="mt-8">
+        <RateHealthDemo />
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Cost-change scenario -->
+  <section class="border-t border-border bg-white py-12">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <h2 class="text-center text-xl font-extrabold text-ink sm:text-2xl">See what a price increase changes before it reaches your profit.</h2>
+      <div class="mt-6">
+        <CostScenarioCards />
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Estimate-versus-actual learning loop -->
+  <section class="border-t border-border bg-paper py-16">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <h2 class="text-center text-2xl font-extrabold text-ink sm:text-3xl">
+        The estimate is a prediction. The completed job tells you what to improve.
+      </h2>
+      <p class="mx-auto mt-3 max-w-xl text-center text-base text-muted">
+        Quote assumptions → completed-job actuals → variance → better production rates and pricing on the next job.
+      </p>
+      <div class="mt-8">
+        <EstimateVsActualDemo />
+      </div>
+    </div>
+  </section>
+
+  <!-- Contextual purchase CTA after the product demonstration -->
+  <section class="border-t border-border bg-white py-10">
+    <div class="mx-auto max-w-md px-4 text-center sm:px-6 lg:px-8">
+      <BuyCtaButton label="Build More Confident Estimates" variant="light" fallbackCtaLabel="proof_explore_free_tools" secondaryLabel="See everything included" secondaryHref="#everything-included" />
+      {salesEnabled && <p class="mt-2.5 text-sm text-muted">One payment. Use it on every estimate from here on.</p>}
+    </div>
+  </section>
+
+  <!-- 9. Core capabilities (supporting tier — compact) -->
+  <section class="border-t border-border bg-paper py-12">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <h2 class="text-xl font-extrabold text-ink sm:text-2xl">Built for estimating, not general business management</h2>
+      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {capabilities.map((item) => (
+          <div class="reveal-item rounded-xl border border-border bg-white p-4">
             <h3 class="font-bold text-ink">{item.title}</h3>
-            <p class="mt-1.5 text-sm text-muted">{item.desc}</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-muted">{item.desc}</p>
           </div>
         ))}
       </div>
     </div>
   </section>
 
-  <section class="border-t border-border bg-paper py-16">
+  <!-- 10. Who it is for / what it is not (combined) -->
+  <section class="border-t border-border bg-white py-14">
     <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
-      <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">What this is not</h2>
-      <p class="mt-3 max-w-2xl text-muted">
-        Landscape Estimate Pro stays focused on estimating, pricing, and job costing. It is not a CRM, scheduling
-        or dispatch tool, payment processor, aerial/satellite measurement tool, or design/engineering software for
-        irrigation, drainage, grading, or retaining walls. That focus is deliberate — it's what keeps the product
-        simple, fast, and easy to support.
+      <h2 class="text-xl font-extrabold text-ink sm:text-2xl">Built for contractors who know the work—but want more certainty in the price.</h2>
+      <div class="mt-7 grid gap-6 sm:grid-cols-2">
+        <div class="rounded-2xl border border-lime-surface/30 bg-mint/40 p-5">
+          <p class="text-xs font-bold uppercase tracking-wider text-mint-ink">For you if</p>
+          <ul class="mt-3 space-y-2.5">
+            {forYouIf.map((item) => (
+              <li class="flex items-start gap-2.5 text-sm font-medium text-ink">
+                <svg class="mt-0.5 h-4 w-4 shrink-0 text-mint-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-border bg-paper p-5">
+          <p class="text-xs font-bold uppercase tracking-wider text-muted">Not the right fit if</p>
+          <ul class="mt-3 space-y-2.5">
+            {notRightFitIf.map((item) => (
+              <li class="flex items-start gap-2.5 text-sm font-medium text-ink">
+                <svg class="mt-0.5 h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <p class="mx-auto mt-6 max-w-2xl text-center text-sm text-muted">
+        Use the tools you already trust for the rest of your business. Use Pro to answer what this job costs and what you should charge.
       </p>
     </div>
   </section>
 
-  <section class="border-t border-border bg-forest py-14 text-white">
-    <div class="mx-auto flex max-w-content flex-col items-start gap-5 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-      <div>
-        <h2 class="text-2xl font-extrabold sm:text-3xl">Landscape Estimate Pro — {PRICE_DISPLAY} lifetime</h2>
-        <p class="mt-2 max-w-xl text-white/75">One payment. No subscription. No account. Your data stays on your device.</p>
+  <!-- 11. Everything included -->
+  <section id="everything-included" class="scroll-mt-24 border-t border-border bg-forest py-14 text-white">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <h2 class="text-xl font-extrabold sm:text-2xl">Everything included, for one price.</h2>
+      <div class="mt-7 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        {everythingIncludedGroups.map((group) => (
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-lime">{group.title}</p>
+            <ul class="mt-2.5 space-y-1.5">
+              {group.items.map((item) => (
+                <li class="flex items-start gap-2 text-sm text-white/90">
+                  <svg class="mt-0.5 h-3.5 w-3.5 shrink-0 text-lime" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
-      <a href="/pricing/" class="inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]">
-        See Pricing
-      </a>
     </div>
   </section>
 
+  <!-- 12. Pricing, ownership and risk reversal -->
+  <section id="pricing" class="scroll-mt-24 border-t border-border bg-paper py-16">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <h2 class="text-center text-2xl font-extrabold text-ink sm:text-3xl">One practical tool. One lifetime price.</h2>
+      <div class="mx-auto mt-8 max-w-3xl rounded-3xl border border-forest bg-forest p-8 text-white shadow-xl sm:p-10">
+        <div class="grid gap-8 sm:grid-cols-[minmax(0,15rem)_1fr]">
+          <div>
+            <h3 class="text-lg font-bold text-lime">Landscape Estimate Pro</h3>
+            <p class="mt-2 text-5xl font-extrabold">{PRICE_DISPLAY}</p>
+            <p class="text-white/70">Lifetime access</p>
+            <p class="mt-1 text-sm text-white/70">One payment. No monthly subscription.</p>
+
+            <div class="mt-6">
+              {salesEnabled ? (
+                <>
+                  <PurchaseButton client:load label={`Get Lifetime Access — ${PRICE_DISPLAY}`} />
+                  <p class="mt-2 text-center text-xs text-white/60 sm:text-left">
+                    Review the <a href="/refund/" class="underline">refund policy</a> before purchasing.
+                  </p>
+                </>
+              ) : (
+                <BuyCtaButton fallbackCtaLabel="pricing_explore_free_tools" />
+              )}
+            </div>
+          </div>
+
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-lime">Includes</p>
+            <ul class="mt-2.5 grid gap-1.5 sm:grid-cols-2">
+              {pricingHighlights.map((item) => (
+                <li class="flex items-start gap-2 text-sm text-white/90">
+                  <svg class="mt-0.5 h-3.5 w-3.5 shrink-0 text-lime" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <p class="mt-2 text-xs text-white/60">Full list: see "Everything included" above.</p>
+
+            <details class="group mt-5 border-t border-white/15 pt-4">
+              <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-white/85">
+                Purchase details
+                <svg class="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <dl class="mt-3 space-y-2 text-sm">
+                {purchaseDetails.map((detail) => (
+                  <div class="flex items-baseline justify-between gap-4">
+                    <dt class="text-white/60">{detail.label}</dt>
+                    <dd class="text-right font-semibold text-white/90">{detail.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13. Evidence and trust -->
   <section class="border-t border-border bg-white py-16">
+    <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">Built to keep your estimates consistent—and your internal numbers private.</h2>
+      <p class="mt-3 max-w-2xl text-base leading-relaxed text-muted">
+        Everything you enter — materials, labor rates, assemblies, estimates — runs and stays in your browser, on
+        your device. Export a JSON backup before clearing browser storage or switching computers; there's no cloud
+        account to fall back on if you don't.
+      </p>
+      <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {trustCards.map((item) => (
+          <li class="rounded-xl border border-border bg-paper p-4">
+            <p class="font-bold text-ink">{item.href ? <a href={item.href} class="underline decoration-lime-surface decoration-2 underline-offset-2">{item.title}</a> : item.title}</p>
+            <p class="mt-1.5 text-base leading-relaxed text-muted">{item.desc}</p>
+          </li>
+        ))}
+      </ul>
+      <p class="mt-6 max-w-2xl text-sm text-muted">
+        Every screenshot on this page is from the real application, not a mockup.
+      </p>
+    </div>
+  </section>
+
+  <!-- 14. FAQs -->
+  <section class="border-t border-border bg-paper py-16">
     <div class="mx-auto max-w-narrow px-4 sm:px-6 lg:px-8">
       <FaqAccordion faqs={faqs} />
     </div>
   </section>
+
+  <!-- 15. Final CTA -->
+  <section class="border-t border-border bg-forest py-16 text-white">
+    <div class="mx-auto max-w-narrow px-4 text-center sm:px-6 lg:px-8">
+      <h2 class="text-2xl font-extrabold sm:text-3xl">The next job should not depend on a guess.</h2>
+      <p class="mt-3 text-white/75">
+        Build the price from your real costs, overhead and target margin—before the work begins.
+      </p>
+      <div class="mx-auto mt-7 max-w-sm">
+        <BuyCtaButton fallbackCtaLabel="final_cta_explore_free_tools" />
+      </div>
+      {salesEnabled && (
+        <>
+          <div class="mt-4">
+            <a href="/landscaping-cost-calculator/" class="text-sm font-semibold text-white/80 underline hover:text-white">
+              Try the Free Cost Calculator
+            </a>
+          </div>
+          <p class="mt-4 text-sm text-white/60">One payment. No monthly subscription.</p>
+        </>
+      )}
+    </div>
+  </section>
+
+  <StickyCtaBar />
 </Layout>
+
+<script>
+  import { startCheckout } from "../../lib/license";
+
+  // A plain vanilla-JS click handler for every non-hydrated "Get Pro" button
+  // on this page (hero, mid-page, final CTA, sticky bar) — startCheckout()
+  // is a plain async function with no React dependency, so these buttons
+  // don't need a React island just to trigger it. Only the pricing section
+  // keeps a real <PurchaseButton client:load> (loading/error state matters
+  // most right at the point of purchase); every other "Get Pro" button
+  // reuses this one shared handler instead of hydrating its own copy of the
+  // same component. CTA copy varies by placement; the destination and
+  // behavior triggered here never does.
+  document.querySelectorAll<HTMLButtonElement>(".js-buy-cta").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (button.disabled) return;
+      const wrap = button.closest(".js-buy-cta-wrap");
+      const errorEl = wrap?.querySelector<HTMLElement>(".js-buy-cta-error");
+      button.disabled = true;
+      errorEl?.classList.add("hidden");
+      try {
+        await startCheckout();
+        // startCheckout() redirects the browser on success — nothing left to do.
+      } catch (err) {
+        button.disabled = false;
+        if (errorEl) {
+          errorEl.textContent = err instanceof Error ? err.message : "Couldn't start checkout. Please try again.";
+          errorEl.classList.remove("hidden");
+        }
+      }
+    });
+  });
+
+  const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  // Financial numbers on this page are always the real, final, server-rendered
+  // value — never an animated count-up. A count-up necessarily shows wrong
+  // intermediate numbers while it runs, which is not acceptable on a page
+  // whose whole argument is "these numbers are exact." Only a plain
+  // opacity/position reveal (see global.css's .reveal-item) is used here.
+  const revealItems = document.querySelectorAll<HTMLElement>(".reveal-item");
+
+  if (reduceMotionQuery.matches) {
+    revealItems.forEach((el) => el.classList.add("is-visible"));
+  } else if (revealItems.length > 0) {
+    const observer = new IntersectionObserver(
+      (entries, obs) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            obs.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold: 0.15 }
+    );
+    revealItems.forEach((el) => observer.observe(el));
+  }
+</script>

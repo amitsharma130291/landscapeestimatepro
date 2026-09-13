@@ -1,0 +1,75 @@
+---
+import { SALES_CONFIG } from "../../data/salesConfig";
+import { PRICE_DISPLAY } from "../../data/site";
+
+interface Props {
+  /** Contextual CTA copy is allowed to vary per placement (hero, mid-page,
+   * pricing, final) — what must stay identical everywhere is the underlying
+   * action: every button here calls the same startCheckout() -> real Dodo
+   * checkout, never a different destination. See sales-page.spec.ts's
+   * "every purchase CTA triggers the same real checkout" test. */
+  label?: string;
+  variant?: "dark" | "light";
+  fallbackCtaLabel?: string;
+  compact?: boolean;
+  /** The sales-disabled secondary action's label — defaults to the label
+   * used everywhere except the hero, which passes its own secondary-CTA
+   * copy so the two stay in sync without duplicating the string. */
+  secondaryLabel?: string;
+  /** Where the secondary action points while sales are disabled — must
+   * match secondaryLabel's meaning (e.g. "See everything included" should
+   * not silently link to the workflow section). */
+  secondaryHref?: string;
+}
+
+const DEFAULT_LABEL = `Get Landscape Estimate Pro — ${PRICE_DISPLAY} Lifetime`;
+const {
+  label = DEFAULT_LABEL,
+  variant = "dark",
+  fallbackCtaLabel = "cta_explore_free_tools",
+  compact = false,
+  secondaryLabel = "Preview Landscape Estimate Pro",
+  secondaryHref = "#how-it-works",
+} = Astro.props as Props;
+
+const { salesEnabled } = SALES_CONFIG;
+const FOCUS_RING = "focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2";
+---
+
+{
+  salesEnabled ? (
+    <div class="js-buy-cta-wrap" data-variant={variant}>
+      <button
+        type="button"
+        class={`js-buy-cta tap-target inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-lime px-5 font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e] active:bg-[#c2e82f] disabled:cursor-wait disabled:opacity-80 ${FOCUS_RING} ${compact ? "text-sm" : "py-4 text-base"}`}
+      >
+        {label}
+      </button>
+      <p class="js-buy-cta-error mt-2 hidden text-sm font-medium text-red" role="alert" />
+    </div>
+  ) : (
+    <div>
+      <p class={`mb-2 text-sm font-bold ${variant === "dark" ? "text-white/80" : "text-muted"}`}>Purchasing is not open yet.</p>
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <a
+          href="/landscaping-cost-calculator/"
+          data-track="cta_click"
+          data-cta-label={fallbackCtaLabel}
+          class={`inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-lime px-5 text-sm font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e] active:bg-[#c2e82f] ${FOCUS_RING}`}
+        >
+          Explore the Free Tools
+        </a>
+        <a
+          href={secondaryHref}
+          data-track="cta_click"
+          data-cta-label={`${fallbackCtaLabel}_preview`}
+          class={`inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-bold transition-colors ${FOCUS_RING} ${
+            variant === "dark" ? "border-white/30 text-white hover:bg-white/10" : "border-border text-ink hover:bg-paper-dim"
+          }`}
+        >
+          {secondaryLabel}
+        </a>
+      </div>
+    </div>
+  )
+}

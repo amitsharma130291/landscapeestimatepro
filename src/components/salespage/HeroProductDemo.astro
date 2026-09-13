@@ -1,0 +1,84 @@
+---
+import { examplePricing, exampleLineItems, EXAMPLE_TARGET_MARGIN_PERCENT, marginComparisonPriceCents } from "../../lib/salesPageExamples";
+import { formatCurrency } from "../../lib/calc";
+
+const maxLineItem = Math.max(...exampleLineItems.map((l) => l.cents));
+
+const callouts = ["Every project cost included", "Margin-based price calculated", "Internal costs stay off the customer estimate"];
+---
+
+<div class="w-full max-w-md">
+  <div role="group" aria-label="Example project using sample costs" class="w-full rounded-2xl border border-border bg-white p-5 shadow-xl sm:p-6">
+    <div class="flex items-center justify-between border-b border-border pb-2.5">
+      <p class="text-[11px] font-bold uppercase tracking-wider text-muted">Example project</p>
+      <span class="flex items-center gap-1.5 text-xs font-medium text-lime-surface">
+        <span class="h-1.5 w-1.5 rounded-full bg-lime-surface" aria-hidden="true"></span>
+        Saved locally
+      </span>
+    </div>
+
+    <div class="mt-3.5 flex items-baseline justify-between">
+      <div>
+        <p class="text-[11px] font-bold uppercase tracking-wider text-muted">Recommended rounded quote</p>
+        <p class="text-4xl font-extrabold tabular-nums text-ink">{formatCurrency(examplePricing.roundedRecommendedPriceCents, { cents: true })}</p>
+      </div>
+      <span class="rounded-full bg-mint px-3 py-1 text-xs font-bold text-mint-ink">{EXAMPLE_TARGET_MARGIN_PERCENT}% target margin</span>
+    </div>
+
+    <ul class="mt-4 space-y-2">
+      {exampleLineItems.map((item) => (
+        <li>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-muted">{item.label}</span>
+            <span class="font-semibold tabular-nums text-ink">{formatCurrency(item.cents)}</span>
+          </div>
+          <div class="mt-1 h-1 w-full rounded-full bg-paper-dim" aria-hidden="true">
+            <div class="h-1 rounded-full bg-lime-surface" style={`width: ${Math.max(6, (item.cents / maxLineItem) * 100)}%`}></div>
+          </div>
+        </li>
+      ))}
+    </ul>
+
+    <div class="mt-4 space-y-1.5 rounded-xl bg-paper-dim p-3.5 text-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-muted">Direct cost</span>
+        <span class="font-semibold tabular-nums text-ink">{formatCurrency(examplePricing.directCostCents)}</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-muted">Overhead allocation (14%)</span>
+        <span class="font-semibold tabular-nums text-ink">{formatCurrency(examplePricing.overheadAmountCents)}</span>
+      </div>
+      <div class="flex items-center justify-between border-t border-border pt-1.5">
+        <span class="font-semibold text-ink">True cost</span>
+        <span class="font-extrabold tabular-nums text-ink">{formatCurrency(examplePricing.trueCostCents, { cents: true })}</span>
+      </div>
+    </div>
+
+    <div class="mt-2.5 rounded-xl border border-lime-surface/30 bg-mint/40 p-3.5 text-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-mint-ink">Price required for a {EXAMPLE_TARGET_MARGIN_PERCENT}% margin</span>
+        <span class="font-extrabold tabular-nums text-ink">{formatCurrency(marginComparisonPriceCents, { cents: true })}</span>
+      </div>
+      <div class="mt-1.5 flex items-center justify-between border-t border-lime-surface/20 pt-1.5">
+        <span class="text-ink/70">Rounded up to a customer-ready quote</span>
+        <span class="font-bold tabular-nums text-ink">{formatCurrency(examplePricing.roundedRecommendedPriceCents, { cents: true })}</span>
+      </div>
+    </div>
+
+    <div class="mt-4 flex min-h-[44px] items-center gap-2 rounded-xl bg-paper-dim px-4 text-sm font-semibold text-ink">
+      <svg class="h-4 w-4 shrink-0 text-mint-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+      </svg>
+      Customer estimate ready
+    </div>
+  </div>
+
+  <ol class="mt-4 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap lg:flex-col">
+    {callouts.map((text, i) => (
+      <li class="flex flex-1 items-start gap-2.5 rounded-xl border border-border bg-white p-3 text-sm leading-snug text-muted shadow-sm sm:min-w-[15rem] lg:min-w-0">
+        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-paper-dim text-[11px] font-bold text-ink" aria-hidden="true">{i + 1}</span>
+        <span>{text}</span>
+      </li>
+    ))}
+  </ol>
+</div>

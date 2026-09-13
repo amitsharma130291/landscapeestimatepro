@@ -17,6 +17,7 @@ const PAGES = [
   { name: "public-home", url: "/" },
   { name: "free-cost-calculator", url: "/landscaping-cost-calculator/" },
   { name: "free-price-list", url: "/landscaping-price-list/" },
+  { name: "estimating-software", url: "/landscaping-estimating-software/" },
   { name: "app-overview", url: "/app/" },
   { name: "app-catalog", url: "/app/catalog/" },
   // DEF-11 regression: the sample workspace seeds assemblies with material/

@@ -1,0 +1,59 @@
+---
+import {
+  actualLaborCostCents,
+  actualLaborHours,
+  actualMarginAfterJob,
+  actualMaterialCostCents,
+  actualServiceQuantity,
+  costVarianceCents,
+  costVariancePercent,
+  estimatedLaborCostCents,
+  estimatedMaterialCostCents,
+  estimatedServiceQuantity,
+  expectedMarginAtQuote,
+  quotedPriceCents,
+} from "../../lib/salesPageExamples";
+import { formatCurrency, formatPercent } from "../../lib/calc";
+---
+
+<div class="mx-auto max-w-3xl">
+  <figure class="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+    <picture>
+      <source srcset="/screenshots/estimate-vs-actual.webp" type="image/webp" />
+      <img
+        src="/screenshots/estimate-vs-actual.png"
+        width="1720"
+        height="1394"
+        loading="lazy"
+        decoding="async"
+        alt="Landscape Estimate Pro's real Estimate vs. Actual screen for a completed job: quoted at $1,042 with a 35.1% expected margin, versus a 23.5% actual margin after recording the real materials, labor, and delivery cost."
+        class="w-full"
+      />
+    </picture>
+    <figcaption class="border-t border-border bg-paper-dim px-4 py-2 text-xs text-muted">
+      Example project — the app's own default sample data, quoted and completed in a real session, not a real customer's job.
+    </figcaption>
+  </figure>
+
+  <div class="mt-6 grid gap-4 sm:grid-cols-3">
+    <div class="rounded-xl border border-border bg-white p-4 text-center">
+      <p class="text-xs font-bold uppercase tracking-wider text-muted">Expected margin</p>
+      <p class="mt-1 text-2xl font-extrabold tabular-nums text-ink">{formatPercent(expectedMarginAtQuote)}</p>
+    </div>
+    <div class="rounded-xl border border-border bg-white p-4 text-center">
+      <p class="text-xs font-bold uppercase tracking-wider text-muted">Actual margin</p>
+      <p class="mt-1 text-2xl font-extrabold tabular-nums text-red">{formatPercent(actualMarginAfterJob)}</p>
+    </div>
+    <div class="rounded-xl border border-border bg-white p-4 text-center">
+      <p class="text-xs font-bold uppercase tracking-wider text-muted">Cost variance</p>
+      <p class="mt-1 text-2xl font-extrabold tabular-nums text-ink">{formatCurrency(costVarianceCents)} <span class="text-base font-semibold text-muted">({formatPercent(costVariancePercent)})</span></p>
+    </div>
+  </div>
+
+  <p class="mx-auto mt-5 max-w-xl text-center text-base leading-relaxed text-muted">
+    Quoted for {estimatedServiceQuantity} yd³, {actualServiceQuantity} yd³ actually went in — materials
+    {formatCurrency(estimatedMaterialCostCents)} → {formatCurrency(actualMaterialCostCents)}, labor
+    {formatCurrency(estimatedLaborCostCents)} → {formatCurrency(actualLaborCostCents)} ({actualLaborHours} hrs). Same
+    locked price, {formatCurrency(quotedPriceCents, { cents: true })} — see which assumptions need attention before the next similar job.
+  </p>
+</div>

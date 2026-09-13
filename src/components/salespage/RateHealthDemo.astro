@@ -1,0 +1,38 @@
+---
+import { rateHealthRows, EXAMPLE_TARGET_MARGIN_PERCENT } from "../../lib/salesPageExamples";
+import { formatCurrency } from "../../lib/calc";
+
+const healthyCount = rateHealthRows.filter((r) => r.health.status === "healthy").length;
+const attentionCount = rateHealthRows.filter((r) => r.health.status === "attention" || r.health.status === "critical").length;
+const worstRow = rateHealthRows.reduce((worst, row) => ((row.health.gapPerUnitCents ?? -1) > (worst.health.gapPerUnitCents ?? -1) ? row : worst));
+---
+
+<div class="mx-auto max-w-3xl">
+  <figure class="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+    <picture>
+      <source srcset="/screenshots/rate-health.webp" type="image/webp" />
+      <img
+        src="/screenshots/rate-health.png"
+        width="1720"
+        height="790"
+        loading="lazy"
+        decoding="async"
+        alt="Landscape Estimate Pro's real Service Rate Health screen, showing four default sample services compared against the rate required to hit a 35% target margin — Mulch Installation, Topsoil Installation and Shrub Installation all need attention."
+        class="w-full"
+      />
+    </picture>
+    <figcaption class="border-t border-border bg-paper-dim px-4 py-2 text-xs text-muted">
+      Example project — the app's own default sample data, not a real customer's price sheet.
+    </figcaption>
+  </figure>
+
+  <div class="mx-auto mt-6 max-w-xl rounded-2xl border border-amber/30 bg-amber-light p-5 text-center sm:p-6">
+    <p class="text-base font-semibold text-ink">
+      {healthyCount} of {rateHealthRows.length} default services meet a {EXAMPLE_TARGET_MARGIN_PERCENT}% target margin — {attentionCount} need attention.
+    </p>
+    <p class="mt-2 text-base leading-relaxed text-ink/80">
+      {worstRow.service} needs the most: {formatCurrency(worstRow.currentRateCents, { cents: true })} charged today vs.
+      {" "}{formatCurrency(worstRow.health.requiredRateCents, { cents: true })} required.
+    </p>
+  </div>
+</div>

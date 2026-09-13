@@ -183,3 +183,20 @@
     width: 100%;
   }
 }
+
+/* Scroll-reveal utility for marketing pages (e.g. the sales page's financial
+ * proof cards) — a plain CSS fade/rise triggered by toggling `.is-visible`
+ * from a tiny IntersectionObserver script, no animation library. Content is
+ * fully visible with no JS and with reduced motion; the animation is a
+ * progressive enhancement only, never a gate on reading the content. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-item {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .reveal-item.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}

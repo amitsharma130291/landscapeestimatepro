@@ -32,7 +32,7 @@ export default function PurchaseButton({ label, variant = "dark" }: { label?: st
           type="button"
           onClick={handleClick}
           disabled={status === "loading"}
-          className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e] disabled:cursor-wait disabled:opacity-80"
+          className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e] active:bg-[#c2e82f] focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80"
         >
           {status === "loading" && <Loader2 size={18} className="animate-spin" aria-hidden="true" />}
           {label ?? `Get Landscape Estimate Pro — ${PRICE_DISPLAY} Lifetime`}
