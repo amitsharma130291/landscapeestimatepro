@@ -37,39 +37,66 @@ const FOCUS_RING = "focus:outline-none focus-visible:ring-2 focus-visible:ring-f
 ---
 
 {
-  salesEnabled ? (
-    <div class="js-buy-cta-wrap" data-variant={variant}>
-      <button
-        type="button"
-        class={`js-buy-cta tap-target inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-lime px-5 font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e] active:bg-[#c2e82f] disabled:cursor-wait disabled:opacity-80 ${FOCUS_RING} ${compact ? "text-sm" : "py-4 text-base"}`}
-      >
-        {label}
-      </button>
-      <p class="js-buy-cta-error mt-2 hidden text-sm font-medium text-red" role="alert" />
-    </div>
-  ) : (
-    <div>
-      <p class={`mb-2 text-sm font-bold ${variant === "dark" ? "text-white/80" : "text-muted"}`}>Purchasing is not open yet.</p>
-      <div class="flex flex-col gap-2 sm:flex-row">
-        <a
-          href="/landscaping-cost-calculator/"
-          data-track="cta_click"
-          data-cta-label={fallbackCtaLabel}
-          class={`inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-lime px-5 text-sm font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e] active:bg-[#c2e82f] ${FOCUS_RING}`}
+  <div class="js-buy-cta-wrap" data-variant={variant}>
+    {salesEnabled ? (
+      <div class="js-buy-cta-buy-block">
+        <button
+          type="button"
+          class={`js-buy-cta tap-target inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-lime px-5 font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e] active:bg-[#c2e82f] disabled:cursor-wait disabled:opacity-80 ${FOCUS_RING} ${compact ? "text-sm" : "py-4 text-base"}`}
         >
-          Explore the Free Tools
-        </a>
-        <a
-          href={secondaryHref}
-          data-track="cta_click"
-          data-cta-label={`${fallbackCtaLabel}_preview`}
-          class={`inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-bold transition-colors ${FOCUS_RING} ${
-            variant === "dark" ? "border-white/30 text-white hover:bg-white/10" : "border-border text-ink hover:bg-paper-dim"
-          }`}
-        >
-          {secondaryLabel}
-        </a>
+          {label}
+        </button>
+        <p class="js-buy-cta-error mt-2 hidden text-sm font-medium text-red" role="alert" />
       </div>
-    </div>
-  )
+    ) : (
+      <div class="js-buy-cta-buy-block">
+        <p class={`mb-2 text-sm font-bold ${variant === "dark" ? "text-white/80" : "text-muted"}`}>Purchasing is not open yet.</p>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <a
+            href="/landscaping-cost-calculator/"
+            data-track="cta_click"
+            data-cta-label={fallbackCtaLabel}
+            class={`inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-lime px-5 text-sm font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e] active:bg-[#c2e82f] ${FOCUS_RING}`}
+          >
+            Explore the Free Tools
+          </a>
+          <a
+            href={secondaryHref}
+            data-track="cta_click"
+            data-cta-label={`${fallbackCtaLabel}_preview`}
+            class={`inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-bold transition-colors ${FOCUS_RING} ${
+              variant === "dark" ? "border-white/30 text-white hover:bg-white/10" : "border-border text-ink hover:bg-paper-dim"
+            }`}
+          >
+            {secondaryLabel}
+          </a>
+        </div>
+      </div>
+    )}
+
+    {/* Shown instead of the block above, for a visitor who already has a
+       stored license — regardless of salesEnabled, someone who's already
+       paid should always get a fast way back into the app, not a buy
+       button or a "purchasing not open" message. Hidden by default and
+       revealed by this component's own script below, since license state
+       only exists client-side (localStorage). */}
+    <a
+      href="/app/"
+      hidden
+      class={`js-go-to-app-cta tap-target inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-lime px-5 font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e] active:bg-[#c2e82f] ${FOCUS_RING} ${compact ? "text-sm" : "py-4 text-base"}`}
+    >
+      Go to App
+    </a>
+  </div>
 }
+
+<script>
+  import { hasStoredLicense } from "../../lib/license";
+
+  if (hasStoredLicense()) {
+    document.querySelectorAll<HTMLElement>(".js-buy-cta-wrap").forEach((wrap) => {
+      wrap.querySelector<HTMLElement>(".js-buy-cta-buy-block")?.setAttribute("hidden", "");
+      wrap.querySelector<HTMLElement>(".js-go-to-app-cta")?.removeAttribute("hidden");
+    });
+  }
+</script>

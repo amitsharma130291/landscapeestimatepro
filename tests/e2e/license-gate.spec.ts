@@ -126,6 +126,12 @@ test.describe("checkout redirect handling (landscaping-estimating-software page)
 });
 
 test.describe("starting a purchase", () => {
+  // Starting checkout only makes sense for someone who hasn't already
+  // bought — opt out of the suite's default "already licensed" fixture, or
+  // PurchaseButton would render "Go to App" instead of the buy button (see
+  // licensed-go-to-app.spec.ts for that behavior's own coverage).
+  test.use({ storageState: { cookies: [], origins: [] } });
+
   test("clicking Get Pro starts a Dodo checkout session and redirects to the hosted checkout URL", async ({ page }) => {
     await page.route("**/api/checkout-create", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, checkoutUrl: "http://localhost:4329/__mock_dodo_checkout__", sessionId: "cs_e2e_new" }) });

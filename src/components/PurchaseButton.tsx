@@ -1,17 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { SALES_CONFIG } from "../data/salesConfig";
 import { PRICE_DISPLAY } from "../data/site";
-import { startCheckout } from "../lib/license";
+import { startCheckout, hasStoredLicense } from "../lib/license";
 
 /**
  * Starts a real Dodo Payments checkout (api/checkout-create.ts) and redirects
  * to Dodo's hosted checkout page. When SALES_CONFIG.salesEnabled is false
  * (checkout taken offline temporarily), falls back to an honest disabled
- * state instead of a dead or fake button.
+ * state instead of a dead or fake button. Regardless of salesEnabled, a
+ * visitor who already has a stored license (they've already paid) sees a
+ * "Go to App" link instead — checked once on mount, since license state
+ * only exists client-side (localStorage) and would cause a hydration
+ * mismatch if read during the initial render.
  */
 export default function PurchaseButton({ label, variant = "dark" }: { label?: string; variant?: "dark" | "light" }) {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [licensed, setLicensed] = useState(false);
+
+  useEffect(() => {
+    setLicensed(hasStoredLicense());
+  }, []);
+
+  if (licensed) {
+    return (
+      <a
+        href="/app/"
+        className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e] active:bg-[#c2e82f] focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
+      >
+        Go to App
+      </a>
+    );
+  }
 
   if (SALES_CONFIG.salesEnabled) {
     async function handleClick() {

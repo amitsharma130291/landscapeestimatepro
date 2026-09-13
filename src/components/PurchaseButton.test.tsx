@@ -5,13 +5,15 @@ const salesConfigMock = vi.hoisted(() => ({ salesEnabled: true, plannedLifetimeP
 vi.mock("../data/salesConfig", () => ({ SALES_CONFIG: salesConfigMock }));
 
 const startCheckoutMock = vi.hoisted(() => vi.fn());
-vi.mock("../lib/license", () => ({ startCheckout: startCheckoutMock }));
+const hasStoredLicenseMock = vi.hoisted(() => vi.fn(() => false));
+vi.mock("../lib/license", () => ({ startCheckout: startCheckoutMock, hasStoredLicense: hasStoredLicenseMock }));
 
 const { default: PurchaseButton } = await import("./PurchaseButton");
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  hasStoredLicenseMock.mockReturnValue(false);
 });
 
 describe("PurchaseButton — sales enabled", () => {
@@ -46,5 +48,26 @@ describe("PurchaseButton — sales disabled", () => {
     expect(disabledButton).toBeDisabled();
     fireEvent.click(disabledButton);
     expect(startCheckoutMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("PurchaseButton — already licensed", () => {
+  it("shows a Go to App link instead of a buy button, even while sales are enabled", async () => {
+    salesConfigMock.salesEnabled = true;
+    hasStoredLicenseMock.mockReturnValue(true);
+    render(<PurchaseButton />);
+
+    const link = await screen.findByRole("link", { name: "Go to App" });
+    expect(link).toHaveAttribute("href", "/app/");
+    expect(screen.queryByRole("button", { name: /Get Landscape Estimate Pro/ })).not.toBeInTheDocument();
+  });
+
+  it("shows a Go to App link instead of the disabled state, even while sales are disabled", async () => {
+    salesConfigMock.salesEnabled = false;
+    hasStoredLicenseMock.mockReturnValue(true);
+    render(<PurchaseButton />);
+
+    expect(await screen.findByRole("link", { name: "Go to App" })).toHaveAttribute("href", "/app/");
+    expect(screen.queryByRole("button", { name: /purchasing temporarily unavailable/i })).not.toBeInTheDocument();
   });
 });

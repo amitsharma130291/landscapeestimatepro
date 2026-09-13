@@ -72,7 +72,7 @@ const schema = webApplicationSchema
       </div>
       <a
         href="/landscaping-estimating-software/"
-        class="inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
+        class="js-tool-layout-pro-cta inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
       >
         Try Pro free — {PRICE_DISPLAY} planned
       </a>
@@ -89,3 +89,14 @@ const schema = webApplicationSchema
     </div>
   </section>
 </Layout>
+
+<script>
+  import { hasStoredLicense } from "../lib/license";
+
+  if (hasStoredLicense()) {
+    document.querySelectorAll<HTMLAnchorElement>(".js-tool-layout-pro-cta").forEach((cta) => {
+      cta.href = "/app/";
+      cta.textContent = "Go to App";
+    });
+  }
+</script>

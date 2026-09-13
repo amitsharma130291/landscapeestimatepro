@@ -17,6 +17,14 @@ export function getStoredLicense(): string | null {
   }
 }
 
+/** True if this browser currently holds a stored license — used purely to
+ * decide what a marketing CTA should say/do (show "Go to App" instead of a
+ * buy button once someone has already paid), never for actual access
+ * control. LicenseGate.tsx is the real gate and re-verifies independently. */
+export function hasStoredLicense(): boolean {
+  return getStoredLicense() !== null;
+}
+
 export function storeLicense(licenseKey: string): void {
   try {
     window.localStorage.setItem(LICENSE_KEY_STORAGE, licenseKey);

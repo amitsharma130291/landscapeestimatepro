@@ -15,7 +15,7 @@ const { salesEnabled } = SALES_CONFIG;
   <div class="mx-auto flex max-w-content items-center justify-between gap-3 border-t border-border bg-white/95 px-4 py-3 shadow-[0_-4px_16px_rgba(14,42,30,0.08)] backdrop-blur sm:px-6" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));">
     <div class="hidden min-w-0 sm:block">
       <p class="truncate text-sm font-bold text-ink">Landscape Estimate Pro</p>
-      <p class="truncate text-xs text-muted">{salesEnabled ? `${PRICE_DISPLAY} lifetime${LAUNCH_PRICE_ACTIVE ? " (launch price)" : ""} — no subscription` : "Purchasing is not open yet"}</p>
+      <p class="js-sticky-cta-caption truncate text-xs text-muted">{salesEnabled ? `${PRICE_DISPLAY} lifetime${LAUNCH_PRICE_ACTIVE ? " (launch price)" : ""} — no subscription` : "Purchasing is not open yet"}</p>
     </div>
     <div class="flex min-w-0 flex-1 shrink items-center gap-2 sm:flex-none">
       {salesEnabled ? (
@@ -47,6 +47,16 @@ const { salesEnabled } = SALES_CONFIG;
 </div>
 
 <script>
+  import { hasStoredLicense } from "../../lib/license";
+
+  // BuyCtaButton (rendered above) already swaps itself to "Go to App" when
+  // licensed — this just keeps the caption next to it from still reading
+  // "$79 lifetime" once that's no longer the relevant message.
+  if (hasStoredLicense()) {
+    const caption = document.querySelector<HTMLElement>(".js-sticky-cta-caption");
+    if (caption) caption.textContent = "Your license is active";
+  }
+
   const bar = document.getElementById("sales-sticky-cta");
   const dismissBtn = document.getElementById("sales-sticky-cta-dismiss");
   const hero = document.getElementById("sales-page-hero");

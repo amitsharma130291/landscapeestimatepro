@@ -25,7 +25,7 @@ import { NAV_ITEMS } from "../data/site";
       ))}
       <a
         href="/pricing/"
-        class="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-lime px-5 text-sm font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
+        class="js-header-cta inline-flex min-h-[44px] items-center justify-center rounded-xl bg-lime px-5 text-sm font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
       >
         See Pricing
       </a>
@@ -55,7 +55,7 @@ import { NAV_ITEMS } from "../data/site";
         </ul>
         <a
           href="/pricing/"
-          class="mt-2 flex min-h-[44px] items-center justify-center rounded-xl bg-lime px-5 text-sm font-bold text-lime-ink hover:bg-[#d9ff5e]"
+          class="js-header-cta mt-2 flex min-h-[44px] items-center justify-center rounded-xl bg-lime px-5 text-sm font-bold text-lime-ink hover:bg-[#d9ff5e]"
         >
           See Pricing
         </a>
@@ -63,3 +63,19 @@ import { NAV_ITEMS } from "../data/site";
     </details>
   </nav>
 </header>
+
+<script>
+  import { hasStoredLicense } from "../lib/license";
+
+  // A visitor who already has a license (bought Pro, or activated a key)
+  // should see a fast way back into the app from every page's header,
+  // instead of a "See Pricing" button pointing at a purchase they've
+  // already made. Purely a UI convenience — LicenseGate.tsx is the real
+  // gate and re-verifies independently once they land on /app/.
+  if (hasStoredLicense()) {
+    document.querySelectorAll<HTMLAnchorElement>(".js-header-cta").forEach((cta) => {
+      cta.href = "/app/";
+      cta.textContent = "Go to App";
+    });
+  }
+</script>

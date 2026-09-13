@@ -12,6 +12,12 @@
 import { test, expect, type Locator } from "@playwright/test";
 import { SALES_CONFIG } from "../../src/data/salesConfig";
 
+// The hero's whole job is the PRE-purchase pitch, so this file opts out of
+// the suite's default "already licensed" fixture (see playwright.config.ts)
+// — otherwise the buy CTA would render as "Go to App" instead (see
+// licensed-go-to-app.spec.ts for that behavior's own coverage).
+test.use({ storageState: { cookies: [], origins: [] } });
+
 const URL = "/landscaping-estimating-software/";
 const PURCHASE_CTA_NAME = /Get Landscape Estimate Pro — \$79 Lifetime/;
 

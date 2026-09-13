@@ -9,6 +9,13 @@
  */
 import { test, expect } from "@playwright/test";
 
+// These upsell CTAs are meant for a visitor who hasn't bought Pro yet, so
+// this file opts out of the suite's default "already licensed" fixture
+// (see playwright.config.ts) — otherwise every "Try Pro free" surface here
+// would render as "Go to App" instead (see licensed-go-to-app.spec.ts for
+// that behavior's own coverage).
+test.use({ storageState: { cookies: [], origins: [] } });
+
 const TOOL_PAGES_WITH_PRO_UPSELL = [
   "/landscaping-cost-calculator/",
   "/landscaping-estimate-calculator/",
