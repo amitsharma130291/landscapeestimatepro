@@ -13,38 +13,53 @@ import { test, expect } from "@playwright/test";
 test.describe("locked (no stored license)", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("shows the activation gate instead of the app", async ({ page }) => {
+  test("redirects straight to the sales page instead of showing a bare activation wall", async ({ page }) => {
     await page.goto("/app/");
-    await expect(page.getByRole("heading", { name: "Activate Landscape Estimate Pro" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Overview" })).not.toBeVisible();
+    await expect(page).toHaveURL(/\/landscaping-estimating-software\/$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Know the cost before you quote/);
   });
 
-  test("activating a valid license key unlocks the app", async ({ page }) => {
+  test("a failed license redemption from a URL param also redirects to the sales page, same as any other unlicensed visit", async ({ page }) => {
+    await page.route("**/api/license-redeem", async (route) => {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: false, status: "unknown" }) });
+    });
+
+    await page.goto("/app/?license=LEP-PRO-not-real");
+    await expect(page).toHaveURL(/\/landscaping-estimating-software\/$/);
+  });
+
+  test("activating a valid license key on /pricing/ (linked from the sales page) also unlocks /app/ afterward", async ({ page }) => {
     await page.route("**/api/license-redeem", async (route) => {
       const body = route.request().postDataJSON();
       expect(body).toMatchObject({ licenseKey: "LEP-PRO-e2e-valid" });
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, paymentId: "pay_e2e", licenseKey: "LEP-PRO-e2e-valid" }) });
     });
 
-    await page.goto("/app/");
+    await page.goto("/pricing/");
     await page.getByLabel("License key").fill("LEP-PRO-e2e-valid");
     await page.getByRole("button", { name: "Activate" }).click();
+    // LicenseActivationSection shows no success message of its own on
+    // /pricing/ (no onActivated handler is wired up there) — the real
+    // proof is that the stored license now unlocks /app/, checked below.
+    await expect(page.getByRole("alert")).not.toBeVisible();
 
+    await page.goto("/app/");
     await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Activate Landscape Estimate Pro" })).not.toBeVisible();
+    await expect(page).toHaveURL(/\/app\/$/);
   });
 
-  test("an invalid license key shows an error and stays locked", async ({ page }) => {
+  test("an invalid license key on /pricing/ shows an error and does not unlock /app/", async ({ page }) => {
     await page.route("**/api/license-redeem", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: false, status: "unknown" }) });
     });
 
-    await page.goto("/app/");
+    await page.goto("/pricing/");
     await page.getByLabel("License key").fill("LEP-PRO-not-real");
     await page.getByRole("button", { name: "Activate" }).click();
-
     await expect(page.getByRole("alert")).toContainText(/isn't valid/i);
-    await expect(page.getByRole("heading", { name: "Activate Landscape Estimate Pro" })).toBeVisible();
+
+    await page.goto("/app/");
+    await expect(page).toHaveURL(/\/landscaping-estimating-software\/$/);
   });
 
   test("a ?license= URL param (a purchase or recovery-email redirect) auto-activates without touching the form", async ({ page }) => {

@@ -1,7 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Loader2, ShieldCheck } from "lucide-react";
-import { Card } from "../ui/primitives";
-import LicenseActivationSection from "../LicenseActivationSection";
+import { Loader2 } from "lucide-react";
 import { consumeLicenseFromUrl, getStoredLicense, redeemLicenseKey } from "../../lib/license";
 
 /**
@@ -21,10 +19,14 @@ import { consumeLicenseFromUrl, getStoredLicense, redeemLicenseKey } from "../..
  *    the app. This is what makes "the user should be redirected to the
  *    paid tool app" after a successful checkout actually unlock it, not
  *    just land on a still-gated page.
- * Otherwise, shows the same activation UI as the pricing page.
+ * Otherwise, /app/ is not the right place for this visitor at all — redirect
+ * to the real sales pitch (/landscaping-estimating-software/) rather than
+ * showing a bare "enter your license key" wall with no context. A returning
+ * customer who's lost their key on this browser/device can still recover or
+ * re-activate it from /pricing/, which that sales page links to.
  */
 export default function LicenseGate({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<"checking" | "unlocked" | "locked">("checking");
+  const [status, setStatus] = useState<"checking" | "unlocked">("checking");
 
   useEffect(() => {
     let cancelled = false;
@@ -37,16 +39,16 @@ export default function LicenseGate({ children }: { children: ReactNode }) {
           if (!cancelled) setStatus("unlocked");
           return;
         } catch {
-          // Fall through to the stored-license / gate check below — an
-          // invalid/expired link shouldn't crash the app, just fail to
-          // auto-unlock it.
+          // Fall through — an invalid/expired link shouldn't crash the
+          // app, just fail to auto-unlock it, and redirect like any other
+          // unlicensed visit below.
         }
       }
       if (getStoredLicense()) {
         if (!cancelled) setStatus("unlocked");
         return;
       }
-      if (!cancelled) setStatus("locked");
+      if (!cancelled) window.location.replace("/landscaping-estimating-software/");
     }
 
     void resolve();
@@ -55,40 +57,13 @@ export default function LicenseGate({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  if (status === "checking") {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 size={24} className="animate-spin text-muted" aria-hidden="true" />
-      </div>
-    );
-  }
+  if (status === "unlocked") return <>{children}</>;
 
-  if (status === "locked") {
-    return (
-      <div className="mx-auto max-w-xl px-4 py-10 sm:px-6">
-        <Card>
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={22} className="text-forest" aria-hidden="true" />
-            <h1 className="text-lg font-bold text-ink">Activate Landscape Estimate Pro</h1>
-          </div>
-          <p className="mt-1.5 text-sm text-muted">
-            You'll need a license key to use the app. Already bought Pro?{" "}
-            <a href="/pricing/#activate-license" className="font-semibold text-forest underline">
-              Enter your key below
-            </a>
-            . Haven't purchased yet?{" "}
-            <a href="/landscaping-estimating-software/#pricing" className="font-semibold text-forest underline">
-              See pricing
-            </a>
-            .
-          </p>
-        </Card>
-        <div className="mt-6">
-          <LicenseActivationSection onActivated={() => setStatus("unlocked")} />
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  // "checking" covers both the brief moment while resolve() runs and the
+  // instant right before the redirect above actually navigates away.
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <Loader2 size={24} className="animate-spin text-muted" aria-hidden="true" />
+    </div>
+  );
 }

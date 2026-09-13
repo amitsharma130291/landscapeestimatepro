@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import AppShell from "./AppShell";
 
 const LICENSE_KEY_STORAGE = "landscapeEstimateProLicense";
@@ -7,12 +7,20 @@ const LICENSE_KEY_STORAGE = "landscapeEstimateProLicense";
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  vi.unstubAllGlobals();
 });
 
 describe("AppShell — license gate (APP_RELEASE_MODE: licensed)", () => {
-  it("shows the activation gate, not the app, when no license is stored", async () => {
+  it("redirects to the sales page instead of the app when no license is stored", async () => {
+    // /app/ has no in-place activation wall any more — an unlicensed
+    // visitor is redirected away entirely (see LicenseGate.tsx). jsdom
+    // doesn't implement window.location.replace(), so stub it the same
+    // way src/lib/license.test.ts stubs `location` for startCheckout().
+    const replace = vi.fn();
+    vi.stubGlobal("location", { ...window.location, replace } as unknown as Location);
+
     render(<AppShell activeTab="overview" />);
-    expect(await screen.findByText("Activate Landscape Estimate Pro")).toBeInTheDocument();
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/landscaping-estimating-software/"));
     expect(screen.queryByRole("heading", { name: "Overview" })).not.toBeInTheDocument();
   });
 

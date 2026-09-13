@@ -80,12 +80,5 @@ test("homepage's 'See How It Works' hero link goes to the sales page's workflow 
   await expect(page.getByRole("heading", { name: "From job quantities to a customer-ready price" })).toBeInViewport();
 });
 
-test.describe("unlicensed visitor", () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
-
-  test("an unlicensed visitor on /app/ is offered the real sales page, not just the bare pricing page", async ({ page }) => {
-    await page.goto("/app/");
-    await expect(page.getByRole("heading", { name: "Activate Landscape Estimate Pro" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "See pricing" })).toHaveAttribute("href", "/landscaping-estimating-software/#pricing");
-  });
-});
+// An unlicensed visitor to /app/ is now redirected straight to the sales
+// page — see tests/e2e/license-gate.spec.ts, which owns that behavior.

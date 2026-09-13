@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import LicenseGate from "./LicenseGate";
 import { redeemLicenseKey } from "../../lib/license";
 
@@ -15,16 +15,30 @@ afterEach(() => {
   window.localStorage.clear();
   window.history.replaceState({}, "", "/app/");
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
+/** /app/ has no in-place "enter your key" wall any more — an unlicensed
+ * visitor is redirected away entirely (see LicenseGate.tsx's own comment
+ * for why: /pricing/ still offers recovery/re-activation for a returning
+ * customer). window.location.replace() isn't implemented in jsdom, so it's
+ * stubbed the same way src/lib/license.test.ts stubs `location` for
+ * startCheckout()'s redirect. */
+function stubLocationReplace() {
+  const replace = vi.fn();
+  vi.stubGlobal("location", { ...window.location, replace } as unknown as Location);
+  return replace;
+}
+
 describe("LicenseGate", () => {
-  it("renders the activation gate when no license is stored and the URL carries none", async () => {
+  it("redirects to the sales page when no license is stored and the URL carries none", async () => {
+    const replace = stubLocationReplace();
     render(
       <LicenseGate>
         <div>Pro app content</div>
       </LicenseGate>
     );
-    expect(await screen.findByText("Activate Landscape Estimate Pro")).toBeInTheDocument();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/landscaping-estimating-software/"));
     expect(screen.queryByText("Pro app content")).not.toBeInTheDocument();
   });
 
@@ -36,7 +50,6 @@ describe("LicenseGate", () => {
       </LicenseGate>
     );
     expect(await screen.findByText("Pro app content")).toBeInTheDocument();
-    expect(screen.queryByText("Activate Landscape Estimate Pro")).not.toBeInTheDocument();
   });
 
   it("auto-activates and renders children when the URL carries a valid ?license= param", async () => {
@@ -53,9 +66,10 @@ describe("LicenseGate", () => {
     expect(redeemLicenseKey).toHaveBeenCalledWith("LEP-PRO-fromlink");
   });
 
-  it("falls back to the locked gate when the URL's license key fails to redeem", async () => {
+  it("redirects to the sales page when the URL's license key fails to redeem, same as any other unlicensed visit", async () => {
     window.history.replaceState({}, "", "/app/?license=LEP-PRO-bad");
     vi.mocked(redeemLicenseKey).mockRejectedValue(new Error("not valid"));
+    const replace = stubLocationReplace();
 
     render(
       <LicenseGate>
@@ -63,23 +77,7 @@ describe("LicenseGate", () => {
       </LicenseGate>
     );
 
-    expect(await screen.findByText("Activate Landscape Estimate Pro")).toBeInTheDocument();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/landscaping-estimating-software/"));
     expect(screen.queryByText("Pro app content")).not.toBeInTheDocument();
-  });
-
-  it("unlocks and shows children after activating through the embedded activation form", async () => {
-    vi.mocked(redeemLicenseKey).mockResolvedValue("LEP-PRO-typed");
-    render(
-      <LicenseGate>
-        <div>Pro app content</div>
-      </LicenseGate>
-    );
-
-    await screen.findByText("Activate Landscape Estimate Pro");
-    const { fireEvent } = await import("@testing-library/react");
-    fireEvent.change(screen.getByLabelText("License key"), { target: { value: "LEP-PRO-typed" } });
-    fireEvent.click(screen.getByRole("button", { name: "Activate" }));
-
-    await waitFor(() => expect(screen.getByText("Pro app content")).toBeInTheDocument());
   });
 });
