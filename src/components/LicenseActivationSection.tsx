@@ -8,16 +8,19 @@ import { redeemLicenseKey, requestLicenseRecovery } from "../lib/license";
  * — the manual-unlock and recovery paths for a purchase made on another
  * device, or after clearing this browser's data. Fully self-verifying
  * against Dodo (see src/lib/license.ts) — no account, no password, just
- * the key from the purchase email.
+ * the key from the purchase email. Standalone on the pricing page
+ * (id="activate-license", which the purchase/recovery emails link straight
+ * to) — /app/ itself no longer embeds this (an unlicensed visit there
+ * redirects to the sales page instead, see LicenseGate.tsx).
  *
- * Reused in two places: standalone on the pricing page (id="activate-license",
- * which the purchase/recovery emails link straight to), and inside
- * LicenseGate.tsx as the actual gate a contractor without a valid stored
- * license sees before the Pro app.
+ * On success, shows a brief confirmation and redirects straight into the
+ * app — same "message plus immediate redirect" pattern as
+ * CheckoutResultBanner.tsx uses for a completed purchase, so activating an
+ * existing key isn't a silent, do-nothing click.
  */
-export default function LicenseActivationSection({ onActivated }: { onActivated?: (licenseKey: string) => void }) {
+export default function LicenseActivationSection() {
   const [licenseKey, setLicenseKey] = useState("");
-  const [activateStatus, setActivateStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [activateStatus, setActivateStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [activateError, setActivateError] = useState<string | null>(null);
 
   const [showRecovery, setShowRecovery] = useState(false);
@@ -31,9 +34,9 @@ export default function LicenseActivationSection({ onActivated }: { onActivated?
     setActivateStatus("loading");
     setActivateError(null);
     try {
-      const confirmedKey = await redeemLicenseKey(licenseKey.trim());
-      setActivateStatus("idle");
-      onActivated?.(confirmedKey);
+      await redeemLicenseKey(licenseKey.trim());
+      setActivateStatus("success");
+      window.location.href = "/app/";
     } catch (err) {
       setActivateStatus("error");
       setActivateError(err instanceof Error ? err.message : "Couldn't verify that license key.");
@@ -75,11 +78,17 @@ export default function LicenseActivationSection({ onActivated }: { onActivated?
             />
           </Field>
         </div>
-        <Button type="submit" disabled={activateStatus === "loading" || !licenseKey.trim()} className="sm:mb-0">
-          {activateStatus === "loading" && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+        <Button type="submit" disabled={activateStatus === "loading" || activateStatus === "success" || !licenseKey.trim()} className="sm:mb-0">
+          {(activateStatus === "loading" || activateStatus === "success") && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
           Activate
         </Button>
       </form>
+      {activateStatus === "success" && (
+        <p className="mt-2 flex items-center gap-2 text-sm font-medium text-mint-ink">
+          <CheckCircle2 size={16} aria-hidden="true" />
+          License activated — taking you to the app…
+        </p>
+      )}
       {activateError && (
         <p role="alert" className="mt-2 text-sm font-medium text-red">
           {activateError}

@@ -11,31 +11,42 @@ vi.mock("../lib/license", () => ({
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
+/** window.location.href isn't a real navigation in jsdom — stub it the
+ * same way src/lib/license.test.ts stubs `location` for startCheckout()'s
+ * redirect, so the assignment can be asserted on. */
+function stubLocation() {
+  const locationStub = { href: "" };
+  vi.stubGlobal("location", locationStub as unknown as Location);
+  return locationStub;
+}
+
 describe("LicenseActivationSection — activation", () => {
-  it("activates a license key and calls onActivated with the confirmed key", async () => {
+  it("activates a license key, shows a confirmation, and redirects into the app", async () => {
     vi.mocked(redeemLicenseKey).mockResolvedValue("LEP-PRO-abc123");
-    const onActivated = vi.fn();
-    render(<LicenseActivationSection onActivated={onActivated} />);
+    const locationStub = stubLocation();
+    render(<LicenseActivationSection />);
 
     fireEvent.change(screen.getByLabelText("License key"), { target: { value: "  lep-pro-abc123  " } });
     fireEvent.click(screen.getByRole("button", { name: "Activate" }));
 
-    await waitFor(() => expect(onActivated).toHaveBeenCalledWith("LEP-PRO-abc123"));
+    expect(await screen.findByText(/license activated/i)).toBeInTheDocument();
+    await waitFor(() => expect(locationStub.href).toBe("/app/"));
     expect(redeemLicenseKey).toHaveBeenCalledWith("lep-pro-abc123");
   });
 
-  it("shows an error message and does not call onActivated when the key is rejected", async () => {
+  it("shows an error message and does not redirect when the key is rejected", async () => {
     vi.mocked(redeemLicenseKey).mockRejectedValue(new Error("That license key isn't valid."));
-    const onActivated = vi.fn();
-    render(<LicenseActivationSection onActivated={onActivated} />);
+    const locationStub = stubLocation();
+    render(<LicenseActivationSection />);
 
     fireEvent.change(screen.getByLabelText("License key"), { target: { value: "LEP-PRO-bogus" } });
     fireEvent.click(screen.getByRole("button", { name: "Activate" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("That license key isn't valid.");
-    expect(onActivated).not.toHaveBeenCalled();
+    expect(locationStub.href).toBe("");
   });
 
   it("disables the Activate button until a key is entered", () => {

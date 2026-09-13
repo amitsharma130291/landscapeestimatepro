@@ -28,7 +28,7 @@ test.describe("locked (no stored license)", () => {
     await expect(page).toHaveURL(/\/landscaping-estimating-software\/$/);
   });
 
-  test("activating a valid license key on /pricing/ (linked from the sales page) also unlocks /app/ afterward", async ({ page }) => {
+  test("activating a valid license key on /pricing/ shows a success message and redirects straight into the app", async ({ page }) => {
     await page.route("**/api/license-redeem", async (route) => {
       const body = route.request().postDataJSON();
       expect(body).toMatchObject({ licenseKey: "LEP-PRO-e2e-valid" });
@@ -38,14 +38,12 @@ test.describe("locked (no stored license)", () => {
     await page.goto("/pricing/");
     await page.getByLabel("License key").fill("LEP-PRO-e2e-valid");
     await page.getByRole("button", { name: "Activate" }).click();
-    // LicenseActivationSection shows no success message of its own on
-    // /pricing/ (no onActivated handler is wired up there) — the real
-    // proof is that the stored license now unlocks /app/, checked below.
-    await expect(page.getByRole("alert")).not.toBeVisible();
 
-    await page.goto("/app/");
-    await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+    // Redirects into the real app — the confirmation message is only
+    // visible for the brief instant before that navigation completes, so
+    // the redirect landing on Overview is the meaningful assertion.
     await expect(page).toHaveURL(/\/app\/$/);
+    await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   });
 
   test("an invalid license key on /pricing/ shows an error and does not unlock /app/", async ({ page }) => {
