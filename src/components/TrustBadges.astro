@@ -1,5 +1,5 @@
 ---
-import { PRICE_DISPLAY } from "../data/site";
+import { PRICE_DISPLAY, LAUNCH_PRICE_ACTIVE } from "../data/site";
 
 export interface Props {
   variant?: "light" | "dark";
@@ -8,7 +8,7 @@ const { variant = "light" } = Astro.props;
 const items = [
   "No account required",
   "Data stays on your device",
-  `${PRICE_DISPLAY} lifetime — no subscription`,
+  LAUNCH_PRICE_ACTIVE ? `${PRICE_DISPLAY} lifetime (launch price) — no subscription` : `${PRICE_DISPLAY} lifetime — no subscription`,
 ];
 const textClass = variant === "dark" ? "text-white/85" : "text-muted";
 const iconClass = variant === "dark" ? "text-lime" : "text-lime-surface";

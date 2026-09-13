@@ -2,7 +2,7 @@
 import "../styles/global.css";
 import PublicHeader from "../components/PublicHeader.astro";
 import PublicFooter from "../components/PublicFooter.astro";
-import { SITE_NAME } from "../data/site";
+import { SITE_NAME, PRICE_DISPLAY, ORIGINAL_PRICE_DISPLAY, LAUNCH_PRICE_ACTIVE } from "../data/site";
 import { ORGANIZATION_LOGO, ORGANIZATION_SAME_AS } from "../data/structuredData";
 
 export interface Props {
@@ -23,8 +23,9 @@ const websiteSchema = {
   "@type": "WebSite",
   name: SITE_NAME,
   url: Astro.site?.toString(),
-  description:
-    "Landscape estimating and job-costing software for small landscape contractors. Free to use today; $99 lifetime planned. No account, local-first.",
+  description: LAUNCH_PRICE_ACTIVE
+    ? `Landscape estimating and job-costing software for small landscape contractors. Free to use today; ${PRICE_DISPLAY} launch price (regular ${ORIGINAL_PRICE_DISPLAY}) planned. No account, local-first.`
+    : `Landscape estimating and job-costing software for small landscape contractors. Free to use today; ${PRICE_DISPLAY} lifetime planned. No account, local-first.`,
 };
 
 const organizationSchema = {

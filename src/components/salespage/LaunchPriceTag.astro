@@ -1,0 +1,25 @@
+---
+import { PRICE_DISPLAY, ORIGINAL_PRICE_DISPLAY, LAUNCH_PRICE_ACTIVE } from "../../data/site";
+
+/** The big, prominent price display used on pricing cards — shows the
+ * current price struck-through against the regular price with a "Launch
+ * price" badge while SALES_CONFIG.originalPriceCents is a real discount,
+ * or just the plain price once that's cleared back to null. */
+interface Props {
+  variant?: "dark" | "light";
+}
+const { variant = "dark" } = Astro.props as Props;
+const mutedClass = variant === "dark" ? "text-white/50" : "text-muted";
+---
+
+{LAUNCH_PRICE_ACTIVE ? (
+  <div>
+    <span class="inline-block rounded-full bg-lime px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-lime-ink">Launch price</span>
+    <p class="mt-2 flex flex-wrap items-baseline gap-3">
+      <span class="text-5xl font-extrabold tabular-nums sm:text-6xl">{PRICE_DISPLAY}</span>
+      <s class={`text-2xl font-semibold tabular-nums ${mutedClass}`}>{ORIGINAL_PRICE_DISPLAY}</s>
+    </p>
+  </div>
+) : (
+  <p class="text-5xl font-extrabold tabular-nums sm:text-6xl">{PRICE_DISPLAY}</p>
+)}

@@ -4,12 +4,15 @@ import Breadcrumbs from "../components/Breadcrumbs.astro";
 import FaqAccordion from "../components/FaqAccordion.astro";
 import PurchaseButton from "../components/PurchaseButton.tsx";
 import LicenseActivationSection from "../components/LicenseActivationSection.tsx";
-import { PRICE_DISPLAY, SITE_URL } from "../data/site";
+import LaunchPriceTag from "../components/salespage/LaunchPriceTag.astro";
+import { PRICE_DISPLAY, ORIGINAL_PRICE_DISPLAY, LAUNCH_PRICE_ACTIVE, SITE_URL } from "../data/site";
 import { buildOfferSchema } from "../data/salesConfig";
 import { PRODUCT_IMAGE_URL } from "../data/structuredData";
 
 const title = `Pricing — Landscape Estimate Pro (${PRICE_DISPLAY} Lifetime)`;
-const description = `Landscape Estimate Pro is ${PRICE_DISPLAY}, one time — no subscription. Local-first storage, no account required.`;
+const description = LAUNCH_PRICE_ACTIVE
+  ? `Landscape Estimate Pro is ${PRICE_DISPLAY} launch price (regular ${ORIGINAL_PRICE_DISPLAY}), one time — no subscription. Local-first storage, no account required.`
+  : `Landscape Estimate Pro is ${PRICE_DISPLAY}, one time — no subscription. Local-first storage, no account required.`;
 
 const offer = buildOfferSchema(`${SITE_URL}/pricing/`);
 const schema = {
@@ -42,7 +45,9 @@ const faqs = [
   },
   {
     question: "What will it cost?",
-    answer: `A one-time ${PRICE_DISPLAY}, lifetime — no subscription, ever.`,
+    answer: LAUNCH_PRICE_ACTIVE
+      ? `A one-time ${PRICE_DISPLAY} launch price (regular ${ORIGINAL_PRICE_DISPLAY}), lifetime — no subscription, ever.`
+      : `A one-time ${PRICE_DISPLAY}, lifetime — no subscription, ever.`,
   },
 ];
 ---
@@ -65,8 +70,8 @@ const faqs = [
   <section class="mx-auto max-w-content px-4 pb-16 sm:px-6 lg:px-8">
     <div class="mx-auto max-w-lg rounded-3xl border border-forest bg-forest p-8 text-white shadow-xl sm:p-10">
       <h2 class="text-lg font-bold text-lime">Landscape Estimate Pro</h2>
-      <p class="mt-2 text-6xl font-extrabold">{PRICE_DISPLAY}</p>
-      <p class="text-white/70">one-time payment, lifetime</p>
+      <div class="mt-2"><LaunchPriceTag /></div>
+      <p class="mt-2 text-white/70">one-time payment, lifetime</p>
 
       <ul class="mt-7 space-y-3 text-sm">
         {[

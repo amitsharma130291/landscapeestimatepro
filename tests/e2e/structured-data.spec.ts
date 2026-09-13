@@ -4,8 +4,11 @@
  * see playwright.config.ts) rather than parsing schema-building source
  * code, so these assertions can't drift from what a crawler actually sees.
  * Covers the structured-data cleanup: free-tool $0 offers preserved, the
- * paid product's real $99 Offer (Dodo checkout is live), product/organization
- * images real and correctly sized, no fabricated ratings/reviews/sameAs.
+ * paid product's real $79 launch-price Offer (Dodo checkout is live — the
+ * struck-through $99 regular price is display-only and intentionally never
+ * appears in structured data, which must always state the actual charged
+ * amount), product/organization images real and correctly sized, no
+ * fabricated ratings/reviews/sameAs.
  */
 import { test, expect, type Page } from "@playwright/test";
 
@@ -31,9 +34,9 @@ test.describe("free tools retain a real $0 Offer", () => {
   }
 });
 
-test.describe("paid product pages carry a real, active $99 offer (Dodo checkout is live)", () => {
+test.describe("paid product pages carry a real, active $79 launch-price offer (Dodo checkout is live)", () => {
   for (const url of PAID_PRODUCT_PAGES) {
-    test(`${url} product schema has a real InStock Offer at $99 USD`, async ({ page }) => {
+    test(`${url} product schema has a real InStock Offer at $79 USD (the actual charged price, not the struck-through $99 regular price)`, async ({ page }) => {
       await page.goto(url);
       const blocks = await readJsonLdBlocks(page);
       const product = blocks.find(
@@ -42,7 +45,7 @@ test.describe("paid product pages carry a real, active $99 offer (Dodo checkout 
           (b as { name?: string }).name === "Landscape Estimate Pro"
       );
       expect(product, `no paid-product schema block found on ${url}`).toBeTruthy();
-      expect(product!.offers).toMatchObject({ "@type": "Offer", price: "99", priceCurrency: "USD", availability: "https://schema.org/InStock" });
+      expect(product!.offers).toMatchObject({ "@type": "Offer", price: "79", priceCurrency: "USD", availability: "https://schema.org/InStock" });
     });
 
     test(`${url} page text never claims the paid product is free`, async ({ page }) => {

@@ -1,5 +1,6 @@
 ---
 import LegalPageLayout from "../layouts/LegalPageLayout.astro";
+import { PRICE_DISPLAY, ORIGINAL_PRICE_DISPLAY, LAUNCH_PRICE_ACTIVE } from "../data/site";
 ---
 
 <LegalPageLayout
@@ -12,7 +13,7 @@ import LegalPageLayout from "../layouts/LegalPageLayout.astro";
   <p>
     Landscape Estimate Pro provides estimating and job-costing calculators and tools for landscape contractors. The
     free tools on this site are usable at no cost. The Pro application described on our{" "}
-    <a href="/pricing/">pricing page</a> is a one-time purchase of $99 for lifetime access — no subscription, no
+    <a href="/pricing/">pricing page</a> is a one-time purchase of {PRICE_DISPLAY}{LAUNCH_PRICE_ACTIVE && <> (launch price — regular {ORIGINAL_PRICE_DISPLAY})</>} for lifetime access — no subscription, no
     recurring charge. Payment is processed by Dodo Payments; we never see or store your card details. After payment
     you receive a license key by email that unlocks Pro in your browser — there is no account or password.
   </p>

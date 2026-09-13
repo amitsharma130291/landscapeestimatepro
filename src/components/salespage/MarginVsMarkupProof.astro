@@ -9,6 +9,13 @@ import {
   EXAMPLE_TARGET_MARGIN_PERCENT,
 } from "../../lib/salesPageExamples";
 import { formatCurrency, formatPercent } from "../../lib/calc";
+import { PRICE_DISPLAY, ORIGINAL_PRICE_DISPLAY, LAUNCH_PRICE_ACTIVE } from "../../data/site";
+import { SALES_CONFIG } from "../../data/salesConfig";
+
+// Computed from the real price, never hardcoded — stays true if the price
+// ever changes (e.g. a launch discount) instead of silently understating
+// or overstating the comparison.
+const priceMultiplier = Math.floor(markupVsMarginDifferenceCents / SALES_CONFIG.plannedLifetimePriceCents);
 ---
 
 <div class="mx-auto max-w-3xl">
@@ -44,7 +51,7 @@ import { formatCurrency, formatPercent } from "../../lib/calc";
     <p class="text-xs font-bold uppercase tracking-wider text-lime">Difference on this example</p>
     <p class="mt-2 text-5xl font-extrabold tabular-nums sm:text-6xl">{formatCurrency(markupVsMarginDifferenceCents, { cents: true })}</p>
     <p class="mt-3 text-base text-white/75">
-      That's more than five times the $99 lifetime price of Landscape Estimate Pro — in this example alone.
+      That's more than {priceMultiplier} times the {PRICE_DISPLAY}{LAUNCH_PRICE_ACTIVE && <> launch price (regular <s>{ORIGINAL_PRICE_DISPLAY}</s>)</>} of Landscape Estimate Pro — in this example alone.
     </p>
   </div>
 

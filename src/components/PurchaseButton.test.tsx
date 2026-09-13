@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-const salesConfigMock = vi.hoisted(() => ({ salesEnabled: true, plannedLifetimePriceCents: 9900, priceValidUntil: null as string | null }));
+const salesConfigMock = vi.hoisted(() => ({ salesEnabled: true, plannedLifetimePriceCents: 7900, originalPriceCents: 9900 as number | null, priceValidUntil: null as string | null }));
 vi.mock("../data/salesConfig", () => ({ SALES_CONFIG: salesConfigMock }));
 
 const startCheckoutMock = vi.hoisted(() => vi.fn());

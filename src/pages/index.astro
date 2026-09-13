@@ -9,13 +9,15 @@ import PurchaseButton from "../components/PurchaseButton.tsx";
 import { calculateExactPricingChainCents, calculateMargin, calculatePriceFromMarkupCents, formatCurrency, formatPercent } from "../lib/calc";
 import { evaluateRateHealth } from "../lib/estimateMath";
 import type { MoneyCents } from "../lib/money";
-import { PRICE_DISPLAY, SITE_URL } from "../data/site";
+import LaunchPriceTag from "../components/salespage/LaunchPriceTag.astro";
+import { PRICE_DISPLAY, ORIGINAL_PRICE_DISPLAY, LAUNCH_PRICE_ACTIVE, SITE_URL } from "../data/site";
 import { buildOfferSchema } from "../data/salesConfig";
 import { PRODUCT_IMAGE_URL } from "../data/structuredData";
 
 const title = "Landscape Estimate Pro — Know Your True Cost, Quote With Confidence";
-const description =
-  "Landscape estimating and job-costing software for small landscape contractors. Turn materials, labor, equipment and overhead into a profitable estimate. Free tools now; Pro ($99 lifetime) is planned, no account, no subscription.";
+const description = LAUNCH_PRICE_ACTIVE
+  ? `Landscape estimating and job-costing software for small landscape contractors. Turn materials, labor, equipment and overhead into a profitable estimate. Free tools now; Pro (${PRICE_DISPLAY} launch price, regular ${ORIGINAL_PRICE_DISPLAY}) is planned, no account, no subscription.`
+  : `Landscape estimating and job-costing software for small landscape contractors. Turn materials, labor, equipment and overhead into a profitable estimate. Free tools now; Pro (${PRICE_DISPLAY} lifetime) is planned, no account, no subscription.`;
 
 // Reference project used consistently across the hero, underpricing, and markup sections
 // — the same Smith Residence numbers as EstimatePreviewCard.astro (materials $1,250 +
@@ -61,7 +63,7 @@ const productSchema = {
 const faqs = [
   {
     question: "Can I buy Pro right now?",
-    answer: "Yes — Pro is a one-time $99, lifetime, no subscription. Payment unlocks the app immediately.",
+    answer: `Yes — Pro is a one-time ${PRICE_DISPLAY}${LAUNCH_PRICE_ACTIVE ? ` launch price (regular ${ORIGINAL_PRICE_DISPLAY})` : ""}, lifetime, no subscription. Payment unlocks the app immediately.`,
   },
   {
     question: "Do I need an account?",
@@ -161,7 +163,7 @@ const faqs = [
       </div>
       <div>
         <p class="text-2xl font-extrabold">{PRICE_DISPLAY}</p>
-        <p class="mt-0.5 text-sm text-white/60">planned lifetime price, one time</p>
+        <p class="mt-0.5 text-sm text-white/60">{LAUNCH_PRICE_ACTIVE ? `planned launch price (regular ${ORIGINAL_PRICE_DISPLAY}), one time` : "planned lifetime price, one time"}</p>
       </div>
       <div>
         <p class="text-2xl font-extrabold">$0</p>
@@ -385,8 +387,8 @@ const faqs = [
     </div>
     <div class="mx-auto mt-8 max-w-lg rounded-3xl border border-forest bg-forest p-8 text-white shadow-xl">
       <h3 class="text-lg font-bold text-lime">Landscape Estimate Pro</h3>
-      <p class="mt-2 text-5xl font-extrabold">{PRICE_DISPLAY}</p>
-      <p class="text-white/70">one-time payment, lifetime access</p>
+      <div class="mt-2"><LaunchPriceTag /></div>
+      <p class="mt-2 text-white/70">one-time payment, lifetime access</p>
       <ul class="mt-6 space-y-2.5 text-sm">
         {[
           "Unlimited estimates and projects",

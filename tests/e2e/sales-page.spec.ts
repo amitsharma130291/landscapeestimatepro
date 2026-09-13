@@ -11,7 +11,7 @@ import { test, expect } from "@playwright/test";
 import { SALES_CONFIG } from "../../src/data/salesConfig";
 
 const URL = "/landscaping-estimating-software/";
-const PURCHASE_CTA_NAME = /Get Landscape Estimate Pro — \$99 Lifetime|Protect My Margin for \$99|Build More Confident Estimates|Get Lifetime Access — \$99|Get Pro — \$99/;
+const PURCHASE_CTA_NAME = /Get Landscape Estimate Pro — \$79 Lifetime|Protect My Margin for \$79|Build More Confident Estimates|Get Lifetime Access — \$79|Get Pro — \$79/;
 
 test("headline and core value proposition are present", async ({ page }) => {
   await page.goto(URL);
@@ -57,12 +57,24 @@ test("CTA copy varies by placement, but every purchase button triggers the same 
   await expect.poll(() => sawApiCall).toBe(true);
 });
 
-test("price is consistent everywhere it appears on the page, from the centralized config", async ({ page }) => {
+test("price is consistent everywhere it appears on the page — only the real launch price or the honestly-disclosed regular price ever appears", async ({ page }) => {
   await page.goto(URL);
   const body = await page.locator("body").innerText();
+  // A launch discount is active: $99 legitimately still appears, but only
+  // ever as the struck-through regular price being compared against — this
+  // catches a stray wrong number, not "there must be exactly one price".
   const dollarPrices = body.match(/\$\d[\d,]*(?:\.\d{2})?\s*(?:lifetime|Lifetime)/g) ?? [];
   for (const match of dollarPrices) {
-    expect(match).toMatch(/\$99/);
+    expect(match).toMatch(/\$(79|99)\b/);
+  }
+  // The actual, currently-charged price must be the one that's actually present.
+  expect(body).toMatch(/\$79/);
+  // Every struck-through ("regular") price on the page must be the real
+  // original price — never an invented or stale number.
+  const struckPrices = await page.locator("s").allTextContents();
+  expect(struckPrices.length).toBeGreaterThan(0);
+  for (const price of struckPrices) {
+    expect(price.trim()).toBe("$99");
   }
 });
 
@@ -81,7 +93,7 @@ test("margin-vs-markup proof: the exact reconciling numbers render on the page (
 test("a contextual purchase CTA follows the financial proof", async ({ page }) => {
   await page.goto(URL);
   const proof = page.locator("text=A familiar pricing shortcut can leave hundreds of dollars on the table.");
-  const cta = SALES_CONFIG.salesEnabled ? page.getByRole("button", { name: "Protect My Margin for $99" }) : page.getByRole("link", { name: "Explore the Free Tools" });
+  const cta = SALES_CONFIG.salesEnabled ? page.getByRole("button", { name: "Protect My Margin for $79" }) : page.getByRole("link", { name: "Explore the Free Tools" });
   const proofBox = await proof.boundingBox();
   const ctaBox = await cta.first().boundingBox();
   expect(proofBox).not.toBeNull();
@@ -221,7 +233,9 @@ test("pricing section: substantial card with the exact price hierarchy and a sho
   const pricing = page.locator("#pricing");
   await pricing.scrollIntoViewIfNeeded();
   await expect(pricing.getByText("Landscape Estimate Pro")).toBeVisible();
-  await expect(pricing.getByText("$99", { exact: true })).toBeVisible();
+  await expect(pricing.getByText("$79", { exact: true })).toBeVisible();
+  await expect(pricing.locator("s").getByText("$99", { exact: true })).toBeVisible(); // struck-through regular price
+  await expect(pricing.getByText("Launch price", { exact: true })).toBeVisible();
   await expect(pricing.getByText("Lifetime access", { exact: true })).toBeVisible();
   await expect(pricing.getByText("One payment. No monthly subscription.")).toBeVisible();
   const cardWidth = (await pricing.locator(".rounded-3xl").boundingBox())!.width;
@@ -237,7 +251,7 @@ test("purchase details only state real, currently-configured policy values", asy
   const body = await page.locator("body").innerText();
   // Must not invent policies this project has never actually decided.
   expect(body.toLowerCase()).not.toMatch(/unlimited devices|24\/7 support|live chat|money-back guarantee beyond/);
-  expect(body).toContain("$99, one time");
+  expect(body).toContain("$79 launch price (regular $99), one time");
   expect(body).toContain("7 days, no questions asked");
   expect(body).toContain("Any modern desktop or mobile browser");
   expect(body).toContain("None required");
@@ -305,7 +319,7 @@ test("paid product structured-data offer reflects SALES_CONFIG.salesEnabled", as
   const productBlock = jsonLd.map((t) => JSON.parse(t)).find((b) => b["@type"] === "SoftwareApplication");
   expect(productBlock).toBeTruthy();
   if (SALES_CONFIG.salesEnabled) {
-    expect(productBlock.offers).toMatchObject({ "@type": "Offer", price: "99", priceCurrency: "USD" });
+    expect(productBlock.offers).toMatchObject({ "@type": "Offer", price: "79", priceCurrency: "USD" });
   } else {
     expect(productBlock).not.toHaveProperty("offers");
   }

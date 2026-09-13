@@ -6,6 +6,12 @@ export const SITE_URL = "https://landscapeestimatepro.com";
 // structured-data block that mentions price agrees with it automatically.
 export const PRICE_USD = SALES_CONFIG.plannedLifetimePriceCents / 100;
 export const PRICE_DISPLAY = `$${PRICE_USD}`;
+// The struck-through "regular" price, shown next to PRICE_DISPLAY while a
+// real launch discount is active — null (and LAUNCH_PRICE_ACTIVE false)
+// once SALES_CONFIG.originalPriceCents is cleared back to null.
+export const ORIGINAL_PRICE_USD = SALES_CONFIG.originalPriceCents !== null ? SALES_CONFIG.originalPriceCents / 100 : null;
+export const ORIGINAL_PRICE_DISPLAY = ORIGINAL_PRICE_USD !== null ? `$${ORIGINAL_PRICE_USD}` : null;
+export const LAUNCH_PRICE_ACTIVE = ORIGINAL_PRICE_USD !== null && ORIGINAL_PRICE_USD > PRICE_USD;
 
 export const NAV_ITEMS = [
   { label: "Free Calculator", href: "/landscaping-cost-calculator/" },

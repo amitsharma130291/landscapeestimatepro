@@ -1,6 +1,7 @@
 ---
 import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
 import ProjectCalculatorIsland from "../../components/calculator/ProjectCalculatorIsland.tsx";
+import { PRICE_DISPLAY, ORIGINAL_PRICE_DISPLAY, LAUNCH_PRICE_ACTIVE } from "../../data/site";
 
 const faqs = [
   {
@@ -15,8 +16,9 @@ const faqs = [
   },
   {
     question: "Does this calculator save my numbers?",
-    answer:
-      "No — this free calculator recalculates fresh each time and doesn't save anything between visits. Landscape Estimate Pro ($99 lifetime) saves your materials, labor, equipment, and every estimate to your device.",
+    answer: LAUNCH_PRICE_ACTIVE
+      ? `No — this free calculator recalculates fresh each time and doesn't save anything between visits. Landscape Estimate Pro (${PRICE_DISPLAY} launch price, regular ${ORIGINAL_PRICE_DISPLAY}) saves your materials, labor, equipment, and every estimate to your device.`
+      : `No — this free calculator recalculates fresh each time and doesn't save anything between visits. Landscape Estimate Pro (${PRICE_DISPLAY} lifetime) saves your materials, labor, equipment, and every estimate to your device.`,
   },
   {
     question: "Is this the same as a landscaping estimate calculator?",

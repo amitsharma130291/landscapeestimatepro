@@ -13,7 +13,7 @@ import { test, expect, type Locator } from "@playwright/test";
 import { SALES_CONFIG } from "../../src/data/salesConfig";
 
 const URL = "/landscaping-estimating-software/";
-const PURCHASE_CTA_NAME = /Get Landscape Estimate Pro — \$99 Lifetime/;
+const PURCHASE_CTA_NAME = /Get Landscape Estimate Pro — \$79 Lifetime/;
 
 async function bottom(locator: Locator): Promise<number> {
   const box = await locator.first().boundingBox();
@@ -250,7 +250,7 @@ test("CTA accessible name includes the product and price when sales are enabled"
   await page.goto(URL);
   const hero = page.locator("#sales-page-hero");
   await expect(hero.getByRole("button", { name: /Landscape Estimate Pro/ })).toBeVisible();
-  await expect(hero.getByRole("button", { name: /\$99/ })).toBeVisible();
+  await expect(hero.getByRole("button", { name: /\$79/ })).toBeVisible();
 });
 
 test("keyboard: the secondary 'See how it works' anchor receives visible focus", async ({ page }) => {

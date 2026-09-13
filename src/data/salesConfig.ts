@@ -8,8 +8,21 @@
  * configure — `salesEnabled` alone is the switch.
  */
 export const SALES_CONFIG = {
-  /** The one-time price, in cents. $99. */
-  plannedLifetimePriceCents: 9900,
+  /** The real, currently-charged one-time price, in cents. Launch price:
+   * $79 (regular price $99 — see originalPriceCents below). This MUST
+   * match whatever the Dodo product (DODO_PRODUCT_ID_PRO) is actually
+   * configured to charge in the Dodo dashboard — changing this constant
+   * alone does not change what Dodo bills. If these ever disagree, the
+   * checkout is lying to the customer about either the displayed price
+   * or the charged one. */
+  plannedLifetimePriceCents: 7900,
+  /** The regular (non-launch) price, in cents, shown struck through next
+   * to the current price wherever price is displayed prominently — or
+   * `null` when there is no discount to disclose (the current price is
+   * simply the price, nothing to compare it against). Only ever a REAL
+   * former/regular price, never an invented "was" price used purely to
+   * manufacture urgency. */
+  originalPriceCents: 9900 as number | null,
   /** Whether a real purchase can actually be completed right now. Every
    * "Buy"/"Get Pro" surface in the app must check this before ever
    * claiming a purchase can be completed — flip back to false if Dodo

@@ -1,6 +1,6 @@
 ---
 import { SALES_CONFIG } from "../../data/salesConfig";
-import { PRICE_DISPLAY } from "../../data/site";
+import { PRICE_DISPLAY, LAUNCH_PRICE_ACTIVE } from "../../data/site";
 import BuyCtaButton from "./BuyCtaButton.astro";
 
 const { salesEnabled } = SALES_CONFIG;
@@ -15,7 +15,7 @@ const { salesEnabled } = SALES_CONFIG;
   <div class="mx-auto flex max-w-content items-center justify-between gap-3 border-t border-border bg-white/95 px-4 py-3 shadow-[0_-4px_16px_rgba(14,42,30,0.08)] backdrop-blur sm:px-6" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));">
     <div class="hidden min-w-0 sm:block">
       <p class="truncate text-sm font-bold text-ink">Landscape Estimate Pro</p>
-      <p class="truncate text-xs text-muted">{salesEnabled ? `${PRICE_DISPLAY} lifetime — no subscription` : "Purchasing is not open yet"}</p>
+      <p class="truncate text-xs text-muted">{salesEnabled ? `${PRICE_DISPLAY} lifetime${LAUNCH_PRICE_ACTIVE ? " (launch price)" : ""} — no subscription` : "Purchasing is not open yet"}</p>
     </div>
     <div class="flex min-w-0 flex-1 shrink items-center gap-2 sm:flex-none">
       {salesEnabled ? (

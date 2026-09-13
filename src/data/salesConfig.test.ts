@@ -16,8 +16,11 @@ describe("SALES_CONFIG", () => {
   it("sales are enabled — Dodo Payments checkout is live", () => {
     expect(SALES_CONFIG.salesEnabled).toBe(true);
   });
-  it("the price is $99", () => {
-    expect(SALES_CONFIG.plannedLifetimePriceCents).toBe(9900);
+  it("the price is $79 (launch price)", () => {
+    expect(SALES_CONFIG.plannedLifetimePriceCents).toBe(7900);
+  });
+  it("the regular (struck-through) price is $99", () => {
+    expect(SALES_CONFIG.originalPriceCents).toBe(9900);
   });
 });
 
@@ -66,10 +69,10 @@ describe("buildOfferSchema — sales enabled (the real, current state)", () => {
     expect(buildOfferSchema()).not.toHaveProperty("priceValidUntil");
   });
 
-  it("returns a real InStock offer at the configured price", () => {
+  it("returns a real InStock offer at the actual charged price — never the struck-through regular price", () => {
     mutableSalesConfig.salesEnabled = true;
     const offer = buildOfferSchema("https://example.com/pricing/");
-    expect(offer).toMatchObject({ "@type": "Offer", price: "99", priceCurrency: "USD", availability: "https://schema.org/InStock" });
+    expect(offer).toMatchObject({ "@type": "Offer", price: "79", priceCurrency: "USD", availability: "https://schema.org/InStock" });
   });
 });
 

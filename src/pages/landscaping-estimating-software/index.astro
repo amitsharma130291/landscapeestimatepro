@@ -13,14 +13,16 @@ import CostScenarioCards from "../../components/salespage/CostScenarioCards.astr
 import EstimateVsActualDemo from "../../components/salespage/EstimateVsActualDemo.astro";
 import StickyCtaBar from "../../components/salespage/StickyCtaBar.astro";
 import { SALES_CONFIG, buildOfferSchema } from "../../data/salesConfig";
-import { PRICE_DISPLAY, SITE_URL } from "../../data/site";
+import LaunchPriceTag from "../../components/salespage/LaunchPriceTag.astro";
+import { PRICE_DISPLAY, ORIGINAL_PRICE_DISPLAY, LAUNCH_PRICE_ACTIVE, SITE_URL } from "../../data/site";
 import { PRODUCT_IMAGE_URL } from "../../data/structuredData";
 
 const { salesEnabled } = SALES_CONFIG;
 
 const title = "Landscaping Estimating Software | Landscape Estimate Pro";
-const description =
-  "Landscaping estimating software that turns your own material, labor and equipment costs into a required selling price — then compares it to what the job actually cost. $99 lifetime, no subscription.";
+const description = LAUNCH_PRICE_ACTIVE
+  ? `Landscaping estimating software that turns your own material, labor and equipment costs into a required selling price — then compares it to what the job actually cost. ${PRICE_DISPLAY} launch price (regular ${ORIGINAL_PRICE_DISPLAY}), no subscription.`
+  : `Landscaping estimating software that turns your own material, labor and equipment costs into a required selling price — then compares it to what the job actually cost. ${PRICE_DISPLAY} lifetime, no subscription.`;
 
 const offer = buildOfferSchema(`${SITE_URL}/landscaping-estimating-software/`);
 const schema = {
@@ -84,7 +86,7 @@ const pricingHighlights = ["True-cost and required-price calculations", "Service
 // architecture (a client-side web app with no version gate), not policy
 // promises that could later be broken.
 const purchaseDetails: { label: string; value: string }[] = [
-  { label: "Price", value: "$99, one time" },
+  { label: "Price", value: LAUNCH_PRICE_ACTIVE ? `${PRICE_DISPLAY} launch price (regular ${ORIGINAL_PRICE_DISPLAY}), one time` : `${PRICE_DISPLAY}, one time` },
   { label: "Subscription", value: "None — lifetime access" },
   { label: "Updates", value: "Improvements to the live app are included automatically, at no extra charge" },
   { label: "Browsers", value: "Any modern desktop or mobile browser — Chrome, Firefox, Safari or Edge" },
@@ -110,14 +112,19 @@ const faqs = [
   { question: "Can I export a backup?", answer: "Yes. Export your complete workspace as a JSON file any time, and restore it on this or another device." },
   { question: "Can I print customer estimates?", answer: "Yes. Customer documents are generated from an allowlisted model that excludes your internal costs, overhead and margin." },
   { question: "Can I compare estimated and actual job costs?", answer: "Yes. Record actual labor, materials and equipment after a job, and compare them to what you quoted." },
-  { question: "Is this a subscription?", answer: salesEnabled ? "No. Pro is $99, once — not a subscription, ever." : "No. The planned price is $99 as a one-time purchase." },
+  {
+    question: "Is this a subscription?",
+    answer: salesEnabled
+      ? `No. Pro is ${PRICE_DISPLAY}${LAUNCH_PRICE_ACTIVE ? ` (launch price — regular ${ORIGINAL_PRICE_DISPLAY})` : ""}, once — not a subscription, ever.`
+      : `No. The planned price is ${PRICE_DISPLAY} as a one-time purchase.`,
+  },
   { question: "What devices and browsers are supported?", answer: "Any modern desktop or mobile browser — Chrome, Firefox, Safari or Edge. There's nothing to install." },
   { question: "What support is included?", answer: "Email support, via the contact page." },
   { question: "What is the refund policy?", answer: "A 7-day, no-questions-asked refund — see the refund policy for details." },
   {
     question: "Is purchasing available now?",
     answer: salesEnabled
-      ? "Yes — Pro is $99, once, lifetime, no subscription. Payment unlocks the app immediately."
+      ? `Yes — Pro is ${PRICE_DISPLAY}${LAUNCH_PRICE_ACTIVE ? ` (launch price — regular ${ORIGINAL_PRICE_DISPLAY})` : ""}, once, lifetime, no subscription. Payment unlocks the app immediately.`
       : "Not yet — purchasing isn't open. Explore the free tools below, or preview how Pro works in the sections above.",
   },
 ];
@@ -381,8 +388,8 @@ const faqs = [
         <div class="grid gap-8 sm:grid-cols-[minmax(0,15rem)_1fr]">
           <div>
             <h3 class="text-lg font-bold text-lime">Landscape Estimate Pro</h3>
-            <p class="mt-2 text-5xl font-extrabold">{PRICE_DISPLAY}</p>
-            <p class="text-white/70">Lifetime access</p>
+            <div class="mt-2"><LaunchPriceTag /></div>
+            <p class="mt-2 text-white/70">Lifetime access</p>
             <p class="mt-1 text-sm text-white/70">One payment. No monthly subscription.</p>
 
             <div class="mt-6">
