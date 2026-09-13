@@ -19,7 +19,10 @@ import { NAV_ITEMS } from "../data/site";
 
     <div class="hidden items-center gap-6 lg:flex">
       {NAV_ITEMS.map((item) => (
-        <a href={item.href} class="text-sm font-semibold text-ink/80 transition-colors hover:text-forest">
+        <a
+          href={item.href}
+          class={`text-sm font-semibold text-ink/80 transition-colors hover:text-forest ${item.href === "/landscaping-estimating-software/" ? "js-nav-estimating-software" : ""}`}
+        >
           {item.label}
         </a>
       ))}
@@ -47,7 +50,10 @@ import { NAV_ITEMS } from "../data/site";
         <ul class="space-y-1">
           {NAV_ITEMS.map((item) => (
             <li>
-              <a href={item.href} class="flex min-h-[44px] items-center rounded-lg px-3 text-sm font-semibold text-ink hover:bg-paper-dim">
+              <a
+                href={item.href}
+                class={`flex min-h-[44px] items-center rounded-lg px-3 text-sm font-semibold text-ink hover:bg-paper-dim ${item.href === "/landscaping-estimating-software/" ? "js-nav-estimating-software" : ""}`}
+              >
                 {item.label}
               </a>
             </li>
@@ -76,6 +82,15 @@ import { NAV_ITEMS } from "../data/site";
     document.querySelectorAll<HTMLAnchorElement>(".js-header-cta").forEach((cta) => {
       cta.href = "/app/";
       cta.textContent = "Go to App";
+    });
+    // The "Estimating Software" nav link points at the marketing/sales
+    // page — once someone already owns Pro, clicking it should take them
+    // straight into the app instead of back to the pitch for it. Keep the
+    // label as-is (only redirect the destination): the ".js-header-cta"
+    // button right next to it already reads "Go to App", so relabeling
+    // this one too would just duplicate it.
+    document.querySelectorAll<HTMLAnchorElement>(".js-nav-estimating-software").forEach((link) => {
+      link.href = "/app/";
     });
   }
 </script>

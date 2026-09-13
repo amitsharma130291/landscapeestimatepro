@@ -67,6 +67,14 @@ test("footer's Product column links directly to the sales page", async ({ page }
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Landscaping Estimating Software" })).toHaveAttribute("href", "/landscaping-estimating-software/");
 });
 
+test("homepage's 'See How It Works' hero link goes to the sales page's workflow section, not an in-page anchor", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "See How It Works" })).toHaveAttribute("href", "/landscaping-estimating-software/#how-it-works");
+  await page.getByRole("link", { name: "See How It Works" }).click();
+  await expect(page).toHaveURL(/\/landscaping-estimating-software\/#how-it-works$/);
+  await expect(page.getByRole("heading", { name: "From job quantities to a customer-ready price" })).toBeInViewport();
+});
+
 test.describe("unlicensed visitor", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 

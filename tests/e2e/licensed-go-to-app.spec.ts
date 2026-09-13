@@ -41,6 +41,19 @@ test.describe("licensed visitor", () => {
     await expect(page.getByRole("link", { name: "Go to App" })).toHaveCount(0);
   });
 
+  test("nav 'Estimating Software' link redirects straight to /app/ once licensed, but keeps its label", async ({ page }) => {
+    await setLicensed(page);
+    await page.goto("/");
+    const navLink = page.locator("nav[aria-label='Primary']").getByRole("link", { name: "Estimating Software" });
+    await expect(navLink).toHaveAttribute("href", "/app/");
+  });
+
+  test("nav 'Estimating Software' link still points at the sales page for an unlicensed visitor", async ({ page }) => {
+    await page.goto("/");
+    const navLink = page.locator("nav[aria-label='Primary']").getByRole("link", { name: "Estimating Software" });
+    await expect(navLink).toHaveAttribute("href", "/landscaping-estimating-software/");
+  });
+
   test("sales page: every BuyCtaButton placement and the sticky bar show Go to App", async ({ page }) => {
     await setLicensed(page);
     await page.goto("/landscaping-estimating-software/");
