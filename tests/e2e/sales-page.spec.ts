@@ -22,7 +22,7 @@ const PURCHASE_CTA_NAME = /Get Landscape Estimate Pro — \$79 Lifetime|Protect 
 
 test("headline and core value proposition are present", async ({ page }) => {
   await page.goto(URL);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Know the cost before you quote\. Protect the margin after the job\./);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Landscaping Estimating Software: Know the Cost Before You Quote\./);
   await expect(page.getByText("Estimating, pricing and job costing. No CRM. No scheduling.")).toBeVisible();
 });
 

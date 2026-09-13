@@ -29,7 +29,7 @@ async function bottom(locator: Locator): Promise<number> {
 
 test("the exact headline is present", async ({ page }) => {
   await page.goto(URL);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Know the cost before you quote. Protect the margin after the job.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Landscaping Estimating Software: Know the Cost Before You Quote.");
 });
 
 test("CTA follows SALES_CONFIG: an active purchase button only when sales are enabled", async ({ page }) => {

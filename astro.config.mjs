@@ -27,6 +27,10 @@ export default defineConfig({
     sitemap({
       // /app/* is the local-first Pro application, not indexable content — keep it out of the sitemap.
       filter: (page) => !page.includes('/app/'),
+      // Every page is statically prerendered at build time, so "last
+      // modified" honestly means "as of this build" for all of them —
+      // there's no per-page content-management timestamp to draw from.
+      serialize: (item) => ({ ...item, lastmod: new Date().toISOString() }),
     }),
   ],
   vite: {

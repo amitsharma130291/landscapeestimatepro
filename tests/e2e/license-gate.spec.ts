@@ -16,7 +16,7 @@ test.describe("locked (no stored license)", () => {
   test("redirects straight to the sales page instead of showing a bare activation wall", async ({ page }) => {
     await page.goto("/app/");
     await expect(page).toHaveURL(/\/landscaping-estimating-software\/$/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Know the cost before you quote/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Landscaping Estimating Software/);
   });
 
   test("a failed license redemption from a URL param also redirects to the sales page, same as any other unlicensed visit", async ({ page }) => {

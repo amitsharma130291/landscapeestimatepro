@@ -21,8 +21,8 @@ const { salesEnabled } = SALES_CONFIG;
 
 const title = "Landscaping Estimating Software | Landscape Estimate Pro";
 const description = LAUNCH_PRICE_ACTIVE
-  ? `Landscaping estimating software that turns your own material, labor and equipment costs into a required selling price — then compares it to what the job actually cost. ${PRICE_DISPLAY} launch price (regular ${ORIGINAL_PRICE_DISPLAY}), no subscription.`
-  : `Landscaping estimating software that turns your own material, labor and equipment costs into a required selling price — then compares it to what the job actually cost. ${PRICE_DISPLAY} lifetime, no subscription.`;
+  ? `Landscaping estimating software (also called landscape estimating software) that turns your costs into a required price. ${PRICE_DISPLAY} launch price, no subscription.`
+  : `Landscaping estimating software (also called landscape estimating software) that turns your costs into a required price. ${PRICE_DISPLAY} lifetime, no subscription.`;
 
 const offer = buildOfferSchema(`${SITE_URL}/landscaping-estimating-software/`);
 const schema = {
@@ -119,6 +119,10 @@ const faqs = [
       : `No. The planned price is ${PRICE_DISPLAY} as a one-time purchase.`,
   },
   { question: "What devices and browsers are supported?", answer: "Any modern desktop or mobile browser — Chrome, Firefox, Safari or Edge. There's nothing to install." },
+  {
+    question: "Is this the same as \"landscape estimating software\" or \"landscaping estimate software\"?",
+    answer: "Yes — landscaping estimating software, landscape estimating software, and landscaping estimate software all describe the same kind of tool. Landscape Estimate Pro is built for exactly that: estimating, pricing and job costing for landscaping projects.",
+  },
   { question: "What support is included?", answer: "Email support, via the contact page." },
   { question: "What is the refund policy?", answer: "A 7-day, no-questions-asked refund — see the refund policy for details." },
   {
@@ -145,7 +149,7 @@ const faqs = [
     <div class="max-w-[620px]">
       <p class="text-sm font-semibold uppercase tracking-wide text-lime-surface">For small landscaping contractors</p>
       <h1 class="mt-2 text-[clamp(1.9rem,4.5vw,3rem)] font-extrabold leading-[1.15] text-ink lg:max-w-[19ch]">
-        Know the cost before you quote. Protect the margin after the job.
+        Landscaping Estimating Software: Know the Cost Before You Quote.
       </h1>
       <p class="mt-3 max-w-xl text-lg leading-relaxed text-muted">
         Turn your material prices, labor, equipment, overhead and production rates into a customer-ready

@@ -1,0 +1,31 @@
+# Landscape Estimate Pro
+
+> Landscaping estimating and job-costing software for small landscape contractors. Turn your own material, labor, equipment and overhead costs into a required selling price, then compare it to what the completed job actually cost. $79 lifetime, no subscription, no account, local-first (nothing leaves the browser). It is not a CRM, scheduling tool, or accounting system.
+
+## Core product
+
+- [Landscaping Estimating Software](https://landscapeestimatepro.com/landscaping-estimating-software/): the full product page — pricing, features, FAQ, and the real estimating workflow (materials → labor → equipment → overhead → true cost → target margin → customer estimate → estimate vs. actual).
+- [Pricing](https://landscapeestimatepro.com/pricing/): the $79 lifetime purchase and license activation/recovery.
+
+## Free tools
+
+- [Landscaping Cost Calculator](https://landscapeestimatepro.com/landscaping-cost-calculator/): free true-cost and required-price calculator.
+- [Landscaping Estimate Calculator](https://landscapeestimatepro.com/landscaping-estimate-calculator/): free single-project estimate calculator.
+- [Landscaping Estimate Template](https://landscapeestimatepro.com/landscaping-estimate-template/): free interactive, printable estimate builder.
+- [Landscaping Quote Template](https://landscapeestimatepro.com/landscaping-quote-template/): free customer-facing quote builder.
+- [Landscaping Invoice Template](https://landscapeestimatepro.com/landscaping-invoice-template/): free itemized invoice builder.
+- [Landscaping Price List](https://landscapeestimatepro.com/landscaping-price-list/): free per-service price book builder.
+- [Landscape Pricing Guide](https://landscapeestimatepro.com/landscape-pricing-guide/): how labor, materials, overhead, markup vs. margin, and production rates combine into a price that protects a landscaping business.
+- [Resources](https://landscapeestimatepro.com/resources/): index of every free tool and guide above.
+
+## Policies
+
+- [Refund Policy](https://landscapeestimatepro.com/refund/): 7-day, no-questions-asked refund.
+- [Privacy Policy](https://landscapeestimatepro.com/privacy/): local-first, no server-side storage of business/project data.
+- [Terms of Service](https://landscapeestimatepro.com/terms/)
+
+## Notes for automated/AI use
+
+- All prices, examples, and calculations on this site are computed from the real product's own pricing logic, not invented figures.
+- The paid product (`/app/`) requires a purchased license and is excluded from crawling (see robots.txt) — it is not public content.
+- "Landscaping estimating software," "landscape estimating software," and "landscaping estimate software" all refer to the same product category this site addresses.
