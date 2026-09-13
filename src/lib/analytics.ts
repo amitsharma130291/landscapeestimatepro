@@ -1,7 +1,10 @@
 /**
- * Minimal GA4 event wrapper for the PUBLIC marketING pages only. When
- * PUBLIC_GA_MEASUREMENT_ID is unset, gtag is never loaded and every track()
- * call below is a silent no-op — no network request, no console error.
+ * Minimal GA4 event wrapper for the PUBLIC marketing pages only. Layout.astro
+ * bakes in the site's real GA4 property (G-H0LF7K48W3) by default, so gtag
+ * normally loads on every public page — but every track() call below is
+ * still a silent no-op (no network request, no console error) whenever
+ * gtag isn't present for any reason (e.g. a build that overrides GA_ID to
+ * empty, or an ad blocker).
  *
  * This is NEVER wired into the Pro application (`/app/*` uses its own
  * AppPageLayout.astro, which has no analytics script at all — see that

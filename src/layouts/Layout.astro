@@ -16,7 +16,13 @@ const { title, description, noIndex = false, ogImage = "/og-default.png" } = Ast
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
 const ogImageUrl = new URL(ogImage, Astro.site).toString();
-const GA_ID = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
+// The real, live GA4 property for this site. Not a secret — a Measurement
+// ID is meant to be public (it ships in every page's own client-side
+// script tag regardless). Baked in directly so analytics works without
+// depending on Vercel env var configuration; PUBLIC_GA_MEASUREMENT_ID
+// still overrides it if ever set (e.g. to point a preview build at a
+// different GA4 property).
+const GA_ID = import.meta.env.PUBLIC_GA_MEASUREMENT_ID || "G-H0LF7K48W3";
 
 const websiteSchema = {
   "@context": "https://schema.org",
