@@ -11,7 +11,16 @@ import { test, expect, type Page } from "@playwright/test";
 
 async function freshWorkspace(page: Page) {
   await page.goto("/app/");
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    // Reset the workspace, but keep this browser's license — clearing it
+    // would re-lock /app behind LicenseGate and hide the very onboarding
+    // UI these tests exercise. The license fixture's real value lives in
+    // playwright.config.ts's default storageState; re-read it before the
+    // wipe so this stays correct even if that fixture value ever changes.
+    const license = localStorage.getItem("landscapeEstimateProLicense");
+    localStorage.clear();
+    if (license) localStorage.setItem("landscapeEstimateProLicense", license);
+  });
   await page.reload();
 }
 

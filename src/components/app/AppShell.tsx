@@ -1,10 +1,10 @@
 import { useState, type ReactElement } from "react";
 import { LayoutGrid, Package, Settings, ClipboardList, FileText, Activity, ArrowLeft, Menu, X, BookOpen } from "lucide-react";
 import { WorkspaceProvider } from "../../lib/workspaceContext";
-import { APP_RELEASE_MODE } from "../../data/salesConfig";
 import SaveStatusIndicator from "./SaveStatusIndicator";
 import NewEstimateButton from "./NewEstimateButton";
 import ScrollToTopButton from "../ui/ScrollToTopButton";
+import LicenseGate from "./LicenseGate";
 import GuideTab from "./tabs/GuideTab";
 import OverviewTab from "./tabs/OverviewTab";
 import CatalogTab from "./tabs/CatalogTab";
@@ -44,89 +44,83 @@ export default function AppShell({ activeTab }: { activeTab: AppTab }) {
   const activeItem = NAV.find((item) => item.id === activeTab);
 
   return (
-    <WorkspaceProvider>
-      <div className="min-h-screen bg-paper">
-        <a href="#app-main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-forest focus:px-4 focus:py-2 focus:text-white">
-          Skip to content
-        </a>
+    <LicenseGate>
+      <WorkspaceProvider>
+        <div className="min-h-screen bg-paper">
+          <a href="#app-main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-forest focus:px-4 focus:py-2 focus:text-white">
+            Skip to content
+          </a>
 
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-white px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="tap-target flex h-10 w-10 items-center justify-center rounded-lg text-ink hover:bg-paper-dim lg:hidden"
-              onClick={() => setMobileNavOpen((v) => !v)}
-              aria-expanded={mobileNavOpen}
-              aria-controls="app-sidebar"
-              aria-label="Toggle navigation"
-            >
-              {mobileNavOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
-            </button>
-            <a href="/" className="inline-flex items-center">
-              <picture>
-                <source srcSet="/brand/logo-lockup.webp" type="image/webp" />
-                <img src="/brand/logo-lockup.png" alt="Landscape Estimate Pro" width="230" height="50" className="h-8 w-auto" />
-              </picture>
-            </a>
-            {APP_RELEASE_MODE === "free-beta" && (
-              <span
-                className="rounded-full bg-amber-light px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-amber"
-                title="This is an open beta — anyone with this link can use it. There is no purchase, account, or access control yet."
+          <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-white px-4 sm:px-6">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="tap-target flex h-10 w-10 items-center justify-center rounded-lg text-ink hover:bg-paper-dim lg:hidden"
+                onClick={() => setMobileNavOpen((v) => !v)}
+                aria-expanded={mobileNavOpen}
+                aria-controls="app-sidebar"
+                aria-label="Toggle navigation"
               >
-                Free beta
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* The Estimates tab already has its own prominent "New estimate"
-                button — showing this global shortcut there too would be a
-                redundant duplicate control with a colliding accessible name. */}
-            {activeTab !== "estimates" && <NewEstimateButton />}
-            <SaveStatusIndicator />
-            <a href="/" className="hidden items-center gap-1.5 text-sm font-semibold text-muted hover:text-forest sm:flex">
-              <ArrowLeft size={16} aria-hidden="true" /> Back to site
-            </a>
-          </div>
-        </header>
-
-        <div className="mx-auto flex max-w-[90rem]">
-          <nav
-            id="app-sidebar"
-            aria-label="Application"
-            className={`${mobileNavOpen ? "block" : "hidden"} w-full shrink-0 border-b border-border bg-white p-3 lg:block lg:w-64 lg:border-b-0 lg:border-r lg:p-4`}
-          >
-            <ul className="space-y-1">
-              {NAV.map((item) => {
-                const Icon = item.icon;
-                const isActive = item.id === activeTab;
-                return (
-                  <li key={item.id}>
-                    <a
-                      href={item.href}
-                      aria-current={isActive ? "page" : undefined}
-                      className={`flex min-h-[44px] items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors ${
-                        isActive ? "bg-forest text-white" : "text-ink hover:bg-paper-dim"
-                      }`}
-                    >
-                      <Icon size={18} aria-hidden="true" />
-                      {item.label}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-
-          <main id="app-main" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-            <h1 className="text-2xl font-extrabold text-ink">{activeItem?.label}</h1>
-            <div className="mt-6">
-              <ActiveComponent />
+                {mobileNavOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+              </button>
+              <a href="/" className="inline-flex items-center">
+                <picture>
+                  <source srcSet="/brand/logo-lockup.webp" type="image/webp" />
+                  <img src="/brand/logo-lockup.png" alt="Landscape Estimate Pro" width="230" height="50" className="h-8 w-auto" />
+                </picture>
+              </a>
             </div>
-          </main>
-        </div>
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* The Estimates tab already has its own prominent "New estimate"
+                  button — showing this global shortcut there too would be a
+                  redundant duplicate control with a colliding accessible name. */}
+              {activeTab !== "estimates" && <NewEstimateButton />}
+              <SaveStatusIndicator />
+              <a href="/" className="hidden items-center gap-1.5 text-sm font-semibold text-muted hover:text-forest sm:flex">
+                <ArrowLeft size={16} aria-hidden="true" /> Back to site
+              </a>
+            </div>
+          </header>
 
-        <ScrollToTopButton />
-      </div>
-    </WorkspaceProvider>
+          <div className="mx-auto flex max-w-[90rem]">
+            <nav
+              id="app-sidebar"
+              aria-label="Application"
+              className={`${mobileNavOpen ? "block" : "hidden"} w-full shrink-0 border-b border-border bg-white p-3 lg:block lg:w-64 lg:border-b-0 lg:border-r lg:p-4`}
+            >
+              <ul className="space-y-1">
+                {NAV.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item.id === activeTab;
+                  return (
+                    <li key={item.id}>
+                      <a
+                        href={item.href}
+                        aria-current={isActive ? "page" : undefined}
+                        className={`flex min-h-[44px] items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors ${
+                          isActive ? "bg-forest text-white" : "text-ink hover:bg-paper-dim"
+                        }`}
+                      >
+                        <Icon size={18} aria-hidden="true" />
+                        {item.label}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+
+            <main id="app-main" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+              <h1 className="text-2xl font-extrabold text-ink">{activeItem?.label}</h1>
+              <div className="mt-6">
+                <ActiveComponent />
+              </div>
+            </main>
+          </div>
+
+          <ScrollToTopButton />
+        </div>
+      </WorkspaceProvider>
+    </LicenseGate>
   );
 }

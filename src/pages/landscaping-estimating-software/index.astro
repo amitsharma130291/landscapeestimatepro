@@ -4,14 +4,15 @@ import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import TrustBadges from "../../components/TrustBadges.astro";
 import FaqAccordion from "../../components/FaqAccordion.astro";
 import PurchaseButton from "../../components/PurchaseButton.tsx";
+import CheckoutResultBanner from "../../components/CheckoutResultBanner.tsx";
 import EstimatePreviewCard from "../../components/EstimatePreviewCard.astro";
 import { PRICE_DISPLAY, SITE_URL } from "../../data/site";
 import { buildOfferSchema } from "../../data/salesConfig";
 import { PRODUCT_IMAGE_URL } from "../../data/structuredData";
 
-const title = "Landscape Estimating Software — Free Tools, Pro Planned";
+const title = "Landscape Estimating Software — Free Tools, Pro $99 Lifetime";
 const description =
-  "Landscape estimating software built from your own materials, labor, equipment and production rates. Free tools now; Pro ($99 lifetime, planned) is not yet purchasable. No account, local-first. Not aerial takeoff — real job costing.";
+  "Landscape estimating software built from your own materials, labor, equipment and production rates. Free tools now; Pro is $99 lifetime, no subscription. No account, local-first. Not aerial takeoff — real job costing.";
 
 const offer = buildOfferSchema(`${SITE_URL}/landscaping-estimating-software/`);
 const schema = {
@@ -39,8 +40,7 @@ const faqs = [
   },
   {
     question: "Is Pro available to buy right now?",
-    answer:
-      "Not yet — purchasing is planned but not open. Pro is fully usable today for building and testing; the planned price is $99 once, lifetime, no subscription.",
+    answer: "Yes — Pro is $99, once, lifetime, no subscription. Payment unlocks the app immediately.",
   },
   {
     question: "Can I see whether a completed job actually hit my target margin?",
@@ -56,6 +56,8 @@ const faqs = [
   </Fragment>
 
   <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Landscaping Estimating Software", href: "/landscaping-estimating-software/" }]} />
+
+  <CheckoutResultBanner client:load />
 
   <section class="mx-auto grid max-w-content gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_24rem] lg:items-center lg:gap-14 lg:px-8 lg:py-16">
     <div>
@@ -113,8 +115,8 @@ const faqs = [
   <section class="border-t border-border bg-forest py-14 text-white">
     <div class="mx-auto flex max-w-content flex-col items-start gap-5 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
       <div>
-        <h2 class="text-2xl font-extrabold sm:text-3xl">Landscape Estimate Pro — {PRICE_DISPLAY} lifetime, planned</h2>
-        <p class="mt-2 max-w-xl text-white/75">One payment, whenever purchasing opens. No subscription. No account. Your data stays on your device.</p>
+        <h2 class="text-2xl font-extrabold sm:text-3xl">Landscape Estimate Pro — {PRICE_DISPLAY} lifetime</h2>
+        <p class="mt-2 max-w-xl text-white/75">One payment. No subscription. No account. Your data stays on your device.</p>
       </div>
       <a href="/pricing/" class="inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]">
         See Pricing

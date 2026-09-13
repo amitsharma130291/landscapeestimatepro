@@ -3,12 +3,13 @@ import Layout from "../layouts/Layout.astro";
 import Breadcrumbs from "../components/Breadcrumbs.astro";
 import FaqAccordion from "../components/FaqAccordion.astro";
 import PurchaseButton from "../components/PurchaseButton.tsx";
+import LicenseActivationSection from "../components/LicenseActivationSection.tsx";
 import { PRICE_DISPLAY, SITE_URL } from "../data/site";
 import { buildOfferSchema } from "../data/salesConfig";
 import { PRODUCT_IMAGE_URL } from "../data/structuredData";
 
-const title = `Pricing — Landscape Estimate Pro (${PRICE_DISPLAY} Lifetime, Planned)`;
-const description = `Landscape Estimate Pro's planned price is ${PRICE_DISPLAY}, one time — purchasing isn't open yet, and the app is fully usable today for building and testing. Local-first storage, no account.`;
+const title = `Pricing — Landscape Estimate Pro (${PRICE_DISPLAY} Lifetime)`;
+const description = `Landscape Estimate Pro is ${PRICE_DISPLAY}, one time — no subscription. Local-first storage, no account required.`;
 
 const offer = buildOfferSchema(`${SITE_URL}/pricing/`);
 const schema = {
@@ -22,26 +23,26 @@ const schema = {
 
 const faqs = [
   {
-    question: "Can I buy Pro right now?",
-    answer: "Not yet — purchasing isn't open. Nothing on this page collects payment or activates anything.",
+    question: "How do I get access after I buy?",
+    answer:
+      "Right after payment you're redirected straight into the app, already unlocked. You'll also get an email with your license key and a link back to the app, in case you close the tab first.",
   },
   {
-    question: "Can I use Pro before purchasing opens?",
-    answer: "Yes — the full app is usable today for building and testing your catalog, estimates, and quotes. There's no login or account either way.",
+    question: "I bought Pro but lost my license key. What do I do?",
+    answer: `Use "Forgot your license key?" below — enter the email you paid with and we'll email it to you. You can also paste the key directly if you still have it.`,
   },
   {
-    question: "What will it cost once purchasing opens?",
-    answer: `The planned price is a one-time ${PRICE_DISPLAY}, lifetime — no subscription, ever. That's a plan, not an active offer, until purchasing is actually open.`,
+    question: "What if it's not for me?",
+    answer: "We offer a 7-day, no-questions-asked refund. Contact us within 7 days of purchase and we'll refund it in full.",
   },
   {
     question: "What happens to my data?",
     answer:
-      "Everything you enter — materials, labor rates, equipment, assemblies, and estimates — stays on your device in your browser's local storage. Nothing is uploaded to a server, now or after purchasing opens. Use JSON export/import to back up your workspace or move it to another device.",
+      "Everything you enter — materials, labor rates, equipment, assemblies, and estimates — stays on your device in your browser's local storage. Nothing is uploaded to a server. Use JSON export/import to back up your workspace or move it to another device.",
   },
   {
-    question: "Are the free tools actually free, with no catch?",
-    answer:
-      "Yes. The free calculators and templates on this site (cost calculator, estimate/quote/invoice templates, price list) are free to use with no time limit and no account.",
+    question: "What will it cost?",
+    answer: `A one-time ${PRICE_DISPLAY}, lifetime — no subscription, ever.`,
   },
 ];
 ---
@@ -55,10 +56,9 @@ const faqs = [
 
   <section class="mx-auto max-w-content px-4 py-12 text-center sm:px-6 lg:px-8">
     <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">Pricing</p>
-    <h1 class="mt-2 text-[clamp(2rem,4.5vw,3rem)] font-extrabold text-ink">One price, planned. Not yet open.</h1>
+    <h1 class="mt-2 text-[clamp(2rem,4.5vw,3rem)] font-extrabold text-ink">One price, lifetime.</h1>
     <p class="mx-auto mt-3 max-w-xl text-muted">
-      Purchasing isn't active yet. Use the full app today to build and test your catalog and estimates — the planned
-      lifetime price below is where things stand when it opens.
+      Buy once, use it forever — no subscription, no account, no data leaving your device.
     </p>
   </section>
 
@@ -66,11 +66,11 @@ const faqs = [
     <div class="mx-auto max-w-lg rounded-3xl border border-forest bg-forest p-8 text-white shadow-xl sm:p-10">
       <h2 class="text-lg font-bold text-lime">Landscape Estimate Pro</h2>
       <p class="mt-2 text-6xl font-extrabold">{PRICE_DISPLAY}</p>
-      <p class="text-white/70">planned one-time payment, lifetime — purchasing not yet open</p>
+      <p class="text-white/70">one-time payment, lifetime</p>
 
       <ul class="mt-7 space-y-3 text-sm">
         {[
-          "One-time payment, planned — no subscription, ever",
+          "One-time payment — no subscription, ever",
           "Unlimited estimates and saved projects",
           "All Pro estimating and job-costing features",
           "Saved material, labor and equipment catalogs",
@@ -94,9 +94,10 @@ const faqs = [
         <PurchaseButton client:load />
       </div>
     </div>
-    <p class="mx-auto mt-4 max-w-lg text-center text-sm text-muted">
-      Every feature above is already usable in <a href="/app/" class="font-semibold text-forest underline">the app</a> today, free, while purchasing is closed.
-    </p>
+
+    <div class="mx-auto mt-8 max-w-lg">
+      <LicenseActivationSection client:load />
+    </div>
   </section>
 
   <section class="border-t border-border bg-white py-16">

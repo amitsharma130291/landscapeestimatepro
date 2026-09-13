@@ -1,28 +1,25 @@
 /**
  * Single source of truth for pricing/purchase state — every page, CTA,
  * structured-data block, and legal-copy string that mentions price or
- * "buy" reads from this, so there is exactly one place to flip when real
- * purchasing is ready. This app has no backend and no payment provider
- * wired up (a deliberate architectural decision, not a temporary gap) —
- * `salesEnabled: false` reflects that honestly rather than presenting a
- * checkout that doesn't exist.
+ * "buy" reads from this, so there is exactly one place to flip if that
+ * ever needs to change again. Checkout is real: PurchaseButton.tsx starts
+ * a Dodo Payments checkout session (api/checkout-create.ts) rather than
+ * linking to a static URL, so there is no `checkoutUrl` field here to
+ * configure — `salesEnabled` alone is the switch.
  */
 export const SALES_CONFIG = {
-  /** The intended future one-time price, in cents. $99. */
+  /** The one-time price, in cents. $99. */
   plannedLifetimePriceCents: 9900,
-  /** Flip to true only once a real checkout is actually wired up somewhere.
-   * Every "Buy"/"Get Pro" surface in the app must check this before ever
-   * claiming a purchase can be completed. */
-  salesEnabled: false,
-  /** Where a real purchase action should send the customer, once one
-   * exists. null while salesEnabled is false — nothing in this codebase
-   * should ever construct a fake checkout destination on its own. */
-  checkoutUrl: null as string | null,
-  /** An optional, REAL price-expiration date for the planned lifetime
-   * price, as a valid future ISO `YYYY-MM-DD` string — or `null` when the
-   * price has no scheduled expiration (the ordinary case for a "lifetime"
-   * price; a permanent price has nothing to set here). Only ever surfaces
-   * in structured data via `buildOfferSchema()`, and only when it is a
+  /** Whether a real purchase can actually be completed right now. Every
+   * "Buy"/"Get Pro" surface in the app must check this before ever
+   * claiming a purchase can be completed — flip back to false if Dodo
+   * checkout ever needs to be taken offline temporarily. */
+  salesEnabled: true,
+  /** An optional, REAL price-expiration date for the lifetime price, as a
+   * valid future ISO `YYYY-MM-DD` string — or `null` when the price has
+   * no scheduled expiration (the ordinary case for a "lifetime" price; a
+   * permanent price has nothing to set here). Only ever surfaces in
+   * structured data via `buildOfferSchema()`, and only when it is a
    * genuinely valid future date AND sales are enabled — see
    * `getValidPriceValidUntil()`. Set this only when a real deadline exists
    * and that SAME deadline is also visibly disclosed on the sales page;
@@ -67,13 +64,12 @@ export function getValidPriceValidUntil(referenceDate: Date = new Date()): strin
  * Product/SoftwareApplication conventions (`offers` is optional). Returns
  * `undefined` in that case — spread it in with `...(offer && {offers: offer})`,
  * never assign it directly, so a page can't accidentally emit
- * `"offers": undefined`. Once `salesEnabled` is true (with a real
- * `checkoutUrl`), this returns the real InStock offer.
+ * `"offers": undefined`.
  */
 export function buildOfferSchema(
   url?: string
 ): { "@type": "Offer"; price: string; priceCurrency: string; availability: string; url?: string; priceValidUntil?: string } | undefined {
-  if (!SALES_CONFIG.salesEnabled || !SALES_CONFIG.checkoutUrl) return undefined;
+  if (!SALES_CONFIG.salesEnabled) return undefined;
   const priceValidUntil = getValidPriceValidUntil();
   return {
     "@type": "Offer",
@@ -89,22 +85,19 @@ export function buildOfferSchema(
 }
 
 /**
- * What this deployment IS, independent of pricing. `/app` cannot be
- * protected client-side in this static, no-backend architecture (there is
- * no server to check a credential against) — so rather than imply access is
- * restricted, this names the deployment's real state honestly:
+ * What this deployment IS, independent of pricing:
  *
  * - "development": the developer's own local/preview build. No badge shown.
- * - "free-beta": a PUBLIC build where anyone who finds /app can use it,
- *   labeled as such so nobody mistakes an open beta for a purchased,
- *   access-controlled product.
+ * - "licensed": the real, deployed product — /app is gated behind a valid
+ *   Dodo Payments-issued license key (see src/components/app/LicenseGate.tsx),
+ *   checked once per session and re-verifiable against Dodo's API forever
+ *   via a self-verifying key (LEP-PRO-<payment id>), never a database.
  *
- * "paid-launch" is deliberately NOT a value this app can be set to — it
- * would require a real distribution/access strategy (which this
- * architecture explicitly does not have) to be anything but a false claim.
- * Adding that value back is a product decision for whoever builds that
- * strategy, not a config flip.
+ * "free-beta" (an earlier, honestly-labeled state where /app had no access
+ * control at all) is retired now that real checkout and licensing exist —
+ * keeping that value around once it no longer describes reality would be
+ * exactly the kind of false claim this type exists to prevent.
  */
-export type AppReleaseMode = "development" | "free-beta";
+export type AppReleaseMode = "development" | "licensed";
 
-export const APP_RELEASE_MODE: AppReleaseMode = "free-beta";
+export const APP_RELEASE_MODE: AppReleaseMode = "licensed";

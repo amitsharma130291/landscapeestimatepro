@@ -8,6 +8,14 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:4329",
     trace: "retain-on-failure",
+    // /app is gated behind a license (LicenseGate.tsx) now that Dodo
+    // checkout is live. Every existing test that exercises the Pro app
+    // assumes it's already open, not the activation screen — so every
+    // test starts with a fixture license already in localStorage by
+    // default. Tests that specifically cover the gate/activation/recovery
+    // flow (tests/e2e/license-gate.spec.ts) opt back OUT with
+    // `test.use({ storageState: { cookies: [], origins: [] } })`.
+    storageState: "tests/e2e/.auth/licensed-state.json",
   },
   webServer: {
     command: "npm run preview -- --port 4329",

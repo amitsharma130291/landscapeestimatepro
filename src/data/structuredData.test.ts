@@ -1,7 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { SALES_CONFIG } from "./salesConfig";
 import { SITE_URL } from "./site";
 import {
   buildFreeToolOfferSchema,
@@ -28,9 +27,11 @@ describe("buildFreeToolOfferSchema", () => {
   });
 
   it("is independent of SALES_CONFIG.salesEnabled — a free tool's price never depends on paid-product state", () => {
-    expect(SALES_CONFIG.salesEnabled).toBe(false);
-    // Calling it doesn't read SALES_CONFIG at all; asserting the shape is
-    // identical regardless documents that independence for future readers.
+    // Whatever SALES_CONFIG.salesEnabled currently is (true now that Dodo
+    // checkout is live, false in an earlier state), buildFreeToolOfferSchema()
+    // doesn't read it at all — the free tools' $0 price is unconditional.
+    // Asserting the shape here regardless of that value documents the
+    // independence for future readers.
     expect(buildFreeToolOfferSchema()).toEqual({ "@type": "Offer", price: 0, priceCurrency: "USD" });
   });
 });

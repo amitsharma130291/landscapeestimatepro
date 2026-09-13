@@ -1,0 +1,9 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:4329",
+      "localStorage": [{ "name": "landscapeEstimateProLicense", "value": "LEP-PRO-e2e-fixture" }]
+    }
+  ]
+}

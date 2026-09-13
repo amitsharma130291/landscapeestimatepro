@@ -8,28 +8,32 @@ import { APP_RELEASE_MODE, buildOfferSchema, getValidPriceValidUntil, SALES_CONF
 // mutated singleton.
 const mutableSalesConfig = SALES_CONFIG as {
   salesEnabled: boolean;
-  checkoutUrl: string | null;
   priceValidUntil: string | null;
 };
 const originalSalesConfig = { ...SALES_CONFIG };
 
 describe("SALES_CONFIG", () => {
-  it("sales are disabled and there is no checkout destination configured", () => {
-    expect(SALES_CONFIG.salesEnabled).toBe(false);
-    expect(SALES_CONFIG.checkoutUrl).toBeNull();
+  it("sales are enabled — Dodo Payments checkout is live", () => {
+    expect(SALES_CONFIG.salesEnabled).toBe(true);
   });
-  it("the planned price is still $99, unchanged", () => {
+  it("the price is $99", () => {
     expect(SALES_CONFIG.plannedLifetimePriceCents).toBe(9900);
   });
 });
 
 describe("buildOfferSchema — sales-disabled structured data contains no active Offer", () => {
+  afterEach(() => {
+    mutableSalesConfig.salesEnabled = originalSalesConfig.salesEnabled;
+  });
+
   it("returns undefined while salesEnabled is false, never a PreOrder or InStock offer", () => {
+    mutableSalesConfig.salesEnabled = false;
     const offer = buildOfferSchema("https://example.com/pricing/");
     expect(offer).toBeUndefined();
   });
 
   it("a page spreading the result in produces an object with NO 'offers' key at all, not offers: undefined", () => {
+    mutableSalesConfig.salesEnabled = false;
     const offer = buildOfferSchema();
     const schema = { "@type": "Product", name: "x", ...(offer ? { offers: offer } : {}) };
     expect("offers" in schema).toBe(false);
@@ -37,16 +41,14 @@ describe("buildOfferSchema — sales-disabled structured data contains no active
   });
 });
 
-describe("buildOfferSchema — once sales are enabled", () => {
+describe("buildOfferSchema — sales enabled (the real, current state)", () => {
   afterEach(() => {
     mutableSalesConfig.salesEnabled = originalSalesConfig.salesEnabled;
-    mutableSalesConfig.checkoutUrl = originalSalesConfig.checkoutUrl;
     mutableSalesConfig.priceValidUntil = originalSalesConfig.priceValidUntil;
   });
 
   it("includes priceValidUntil only when a real, valid future date is configured", () => {
     mutableSalesConfig.salesEnabled = true;
-    mutableSalesConfig.checkoutUrl = "https://checkout.example.com/lep";
     mutableSalesConfig.priceValidUntil = null;
     expect(buildOfferSchema()).not.toHaveProperty("priceValidUntil");
 
@@ -56,13 +58,18 @@ describe("buildOfferSchema — once sales are enabled", () => {
 
   it("never includes priceValidUntil for an invalid or past configured date", () => {
     mutableSalesConfig.salesEnabled = true;
-    mutableSalesConfig.checkoutUrl = "https://checkout.example.com/lep";
 
     mutableSalesConfig.priceValidUntil = "2020-01-01"; // past
     expect(buildOfferSchema()).not.toHaveProperty("priceValidUntil");
 
     mutableSalesConfig.priceValidUntil = "2026-02-30"; // calendar-invalid
     expect(buildOfferSchema()).not.toHaveProperty("priceValidUntil");
+  });
+
+  it("returns a real InStock offer at the configured price", () => {
+    mutableSalesConfig.salesEnabled = true;
+    const offer = buildOfferSchema("https://example.com/pricing/");
+    expect(offer).toMatchObject({ "@type": "Offer", price: "99", priceCurrency: "USD", availability: "https://schema.org/InStock" });
   });
 });
 
@@ -100,9 +107,9 @@ describe("getValidPriceValidUntil", () => {
 
 describe("APP_RELEASE_MODE", () => {
   it("is one of the two values this architecture actually supports", () => {
-    expect(["development", "free-beta"]).toContain(APP_RELEASE_MODE);
+    expect(["development", "licensed"]).toContain(APP_RELEASE_MODE);
   });
-  it("is never 'paid-launch' — this architecture has no real access-control strategy to back that claim", () => {
-    expect(APP_RELEASE_MODE).not.toBe("paid-launch");
+  it("is the real, current state — /app is license-gated, not an open free beta", () => {
+    expect(APP_RELEASE_MODE).toBe("licensed");
   });
 });

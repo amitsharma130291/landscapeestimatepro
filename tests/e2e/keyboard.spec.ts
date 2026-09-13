@@ -42,7 +42,13 @@ test.describe("Keyboard navigation — Pro app", () => {
 
   test("getting-started section: collapse toggle and a step action link both operate via Enter", async ({ page }) => {
     await page.goto("/app/");
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(() => {
+      // Keep the license fixture — clearing it would re-lock /app behind
+      // LicenseGate instead of resetting the onboarding workspace state.
+      const license = localStorage.getItem("landscapeEstimateProLicense");
+      localStorage.clear();
+      if (license) localStorage.setItem("landscapeEstimateProLicense", license);
+    });
     await page.reload();
     // Queried by its stable aria-controls target, not by name — the
     // accessible name itself flips between "How to get started" and "Show

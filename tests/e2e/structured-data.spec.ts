@@ -3,8 +3,8 @@
  * webServer here is `npm run preview`, i.e. the production build output —
  * see playwright.config.ts) rather than parsing schema-building source
  * code, so these assertions can't drift from what a crawler actually sees.
- * Covers the structured-data cleanup: free-tool $0 offers preserved,
- * paid-product offers absent while sales are disabled, product/organization
+ * Covers the structured-data cleanup: free-tool $0 offers preserved, the
+ * paid product's real $99 Offer (Dodo checkout is live), product/organization
  * images real and correctly sized, no fabricated ratings/reviews/sameAs.
  */
 import { test, expect, type Page } from "@playwright/test";
@@ -31,9 +31,9 @@ test.describe("free tools retain a real $0 Offer", () => {
   }
 });
 
-test.describe("paid product pages carry no active offer while sales are disabled", () => {
+test.describe("paid product pages carry a real, active $99 offer (Dodo checkout is live)", () => {
   for (const url of PAID_PRODUCT_PAGES) {
-    test(`${url} product schema has no offers/price/priceCurrency/availability/priceValidUntil`, async ({ page }) => {
+    test(`${url} product schema has a real InStock Offer at $99 USD`, async ({ page }) => {
       await page.goto(url);
       const blocks = await readJsonLdBlocks(page);
       const product = blocks.find(
@@ -42,11 +42,7 @@ test.describe("paid product pages carry no active offer while sales are disabled
           (b as { name?: string }).name === "Landscape Estimate Pro"
       );
       expect(product, `no paid-product schema block found on ${url}`).toBeTruthy();
-      expect(product).not.toHaveProperty("offers");
-      expect(product).not.toHaveProperty("price");
-      expect(product).not.toHaveProperty("priceCurrency");
-      expect(product).not.toHaveProperty("availability");
-      expect(product).not.toHaveProperty("priceValidUntil");
+      expect(product!.offers).toMatchObject({ "@type": "Offer", price: "99", priceCurrency: "USD", availability: "https://schema.org/InStock" });
     });
 
     test(`${url} page text never claims the paid product is free`, async ({ page }) => {

@@ -124,7 +124,13 @@ for (const viewport of VIEWPORTS) {
     test("getting-started section (fresh workspace) renders without overflow and shows real completion count", async ({ page, context }) => {
       await context.clearCookies();
       await page.goto("/app/");
-      await page.evaluate(() => localStorage.clear());
+      await page.evaluate(() => {
+        // Keep the license fixture — clearing it would re-lock /app behind
+        // LicenseGate instead of resetting the onboarding workspace state.
+        const license = localStorage.getItem("landscapeEstimateProLicense");
+        localStorage.clear();
+        if (license) localStorage.setItem("landscapeEstimateProLicense", license);
+      });
       await page.reload();
       await expect(page.getByText(/of 5 steps complete/)).toBeVisible();
       await assertNoPageOverflow(page, `${viewport.name} getting-started`);
