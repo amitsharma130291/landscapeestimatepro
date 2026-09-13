@@ -82,3 +82,32 @@ test("homepage's 'See How It Works' hero link goes to the sales page's workflow 
 
 // An unlicensed visitor to /app/ is now redirected straight to the sales
 // page — see tests/e2e/license-gate.spec.ts, which owns that behavior.
+
+test("homepage: 'See every free tool and guide' links to the resources hub", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "See every free tool and guide" })).toHaveAttribute("href", "/resources/");
+});
+
+for (const url of TOOL_PAGES_WITH_PRO_UPSELL) {
+  test(`${url}: 'More free tools' also links back to the resources hub`, async ({ page }) => {
+    await page.goto(url);
+    await expect(page.getByRole("link", { name: "See every free tool and guide" })).toHaveAttribute("href", "/resources/");
+  });
+}
+
+test("resources page's own tool grids do not link back to themselves", async ({ page }) => {
+  await page.goto("/resources/");
+  await expect(page.getByRole("link", { name: "See every free tool and guide" })).toHaveCount(0);
+});
+
+test("privacy and terms cross-reference each other", async ({ page }) => {
+  await page.goto("/privacy/");
+  await expect(page.locator("#main-content").getByRole("link", { name: "Terms of Service" })).toHaveAttribute("href", "/terms/");
+  await page.goto("/terms/");
+  await expect(page.locator("#main-content").getByRole("link", { name: "privacy policy" })).toHaveAttribute("href", "/privacy/");
+});
+
+test("pricing page links to the refund policy before purchasing, same as the sales page", async ({ page }) => {
+  await page.goto("/pricing/");
+  await expect(page.locator("#main-content").getByRole("link", { name: "refund policy" })).toHaveAttribute("href", "/refund/");
+});

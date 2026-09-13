@@ -7,9 +7,12 @@ export interface Props {
   showProCard?: boolean;
   heading?: string;
   intro?: string;
+  /** Shows a "See everything on the resources hub" link near the heading —
+   * omit on the resources page itself (which would just link to itself). */
+  seeAllHref?: string;
 }
 
-const { exclude = [], showProCard = true, heading, intro } = Astro.props;
+const { exclude = [], showProCard = true, heading, intro, seeAllHref } = Astro.props;
 const tools = TOOL_LINKS.filter((t) => !exclude.includes(t.href));
 const headingId = heading ? `tool-grid-heading-${heading.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : undefined;
 ---
@@ -19,6 +22,14 @@ const headingId = heading ? `tool-grid-heading-${heading.toLowerCase().replace(/
     <div class="mx-auto max-w-2xl text-center">
       <h2 id={headingId} class="text-2xl font-extrabold text-ink sm:text-3xl">{heading}</h2>
       {intro && <p class="mt-3 text-muted">{intro}</p>}
+      {seeAllHref && (
+        <a href={seeAllHref} class="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-forest hover:underline">
+          See every free tool and guide
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </a>
+      )}
     </div>
   )}
   <div class={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${heading ? "mt-8" : ""}`}>
