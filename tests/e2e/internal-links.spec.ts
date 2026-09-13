@@ -67,6 +67,11 @@ test("footer's Product column links directly to the sales page", async ({ page }
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Landscaping Estimating Software" })).toHaveAttribute("href", "/landscaping-estimating-software/");
 });
 
+test("homepage's example preview card: 'Create customer estimate' points at the sales page, not the free calculator (which can't produce a document)", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Create customer estimate" })).toHaveAttribute("href", "/landscaping-estimating-software/");
+});
+
 test("homepage's 'See How It Works' hero link goes to the sales page's workflow section, not an in-page anchor", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("link", { name: "See How It Works" })).toHaveAttribute("href", "/landscaping-estimating-software/#how-it-works");

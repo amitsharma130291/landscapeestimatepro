@@ -79,8 +79,8 @@ const maxValue = Math.max(...lineItems.map((l) => l.value));
   </div>
 
   <a
-    href="/landscaping-cost-calculator/"
-    class="mt-5 flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-forest px-5 text-sm font-bold text-white transition-colors hover:bg-forest-light"
+    href="/landscaping-estimating-software/"
+    class="js-preview-create-estimate mt-5 flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-forest px-5 text-sm font-bold text-white transition-colors hover:bg-forest-light"
   >
     Create customer estimate
     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -88,3 +88,17 @@ const maxValue = Math.max(...lineItems.map((l) => l.value));
     </svg>
   </a>
 </div>
+
+<script>
+  import { hasStoredLicense } from "../lib/license";
+
+  // Creating a customer-ready estimate document (not just a price) is a
+  // Pro-only capability — the free cost calculator this used to point at
+  // can't actually do it. Unlicensed, this is really a Pro pitch; licensed,
+  // it should go straight to the real app instead of back to the pitch.
+  if (hasStoredLicense()) {
+    document.querySelectorAll<HTMLAnchorElement>(".js-preview-create-estimate").forEach((link) => {
+      link.href = "/app/";
+    });
+  }
+</script>

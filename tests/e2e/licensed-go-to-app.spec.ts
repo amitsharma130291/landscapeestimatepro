@@ -94,6 +94,12 @@ test.describe("licensed visitor", () => {
     await expect(page.locator('a[href="/app/"]').filter({ hasText: "Go to App" }).first()).toBeVisible();
   });
 
+  test("homepage's example preview card: 'Create customer estimate' goes straight to /app/ once licensed", async ({ page }) => {
+    await setLicensed(page);
+    await page.goto("/");
+    await expect(page.getByRole("link", { name: "Create customer estimate" })).toHaveAttribute("href", "/app/");
+  });
+
   const TOOL_PAGES = [
     "/landscaping-cost-calculator/",
     "/landscaping-estimate-calculator/",
