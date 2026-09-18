@@ -53,7 +53,7 @@ const FORBIDDEN_PAGE_CHROME: { label: string; pattern: RegExp }[] = [
   { label: "trust badge / pricing: lifetime planned", pattern: /lifetime planned/i },
   { label: "Pro upsell box heading", pattern: /Save your materials, labor and equipment/i },
   { label: "Pro upsell CTA button", pattern: /Get Landscape Estimate Pro/i },
-  { label: "Pro banner heading", pattern: /Run the numbers once\. Reuse them forever\./i },
+  { label: "Pro banner heading", pattern: /Calculate costs before creating the customer document/i },
   { label: "Try Pro CTA button", pattern: /Try Pro free/i },
   { label: "More free tools heading", pattern: /More free tools/i },
   { label: "FAQ question 1", pattern: /Is this a downloadable Excel template/i },

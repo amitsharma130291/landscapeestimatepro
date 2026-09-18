@@ -22,7 +22,7 @@ export default function ServiceEstimateCalculator() {
   const valid = lines.every(l => !error(l.quantity) && !error(l.cost)) && Object.entries(settings).every(([key, value]) => !error(value, key === "margin" ? 99.9 : undefined));
   const direct = valid ? lines.reduce((s, l) => s.plus(new Decimal(l.quantity.trim()).times(l.cost.trim())), new Decimal(settings.delivery.trim()).plus(settings.other.trim())) : new Decimal(0);
   const trueCost = direct.times(new Decimal(valid ? settings.overhead.trim() : 0).div(100).plus(1));
-  const requiredPrice = valid ? new Decimal(trueCost.toFixed(2)).div(new Decimal(1).minus(new Decimal(settings.margin.trim()).div(100))).toDecimalPlaces(2, Decimal.ROUND_CEIL).toFixed(2) : "";
+  const requiredPrice = valid ? trueCost.div(new Decimal(1).minus(new Decimal(settings.margin.trim()).div(100))).toDecimalPlaces(2, Decimal.ROUND_CEIL).toFixed(2) : "";
   const control = "min-h-[44px] w-full min-w-0 rounded-lg border border-border bg-white px-3 py-2 focus:ring-2 focus:ring-forest";
   return <section className="rounded-2xl border border-border bg-white p-5 sm:p-6" aria-label="Multi-service estimate worksheet">
     {dialog}
@@ -37,6 +37,6 @@ export default function ServiceEstimateCalculator() {
     <button type="button" className="my-4 min-h-[44px] rounded-lg bg-forest px-5 font-bold text-white" onClick={() => setLines([...lines, { name: "", quantity: "1", unit: "each", cost: "0" }])}>Add service</button>
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{(Object.keys(settings) as (keyof typeof settings)[]).map(key => { const message = error(settings[key], key === "margin" ? 99.9 : undefined); return <div key={key}><label className="mb-2 block text-sm font-semibold" htmlFor={`${id}-${key}`}>{labels[key]}</label><input className={control} id={`${id}-${key}`} inputMode="decimal" value={settings[key]} aria-invalid={!!message} aria-describedby={message ? `${id}-${key}-error` : undefined} onChange={e => setSettings({ ...settings, [key]: e.target.value })} />{message && <p id={`${id}-${key}-error`} className="text-sm text-red">{message}</p>}</div>; })}</div>
     <div aria-live="polite" className="mt-6 rounded-xl bg-forest p-5 text-white">{valid ? <dl className="grid gap-4 sm:grid-cols-3"><div><dt>Direct project cost</dt><dd className="text-2xl font-bold">${direct.toFixed(2)}</dd></div><div><dt>True project cost</dt><dd className="text-2xl font-bold">${trueCost.toFixed(2)}</dd></div><div><dt>Required pre-tax price</dt><dd className="text-2xl font-bold text-lime">${requiredPrice}</dd></div></dl> : <p>Correct the highlighted inputs to see your estimate.</p>}</div>
-    <p className="mt-3 text-sm text-muted">Free worksheet: entries are not saved. True cost rounds to cents before solving the required price; the required price rounds up to the next cent.</p>
+    <p className="mt-3 text-sm text-muted">Free worksheet: entries are not saved. Displayed costs round to cents; the required price uses unrounded cost and rounds up to the next cent.</p>
   </section>;
 }

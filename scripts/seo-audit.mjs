@@ -20,6 +20,12 @@ const publicPages = pages.filter(p => !p.noindex);
 const paths = new Map(pages.map(p => [p.route, p]));
 for (const p of pages) {
   if (!p.noindex) {
+    const visible = p.doc.body.cloneNode(true);
+    visible.querySelectorAll('script,style').forEach(n => n.remove());
+    for (const phrase of ['Run the numbers once. Reuse them forever.', 'every future estimate calculates itself', 'every future estimate calculates automatically', 'A natural path to Pro', 'Pro remembers everything', 'Every screenshot on this page is from the real application, not a mockup.']) {
+      if (visible.textContent.toLowerCase().includes(phrase.toLowerCase())) issues.push(`${p.route}: unsupported or generic copy returned: ${phrase}`);
+    }
+    if (p.doc.querySelector('main [data-calculator]') && !p.links.some(l => l.main && l.href === '/calculation-methodology/')) issues.push(`${p.route}: calculator has no methodology link`);
     if (!p.title || !p.description) issues.push(`${p.route}: missing title or description`);
     if (p.canonical !== site + p.route) issues.push(`${p.route}: non-self canonical ${p.canonical}`);
     if (p.doc.querySelectorAll('h1').length !== 1) issues.push(`${p.route}: needs exactly one h1`);

@@ -22,8 +22,19 @@ export interface Props {
   proDescription?: string;
 }
 
-const { title, description, eyebrow, h1, intro, breadcrumbLabel, faqs, currentHref, webApplicationSchema = true, relatedHrefs, proHeading = "Run the numbers once. Reuse them forever.", proDescription = "Pro saves your materials, equipment, labor and production rates so every future estimate calculates itself — plus Service Rate Health, estimate-vs-actual tracking, and branded customer estimates." } =
+const { title, description, eyebrow, h1, intro, breadcrumbLabel, faqs, currentHref, webApplicationSchema = true, relatedHrefs, proHeading, proDescription } =
   Astro.props;
+
+const promotions: Record<string, { heading: string; description: string }> = {
+  "/landscaping-cost-calculator/": { heading: "Keep the costs behind your quote", description: "Pro saves material and equipment catalogs, labor assumptions, and project estimates. Enter the next job's quantities and check that your saved rates are current." },
+  "/landscaping-estimate-calculator/": { heading: "Build a service assembly you can reuse", description: "Replace manual unit-cost entry with saved material, labor, and equipment components in Pro. Add those services to a project and review its calculated price." },
+  "/landscaping-estimate-template/": { heading: "Calculate costs before creating the customer document", description: "Pro keeps internal cost calculations separate from the customer estimate. Save the project, review its price, and print the selected service detail." },
+  "/landscaping-quote-template/": { heading: "Keep a record of the price you quoted", description: "Pro saves a quote revision so you can compare the accepted price with actual job costs later. Your internal costs and margin stay out of the customer document." },
+  "/landscaping-invoice-template/": { heading: "Review the profit behind a completed job", description: "Use this free builder for the invoice. Pro adds saved estimates, actual job costs, and profitability comparisons; it does not collect payments or replace bookkeeping." },
+  "/landscaping-price-list/": { heading: "Check the margin behind each service rate", description: "Pro's Rate Health compares saved service prices with their material, labor, equipment, and overhead costs. Review the flagged rates when costs change." },
+  "/landscape-pricing-guide/": { heading: "Apply these assumptions to saved projects", description: "Pro stores your labor rate, overhead, target margin, and service assemblies. Review those assumptions for each job, then record actual costs when the work is done." },
+};
+const promotion = promotions[currentHref] ?? { heading: "Save your projects in Landscape Estimate Pro", description: "Keep material catalogs, service assemblies, and estimates in your browser. Review saved inputs when you prepare a new job and export a backup for your records." };
 
 const relatedByPage: Record<string, string[]> = {
   "/landscaping-cost-calculator/": ["/landscape-labor-cost-calculator/", "/landscaping-estimate-calculator/", "/landscape-job-cost-calculator/"],
@@ -60,6 +71,7 @@ const schema = webApplicationSchema
     <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">{eyebrow}</p>
     <h1 class="mt-2 max-w-3xl text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold leading-[1.1] text-ink">{h1}</h1>
     <p class="mt-4 max-w-2xl text-base text-muted sm:text-lg">{intro}</p>
+    <p class="mt-3 text-sm text-muted"><a href="/calculation-methodology/" class="font-semibold underline underline-offset-2">Calculation methods, rounding, and example data</a></p>
     <div class="mt-5">
       <TrustBadges />
     </div>
@@ -79,9 +91,9 @@ const schema = webApplicationSchema
   <section class="bg-forest py-14 text-white">
     <div class="mx-auto flex max-w-content flex-col items-start gap-5 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
       <div>
-        <h2 class="text-2xl font-extrabold sm:text-3xl">{proHeading}</h2>
+        <h2 class="text-2xl font-extrabold sm:text-3xl">{proHeading ?? promotion.heading}</h2>
         <p class="mt-2 max-w-xl text-white/75">
-          {proDescription}
+          {proDescription ?? promotion.description}
         </p>
         <p class="mt-3 text-sm text-white/80">This tool is free. <a href="/pricing/" class="font-semibold text-lime underline">See Pro pricing and license details</a>.</p>
       </div>
