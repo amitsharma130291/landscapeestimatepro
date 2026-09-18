@@ -1,12 +1,12 @@
 ---
 import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
-import ProjectCalculatorIsland from "../../components/calculator/ProjectCalculatorIsland.tsx";
+import ServiceEstimateCalculator from "../../components/calculator/ServiceEstimateCalculator";
 
 const faqs = [
   {
     question: "How is an estimate calculator different from a cost calculator?",
     answer:
-      "They run the same math. This page frames the tool around producing one project's full estimate — true cost plus the required selling price — rather than just a cost check.",
+      "The cost calculator starts with category totals. This worksheet builds a project from service quantities and direct costs per unit, then adds shared expenses, overhead, and margin.",
   },
   {
     question: "Can I calculate more than one project at a time?",
@@ -16,36 +16,42 @@ const faqs = [
   {
     question: "Does it factor in my production rates?",
     answer:
-      "This free calculator takes a total labor cost you've already worked out. Pro adds production-rate labor calculation — enter a quantity (e.g. 8 yd³ of mulch) and your own production rate (e.g. 2.5 yd³ per person-hour), and it calculates person-hours and labor cost for you.",
+      "This worksheet takes a direct unit cost you have already worked out for each service, including labor. Pro adds production-rate labor calculation — enter a quantity (e.g. 8 yd³ of mulch) and your own production rate (e.g. 2.5 yd³ per person-hour), and it calculates person-hours and labor cost for you.",
   },
   {
     question: "What's the difference between required price and display price?",
     answer:
-      "The required selling price is calculated to the cent. The display price rounds that up or down to a clean whole-dollar number for the customer-facing quote — both are shown so you can see exactly how the rounding works.",
+      "This worksheet rounds true cost to cents, then rounds the required selling price upward to the next cent. It does not round down or automatically choose a whole-dollar customer quote.",
   },
 ];
 ---
 
 <ToolPageLayout
-  title="Landscaping Estimate Calculator — Free Cost Tool"
-  description="Free landscaping estimate calculator (also called a landscape estimate calculator). Turn one project's costs into a true cost and required selling price."
+  title="Landscaping Estimate Calculator — Multi-Service Worksheet"
+  description="Build a landscaping estimate from service quantities and unit costs. Add shared delivery, overhead, and your target margin to calculate a project price."
   eyebrow="Free estimate calculator"
   h1="Landscaping Estimate Calculator"
-  intro="Build one project's estimate from the ground up: direct cost, overhead allocation, true cost, and the selling price required to hit your target margin."
+  intro="Build a project from individual services and quantities. Enter your direct cost per service unit, add shared project expenses once, and calculate the price your margin requires."
   breadcrumbLabel="Landscaping Estimate Calculator"
   currentHref="/landscaping-estimate-calculator/"
   faqs={faqs}
 >
-  <ProjectCalculatorIsland client:load />
+  <ServiceEstimateCalculator client:load />
 
   <Fragment slot="extra">
+    <article class="tool-editorial mb-10">
+      <h2>Worked example: two services, one project overhead</h2>
+      <p>Eight yards of mulch installation at a $75 direct unit cost contribute $600. Eighteen shrub installations at $40 direct cost each add $720. With $150 shared delivery, direct project cost is $1,470. Applying 15% overhead gives $1,690.50, and a 35% margin requires $2,600.77 before sales tax.</p>
+      <p>These unit costs are examples, not recommended rates. Build your own using supplier prices, material quantities, paid crew time, and equipment needs. The <a href="/mulch-cost-calculator/">mulch calculator</a>, <a href="/topsoil-cost-calculator/">topsoil calculator</a>, and <a href="/landscape-labor-cost-calculator/">loaded labor calculator</a> can help with those inputs.</p>
+      <p>Do not enter a selling rate as a direct cost: that would add overhead and profit to a price that already contains them. Likewise, if a service unit cost includes its own delivery allocation, omit that portion from shared delivery. Use the <a href="/landscape-profit-margin-calculator/">profit margin calculator</a> to review a final customer price, and the <a href="/landscape-job-cost-calculator/">job cost calculator</a> for the completed-job comparison.</p>
+    </article>
     <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">How this estimate calculator works</h2>
     <ol class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {[
-        { step: "1", title: "Add direct costs", desc: "Materials, labor, equipment, delivery, and any other job-specific cost." },
+        { step: "1", title: "Build service lines", desc: "Multiply quantities by your direct cost per unit, including materials, labor, and equipment." },
         { step: "2", title: "Apply overhead", desc: "Your overhead percentage is added on top to reach a true project cost." },
         { step: "3", title: "Set your target margin", desc: "Margin, not markup — the profit share of the final price, not of cost." },
-        { step: "4", title: "Get your price", desc: "The required selling price updates instantly, to the cent and rounded." },
+        { step: "4", title: "Get your price", desc: "The required selling price updates instantly and rounds upward to the next cent." },
       ].map((item) => (
         <li class="list-none rounded-2xl border border-border bg-paper p-5">
           <span class="flex h-8 w-8 items-center justify-center rounded-full bg-forest text-sm font-bold text-lime">{item.step}</span>

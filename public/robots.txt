@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /app/
+# Let crawlers read the app pages' noindex directive. They are excluded from the sitemap.
 
 Sitemap: https://landscapeestimatepro.com/sitemap-index.xml

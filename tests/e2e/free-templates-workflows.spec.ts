@@ -109,34 +109,28 @@ async function zeroAllExcept(page: import("@playwright/test").Page, exceptLabel:
   await overhead.blur();
 }
 
-test("LEP-065 Free Estimate Calculator category isolation: only Materials = $100, every other category zero, direct/true cost is exactly $100 before overhead", async ({ page }) => {
+test("LEP-065 service worksheet isolates a single direct-cost line", async ({ page }) => {
   await page.goto("/landscaping-estimate-calculator/");
-  await zeroAllExcept(page, "Materials");
-  await page.getByLabel(/^Materials/).fill("100");
-  await page.getByLabel(/^Materials/).blur();
-  const resultsText = await page.locator("main").innerText();
-  const directMatch = resultsText.match(/Direct cost\s*\$?([\d,]+(?:\.\d{2})?)/);
-  expect(directMatch, `no "Direct cost" figure found in:\n${resultsText}`).not.toBeNull();
-  expect(directMatch![1].replace(/,/g, "")).toBe("100");
+  await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
+  await page.getByLabel("Quantity", { exact: true }).first().fill("1");
+  await page.getByLabel("Direct cost per unit ($)", { exact: true }).first().fill("100");
+  await page.getByLabel("Quantity", { exact: true }).nth(1).fill("0");
+  await page.getByLabel("Delivery ($)", { exact: true }).fill("0");
+  await page.getByLabel("Overhead (%)", { exact: true }).fill("0");
+  const result = page.locator('section[aria-label="Multi-service estimate worksheet"] [aria-live]');
+  await expect(result).toContainText("Direct project cost$100.00");
+  await expect(result).toContainText("True project cost$100.00");
 });
 
-test("LEP-066 Free Estimate Calculator reset returns every input/output to documented defaults", async ({ page }) => {
+test("LEP-066 service worksheet reset restores its own documented defaults", async ({ page }) => {
   await page.goto("/landscaping-estimate-calculator/");
-  const materials = page.getByLabel(/^Materials/);
-  const originalValue = await materials.inputValue();
-  await materials.fill("12345");
-  await materials.blur();
-  await expect(materials).toHaveValue("12345");
-
-  const resetButton = page.getByRole("button", { name: /reset calculator/i });
-  await resetButton.click();
-  // Resetting a dirty form opens an in-app confirm dialog — accept it.
+  await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
+  const cost = page.getByLabel("Direct cost per unit ($)", { exact: true }).first();
+  await cost.fill("12345");
+  await page.getByRole("button", { name: "Reset calculator to starting values" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Reset" }).click();
-  // Reset returns to the tool's own documented starting values — which are
-  // real sample defaults, not necessarily blank — never leaving the just
-  // -typed 12345 behind.
-  await expect(materials).not.toHaveValue("12345");
-  await expect(materials).toHaveValue(originalValue);
+  await expect(cost).toHaveValue("75");
+  await expect(page.getByRole("region", { name: "Multi-service estimate worksheet" })).toContainText("$2600.77");
 });
 
 test("LEP-072 Free Cost Calculator category isolation: only Materials = $100, direct/true cost is exactly $100 before overhead", async ({ page }) => {

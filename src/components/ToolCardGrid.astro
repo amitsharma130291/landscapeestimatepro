@@ -1,9 +1,11 @@
 ---
-import { PRICE_DISPLAY, TOOL_LINKS } from "../data/site";
+import { PRO_CTA_LABEL, TOOL_LINKS } from "../data/site";
 
 export interface Props {
   /** Hrefs to exclude (e.g. don't link a tool page to itself). */
   exclude?: string[];
+  include?: string[];
+  category?: "calculators" | "templates" | "guides";
   showProCard?: boolean;
   heading?: string;
   intro?: string;
@@ -12,8 +14,8 @@ export interface Props {
   seeAllHref?: string;
 }
 
-const { exclude = [], showProCard = true, heading, intro, seeAllHref } = Astro.props;
-const tools = TOOL_LINKS.filter((t) => !exclude.includes(t.href));
+const { exclude = [], include, category, showProCard = true, heading, intro, seeAllHref } = Astro.props;
+const tools = TOOL_LINKS.filter((t) => !exclude.includes(t.href) && (!include || include.includes(t.href)) && (!category || t.category === category));
 const headingId = heading ? `tool-grid-heading-${heading.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : undefined;
 ---
 
@@ -61,7 +63,7 @@ const headingId = heading ? `tool-grid-heading-${heading.toLowerCase().replace(/
           Save materials, equipment, labor and production rates once — every future estimate calculates itself.
         </p>
         <span class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-lime group-hover:gap-1.5 transition-all">
-          <span class="js-pro-upsell-cta-text">Try Pro free — {PRICE_DISPLAY} planned</span>
+          <span class="js-pro-upsell-cta-text">{PRO_CTA_LABEL}</span>
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>
@@ -75,7 +77,7 @@ const headingId = heading ? `tool-grid-heading-${heading.toLowerCase().replace(/
   import { hasStoredLicense } from "../lib/license";
 
   // A visitor who already owns Pro should be offered a fast way back into
-  // the app here too, instead of a "Try Pro free" pitch for something
+  // the app here too, instead of a purchase pitch for something
   // they've already bought.
   if (hasStoredLicense()) {
     document.querySelectorAll<HTMLAnchorElement>(".js-pro-upsell-card").forEach((card) => {

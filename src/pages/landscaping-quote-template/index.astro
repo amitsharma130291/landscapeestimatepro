@@ -6,7 +6,7 @@ const faqs = [
   {
     question: "What's the difference between a quote and an estimate?",
     answer:
-      "In practice, most landscape contractors use the two interchangeably as a customer-facing price before the job starts. This template is built for sending to the customer; use the estimate template if you want a more cost-oriented internal working document.",
+      "Use the estimate builder to explain provisional quantities and selling rates. This quote builder adds a summary view for presenting service amounts without unit-price columns. Clearly state the scope and terms in either document; the tool does not decide the legal effect of your wording.",
   },
   {
     question: "Can I add a validity period or deposit terms?",
@@ -34,6 +34,16 @@ const faqs = [
   <EstimateBuilderIsland variant="quote" client:load />
 
   <Fragment slot="extra">
+    <article class="tool-editorial mb-10">
+      <h2>Choose how much pricing detail to show</h2>
+      <p>Detailed mode displays service quantities, units, unit prices, and line totals. Summary mode shows each service and its amount without the unit breakdown. Switching views changes presentation only; it never changes the quote total. Choose the format that explains the agreed scope most clearly to your customer.</p>
+      <h2>Write the scope before setting the total</h2>
+      <p>A useful quote explains what will be supplied, what preparation is included, and what cleanup or removal the price covers. For planting work, specify the agreed plant sizes and quantities. For mulch or soil work, record the measured area and intended additional depth. Do not rely on a short label such as “landscaping” to describe several different services.</p>
+      <p>In the notes field, record the quote validity period, scheduling assumptions, payment or deposit terms, and how changes will be handled. These are text notes you write; the builder does not collect a deposit, take signatures, or enforce an expiry date. Confirm the final wording before sharing the document.</p>
+      <h2>Example: a two-service customer quote</h2>
+      <p>The sample mulch line totals $760 and the shrub line totals $1,170, for a $1,930 quote. In summary mode the customer sees the two service amounts and total. In detailed mode the same price includes eight yards at $95 and 18 plants at $65. The numbers are examples; check your own costs before using any rate.</p>
+      <p>Test the final price in the <a href="/landscape-profit-margin-calculator/">profit margin calculator</a>. If the scope is still provisional, use the <a href="/landscaping-estimate-template/">estimate template</a> to document assumptions. After the job, create an <a href="/landscaping-invoice-template/">itemized invoice</a> and review the <a href="/landscape-job-cost-calculator/">actual job profit</a>. Free-page entries do not carry between tools.</p>
+    </article>
     <div class="rounded-2xl border border-border bg-paper p-6">
       <h2 class="text-xl font-bold text-ink">Know your price is right before you send it</h2>
       <p class="mt-2 text-sm text-muted">

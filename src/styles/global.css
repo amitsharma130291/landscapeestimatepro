@@ -200,3 +200,14 @@
     transform: none;
   }
 }
+/* Readable editorial guidance accompanying the free tools. */
+.tool-editorial { max-width: 72ch; margin-inline: auto; line-height: 1.8; }
+.tool-editorial h2 { font-size: clamp(1.25rem, 3vw, 1.7rem); font-weight: 800; line-height: 1.3; margin-block: 2rem 1rem; }
+.tool-editorial h2:first-child { margin-top: 0; }
+.tool-editorial p { margin-block: 1rem; }
+.tool-editorial ul, .tool-editorial ol { padding-left: 1.5rem; margin-block: 1rem; }
+.tool-editorial ul { list-style: disc; }
+.tool-editorial ol { list-style: decimal; }
+.tool-editorial li { margin-block: .5rem; }
+.tool-editorial a { text-decoration: underline; text-underline-offset: .2em; font-weight: 600; }
+.tool-editorial a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }

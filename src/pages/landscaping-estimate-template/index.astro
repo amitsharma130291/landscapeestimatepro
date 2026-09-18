@@ -16,7 +16,7 @@ const faqs = [
   {
     question: "How is this different from the quote template?",
     answer:
-      "They share the same line-item builder. This estimate template is framed around your internal costing process; the quote template is framed as the customer-facing document you send to win the job.",
+      "This estimate shows quantities and unit prices to explain a provisional scope. The quote builder also offers a summary presentation for an agreed customer price. Both are customer documents; calculate internal costs separately before entering selling rates.",
   },
   {
     question: "Can I save my materials and labor costs so I don't retype them every time?",
@@ -40,6 +40,16 @@ const faqs = [
   <EstimateBuilderIsland variant="estimate" client:load />
 
   <Fragment slot="extra">
+    <article class="tool-editorial mb-10">
+      <h2>Prepare a provisional scope the customer can understand</h2>
+      <p>Use an estimate when quantities or site conditions still need confirmation. Describe each service, its measured quantity, the unit, and the customer selling rate. The builder multiplies quantity by rate and adds the line totals; it does not infer your material, labor, or equipment costs from the service name.</p>
+      <h2>Example: show what the quantity means</h2>
+      <p>Eight cubic yards of mulch installation at $95 per yard totals $760. Eighteen shrubs installed at $65 each totals $1,170. The sample estimate is $1,930 before any separately stated adjustments. Those are example selling rates, not suggested prices. State whether supply, preparation, disposal, and cleanup are included so a customer can compare scopes accurately.</p>
+      <p>Use the notes field to record assumptions such as final bed measurements, access to the work area, and exclusions. Review quantities after the site visit before treating a provisional estimate as the agreed scope. Keep your internal labor and supplier costs in your own working estimate rather than copying them into the customer notes.</p>
+      <h2>Cost first, document second</h2>
+      <p>Build service costs with the <a href="/landscaping-estimate-calculator/">multi-service estimate calculator</a>. For material quantities, use the <a href="/mulch-cost-calculator/">mulch calculator</a> or <a href="/topsoil-cost-calculator/">topsoil calculator</a>. Transfer reviewed selling rates here, then print or choose Save as PDF in your browser's print dialog.</p>
+      <p>Once the scope and price are ready to present as a quote, the <a href="/landscaping-quote-template/">quote builder</a> lets you choose detailed or summary lines. These free tools do not transfer entries between pages or save documents between visits, so save the PDF before leaving.</p>
+    </article>
     <div class="rounded-2xl border border-lime-surface bg-mint p-6">
       <h2 class="text-xl font-bold text-mint-ink">Save your materials, labor and equipment costs so every future estimate calculates automatically.</h2>
       <p class="mt-2 text-sm text-mint-ink">That's what Landscape Estimate Pro does — reusable catalogs, service assemblies, and saved estimates, {PRICE_DISPLAY} lifetime{LAUNCH_PRICE_ACTIVE && <> (launch price — regular {ORIGINAL_PRICE_DISPLAY})</>}.</p>

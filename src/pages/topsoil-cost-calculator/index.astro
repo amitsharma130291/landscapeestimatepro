@@ -1,0 +1,29 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import ExpansionCalculator from "../../components/calculator/ExpansionCalculator";
+const faqs = [
+  { question: "How do I calculate topsoil volume?", answer: "Multiply the area in square feet by the finished depth in inches and divide by 324 to obtain cubic yards. Then apply an extra-volume allowance only if it is appropriate for your soil and supplier. The allowance is user-controlled." },
+  { question: "Can I convert topsoil cubic yards to tons?", answer: "Yes, if you know the supplier's bulk density. Multiply cubic yards by US short tons per cubic yard. Soil composition and moisture affect density, so the example value of 1.2 is not a universal conversion. A US short ton is 2,000 pounds." },
+  { question: "Which supplier price is used for the installed quote?", answer: "The contractor price uses the cubic-yard material quote, plus delivery, spreading labor, equipment, and overhead. The ton-price result is a separate material-only comparison. The two material quotes are not added together." },
+  { question: "Does this include excavation or disposal?", answer: "Only if you add those costs. Include the relevant amount in equipment and other direct costs, or calculate a larger multi-service project separately. Existing ground removal, soil testing, and access improvements are not inferred from surface dimensions." },
+];
+---
+<ToolPageLayout title="Topsoil Cost Calculator — Yards, Tons & Spreading Cost" description="Calculate topsoil cubic yards, supplier-density tonnage, delivery, and spreading costs. Compare per-yard and per-ton quotes and estimate an installed price." eyebrow="Free soil quantity and cost tool" h1="Topsoil Cost Calculator" intro="Estimate how much topsoil a measured area needs, compare supplier quotes by volume or weight, and calculate delivery and spreading costs. Use your supplier's density and your own allowance." breadcrumbLabel="Topsoil Cost Calculator" currentHref="/topsoil-cost-calculator/" faqs={faqs} relatedHrefs={["/mulch-cost-calculator/", "/landscape-labor-cost-calculator/", "/landscaping-estimate-calculator/"]} proHeading="Build a reusable soil installation estimate" proDescription="Landscape Estimate Pro combines saved soil costs, equipment rates, and labor assumptions in service assemblies. Add soil work alongside other services, save the project estimate, and compare it with actual job costs later.">
+  <ExpansionCalculator kind="topsoil" client:load />
+  <Fragment slot="extra">
+    <article class="tool-editorial">
+      <h2>Volume and weight answer different buying questions</h2>
+      <p>Your measurements describe a finished volume. A supplier may quote that soil by cubic yard or by weight. Start with area × depth in inches ÷ 324 to find cubic yards, then multiply by your supplier's density if a ton quote needs comparing. This page uses US short tons; metric tonnes and UK long tons are different units.</p>
+      <p>The extra-volume allowance increases the measured volume before material pricing and weight conversion. Ask the supplier how their loose delivery volume relates to your required finished depth. Do not use the sample 15% as a site specification: settlement, compaction, and moisture depend on the soil and the work.</p>
+      <h2>Worked example: 1,000 square feet at 4 inches</h2>
+      <p>The finished volume is 12.3457 cubic yards. A 15% allowance gives 14.1975 cubic yards, shown as 14.20. At $38 per cubic yard, material costs $539.51. If the supplier confirms 1.2 US short tons per cubic yard, estimated weight is 17.04 tons.</p>
+      <p>At an alternative quote of $32 per ton, material would cost $545.19. Compare these on the same product grade, moisture basis, and delivery terms. The calculator does not add the two quotes together; it uses the per-yard quote for the installation calculation and shows the weight quote as an alternative.</p>
+      <h2>Delivery and spreading can change the decision</h2>
+      <p>Truck access, minimum order sizes, delivery distance, and where the load can be tipped affect the overall price. Obtain a delivered quote and check whether the full order needs more than one load. Enter the total delivery charge for the project rather than assuming the sample fee covers any quantity.</p>
+      <p>Spreading labor is another separate cost. Include machine time, hand finishing, and paid preparation. Use the <a href="/landscape-labor-cost-calculator/">landscape labor cost calculator</a> for the crew cost, then add equipment hire or operating costs here. In the sample, $120 delivery, $320 labor, and $90 equipment produce $1,069.51 direct cost; 15% overhead and 35% margin require a $1,892.21 pre-tax price.</p>
+      <h2>Plan the complete scope before quoting</h2>
+      <p>This calculation does not select the appropriate soil, specify grading or drainage, or decide how much existing material must be removed. Confirm the product and scope before ordering. Keep removal and disposal visible in your estimate if they are part of the job.</p>
+      <p>For a finish layer of mulch, use the separate <a href="/mulch-cost-calculator/">mulch quantity and cost calculator</a>. Combine services in the <a href="/landscaping-estimate-calculator/">landscaping estimate calculator</a>, or use <a href="/landscaping-estimating-software/">Landscape Estimate Pro</a> to save soil assemblies, project templates, and actual job results. Save supplier units consistently so a cost per ton is never mistaken for a cost per cubic yard.</p>
+    </article>
+  </Fragment>
+</ToolPageLayout>

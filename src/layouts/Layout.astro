@@ -14,7 +14,8 @@ export interface Props {
 
 const { title, description, noIndex = false, ogImage = "/og-default.png" } = Astro.props;
 
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
+const canonicalPath = Astro.url.pathname.replace(/\/+$/, "") + "/";
+const canonicalUrl = new URL(canonicalPath, Astro.site).toString();
 const ogImageUrl = new URL(ogImage, Astro.site).toString();
 // The real, live GA4 property for this site. Not a secret — a Measurement
 // ID is meant to be public (it ships in every page's own client-side
@@ -30,8 +31,8 @@ const websiteSchema = {
   name: SITE_NAME,
   url: Astro.site?.toString(),
   description: LAUNCH_PRICE_ACTIVE
-    ? `Landscape estimating and job-costing software for small landscape contractors. Free to use today; ${PRICE_DISPLAY} launch price (regular ${ORIGINAL_PRICE_DISPLAY}) planned. No account, local-first.`
-    : `Landscape estimating and job-costing software for small landscape contractors. Free to use today; ${PRICE_DISPLAY} lifetime planned. No account, local-first.`,
+    ? `Landscape estimating and job-costing software for small landscape contractors. Free calculators; Pro is ${PRICE_DISPLAY} launch price (regular ${ORIGINAL_PRICE_DISPLAY}). No account, local-first.`
+    : `Landscape estimating and job-costing software for small landscape contractors. Free calculators; Pro is ${PRICE_DISPLAY} lifetime. No account, local-first.`,
 };
 
 const organizationSchema = {

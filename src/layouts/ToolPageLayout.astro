@@ -4,7 +4,7 @@ import Breadcrumbs from "../components/Breadcrumbs.astro";
 import FaqAccordion, { type FaqItem } from "../components/FaqAccordion.astro";
 import ToolCardGrid from "../components/ToolCardGrid.astro";
 import TrustBadges from "../components/TrustBadges.astro";
-import { PRICE_DISPLAY, SITE_URL } from "../data/site";
+import { SITE_URL, PRO_CTA_LABEL } from "../data/site";
 import { buildFreeToolOfferSchema } from "../data/structuredData";
 
 export interface Props {
@@ -17,10 +17,23 @@ export interface Props {
   faqs: FaqItem[];
   currentHref: string;
   webApplicationSchema?: boolean;
+  relatedHrefs?: string[];
+  proHeading?: string;
+  proDescription?: string;
 }
 
-const { title, description, eyebrow, h1, intro, breadcrumbLabel, faqs, currentHref, webApplicationSchema = true } =
+const { title, description, eyebrow, h1, intro, breadcrumbLabel, faqs, currentHref, webApplicationSchema = true, relatedHrefs, proHeading = "Run the numbers once. Reuse them forever.", proDescription = "Pro saves your materials, equipment, labor and production rates so every future estimate calculates itself — plus Service Rate Health, estimate-vs-actual tracking, and branded customer estimates." } =
   Astro.props;
+
+const relatedByPage: Record<string, string[]> = {
+  "/landscaping-cost-calculator/": ["/landscape-labor-cost-calculator/", "/landscaping-estimate-calculator/", "/landscape-job-cost-calculator/"],
+  "/landscaping-estimate-calculator/": ["/mulch-cost-calculator/", "/topsoil-cost-calculator/", "/landscaping-estimate-template/"],
+  "/landscaping-estimate-template/": ["/landscaping-estimate-calculator/", "/landscaping-quote-template/", "/landscaping-invoice-template/"],
+  "/landscaping-quote-template/": ["/landscape-profit-margin-calculator/", "/landscaping-estimate-template/", "/landscaping-invoice-template/"],
+  "/landscaping-invoice-template/": ["/landscape-job-cost-calculator/", "/landscaping-quote-template/", "/landscape-profit-margin-calculator/"],
+  "/landscaping-price-list/": ["/landscape-profit-margin-calculator/", "/mulch-cost-calculator/", "/landscape-labor-cost-calculator/"],
+  "/landscape-pricing-guide/": ["/landscape-labor-cost-calculator/", "/landscape-profit-margin-calculator/", "/landscape-job-cost-calculator/"],
+};
 
 const schema = webApplicationSchema
   ? {
@@ -41,7 +54,7 @@ const schema = webApplicationSchema
     {schema && <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />}
   </Fragment>
 
-  <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: breadcrumbLabel, href: currentHref }]} />
+  <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Free tools", href: "/resources/" }, { label: breadcrumbLabel, href: currentHref }]} />
 
   <section class="mx-auto max-w-content px-4 pb-8 pt-6 sm:px-6 lg:px-8">
     <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">{eyebrow}</p>
@@ -54,6 +67,7 @@ const schema = webApplicationSchema
 
   <section class="mx-auto max-w-content px-4 pb-16 sm:px-6 lg:px-8">
     <slot />
+    <noscript><p class="mt-4 rounded-lg border border-border p-4">Enable JavaScript to edit the calculator. The formulas, worked examples, and guidance below remain available without JavaScript.</p></noscript>
   </section>
 
   <section class="border-y border-border bg-white py-16">
@@ -65,22 +79,23 @@ const schema = webApplicationSchema
   <section class="bg-forest py-14 text-white">
     <div class="mx-auto flex max-w-content flex-col items-start gap-5 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
       <div>
-        <h2 class="text-2xl font-extrabold sm:text-3xl">Run the numbers once. Reuse them forever.</h2>
+        <h2 class="text-2xl font-extrabold sm:text-3xl">{proHeading}</h2>
         <p class="mt-2 max-w-xl text-white/75">
-          Pro saves your materials, equipment, labor and production rates so every future estimate calculates itself — plus Service Rate Health, estimate-vs-actual tracking, and branded customer estimates.
+          {proDescription}
         </p>
+        <p class="mt-3 text-sm text-white/80">This tool is free. <a href="/pricing/" class="font-semibold text-lime underline">See Pro pricing and license details</a>.</p>
       </div>
       <a
         href="/landscaping-estimating-software/"
         class="js-tool-layout-pro-cta inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-xl bg-lime px-7 py-4 text-base font-bold text-lime-ink transition-colors hover:bg-[#d9ff5e]"
       >
-        Try Pro free — {PRICE_DISPLAY} planned
+        {PRO_CTA_LABEL}
       </a>
     </div>
   </section>
 
   <section class="mx-auto max-w-content px-4 py-16 sm:px-6 lg:px-8">
-    <ToolCardGrid heading="More free tools" exclude={[currentHref]} seeAllHref="/resources/" />
+    <ToolCardGrid heading="More free tools" include={relatedHrefs ?? relatedByPage[currentHref]} exclude={[currentHref]} showProCard={false} seeAllHref="/resources/" />
   </section>
 
   <section class="border-t border-border bg-white py-16">

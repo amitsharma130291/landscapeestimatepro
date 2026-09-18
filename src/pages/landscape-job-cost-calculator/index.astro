@@ -1,0 +1,29 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import ExpansionCalculator from "../../components/calculator/ExpansionCalculator";
+const faqs = [
+  { question: "What is the difference between job costing and estimating?", answer: "An estimate predicts costs before work starts. Job costing records what the work actually consumed and compares it with that estimate. This calculator keeps the original quoted revenue fixed so overruns show up as lower profit." },
+  { question: "Should I include owner labor?", answer: "Include a cost for the time you spend working on the job, even if you do not draw an hourly wage. Otherwise the apparent job profit also has to pay for that work. Use the same costing basis in the estimated and actual columns." },
+  { question: "Does a positive variance mean I made more money?", answer: "No. Here, variance is actual cost minus estimated cost. A positive amount means an overrun; a negative amount means the job came in under budget. Profit is calculated separately from quoted revenue minus actual true cost." },
+  { question: "Can I track multiple jobs here?", answer: "This free tool compares one job and does not save entries. Landscape Estimate Pro saves estimates and actuals and provides profitability reporting and historical service variance across completed jobs." },
+];
+---
+<ToolPageLayout title="Landscape Job Cost Calculator — Estimate vs. Actual" description="Compare estimated and actual landscaping job costs. Find material and labor overruns, actual profit, and margin on your quoted price with this free tool." eyebrow="Free completed-job review" h1="Landscape Job Cost Calculator" intro="Find where a completed job gained or lost profit. Enter your original budget beside the actual costs, keep the quoted revenue fixed, and compare the results by cost category." breadcrumbLabel="Job Cost Calculator" currentHref="/landscape-job-cost-calculator/" faqs={faqs} relatedHrefs={["/landscape-labor-cost-calculator/", "/landscape-profit-margin-calculator/", "/landscaping-invoice-template/"]} proHeading="Turn one job review into a better next estimate" proDescription="Landscape Estimate Pro keeps saved estimates, actual labor and material costs, and historical service variance together. Review profitability across completed jobs and use what you learn when pricing the next one.">
+  <ExpansionCalculator kind="job" client:load />
+  <Fragment slot="extra">
+    <article class="tool-editorial">
+      <h2>How to review a completed landscaping job</h2>
+      <p>Use the estimate that the customer accepted as your starting budget. Gather supplier invoices, crew time records, equipment charges, delivery receipts, and disposal costs. Enter the costs of the work actually performed, using the same categories on both sides. A material purchase for several jobs should be allocated to the jobs that used it, rather than charged entirely to the first job.</p>
+      <p>The labor columns should include the whole crew's loaded cost, including paid loading and travel time. If you have hours but not a labor total, use the <a href="/landscape-labor-cost-calculator/">landscape labor cost calculator</a> first. Do not compare an estimate based on base wages with actual costs that include payroll burden: that mixes two different assumptions.</p>
+      <h2>The job-costing formulas</h2>
+      <ul><li>Direct cost = materials + labor + equipment + delivery + other costs.</li><li>True cost = direct cost × (1 + overhead percentage ÷ 100).</li><li>Cost variance = actual true cost − estimated true cost.</li><li>Actual job profit = pre-tax quoted revenue − actual true cost.</li><li>Actual margin = actual job profit ÷ pre-tax quoted revenue × 100.</li></ul>
+      <p>This calculator applies the same overhead percentage to both columns to make the comparison consistent. If your actual overhead allocation is already included in a cost entry, use zero overhead here to avoid counting it twice. Job profit after this allocation is a planning measure; it is not a substitute for a complete business profit-and-loss statement.</p>
+      <h2>Worked example: the quote stayed the same, but labor increased</h2>
+      <p>The sample job was quoted at $5,000. Estimated direct costs total $2,400 and become $2,760 with 15% overhead. Actual direct costs total $2,900 and become $3,335. The $575 overrun reduces expected profit from $2,240 to $1,665, leaving a 33.30% actual margin.</p>
+      <p>The category breakdown identifies $300 extra labor, $150 extra materials, and $50 extra equipment before overhead. Those details point to different questions: was the original quantity too low, did access slow the crew, or did equipment stay on hire longer? A single total-cost comparison cannot answer those questions.</p>
+      <h2>What to do with a cost overrun</h2>
+      <p>Separate estimating errors from changes in scope. For approved extra work, update revenue and include its corresponding costs so the comparison covers the same work. For recurring labor overruns, review production assumptions rather than adding an unexplained contingency to every future quote.</p>
+      <p>Use the <a href="/landscape-profit-margin-calculator/">profit margin calculator</a> to test the price needed on a similar future job. To prepare the customer bill, use the <a href="/landscaping-invoice-template/">landscaping invoice template</a>. For saved job history and service-level comparisons, see <a href="/landscaping-estimating-software/">Landscape Estimate Pro's estimating and job-costing features</a>.</p>
+    </article>
+  </Fragment>
+</ToolPageLayout>

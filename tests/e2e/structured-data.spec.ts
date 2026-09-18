@@ -14,7 +14,7 @@ import { test, expect, type Page } from "@playwright/test";
 
 const SITE_URL = "https://landscapeestimatepro.com";
 
-const FREE_TOOL_PAGES = ["/landscaping-cost-calculator/", "/landscaping-estimate-calculator/"];
+const FREE_TOOL_PAGES = ["/landscaping-cost-calculator/", "/landscaping-estimate-calculator/", "/landscape-job-cost-calculator/", "/landscape-profit-margin-calculator/", "/mulch-cost-calculator/", "/topsoil-cost-calculator/", "/landscape-labor-cost-calculator/"];
 const PAID_PRODUCT_PAGES = ["/", "/pricing/", "/landscaping-estimating-software/"];
 
 async function readJsonLdBlocks(page: Page): Promise<unknown[]> {

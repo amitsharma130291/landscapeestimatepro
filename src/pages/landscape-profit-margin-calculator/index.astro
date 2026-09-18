@@ -1,0 +1,29 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import ExpansionCalculator from "../../components/calculator/ExpansionCalculator";
+const faqs = [
+  { question: "Is a 35% markup the same as a 35% margin?", answer: "No. A $3,000 cost with 35% markup sells for $4,050 and earns a 25.93% margin. A 35% margin on the same cost requires a selling price of at least $4,615.39. Markup divides profit by cost; margin divides profit by selling price." },
+  { question: "What landscaping profit margin should I target?", answer: "There is no universal target in this calculator. Choose a target based on your own overhead, risk, capacity, and business goals. The starting 35% is a worked-example input, not an industry benchmark." },
+  { question: "Why is my result negative?", answer: "Your entered selling price is below your entered cost. A negative profit and margin show the size of that loss. The calculator does not replace negative results with zero." },
+  { question: "Why can I not enter a 100% target margin?", answer: "For a positive cost, the formula divides by one minus the target margin. At 100% that denominator is zero, so no finite selling price can meet the target. This tool accepts targets from 0% to 99.9%." },
+];
+---
+<ToolPageLayout title="Landscape Profit Margin Calculator — Margin vs. Markup" description="Calculate landscaping job profit, margin, and markup from cost and selling price. Find the pre-tax price required for your own target profit margin." eyebrow="Free pricing check" h1="Landscape Profit Margin Calculator" intro="Check the profit in a price you already charge, then compare it with the price your target margin requires. See margin and markup side by side without confusing the two." breadcrumbLabel="Profit Margin Calculator" currentHref="/landscape-profit-margin-calculator/" faqs={faqs} relatedHrefs={["/landscaping-price-list/", "/landscape-job-cost-calculator/", "/landscape-pricing-guide/"]} proHeading="Check every service rate against its true cost" proDescription="Landscape Estimate Pro's Rate Health compares your saved service prices with materials, labor, equipment, overhead, and your target margin. Find underpriced services before you reuse them in another estimate.">
+  <ExpansionCalculator kind="margin" client:load />
+  <Fragment slot="extra">
+    <article class="tool-editorial">
+      <h2>Start with a complete cost, not just the supplier bill</h2>
+      <p>Enter the cost of delivering the work, including materials, loaded labor, equipment, delivery, other direct costs, and allocated overhead. Enter the customer selling price before sales tax. If you have not built that cost yet, the <a href="/landscaping-cost-calculator/">landscaping cost calculator</a> adds the cost categories together first.</p>
+      <p>This tool answers a narrower question: does a known selling price deliver the profit share you intended? It can check a whole project or one service unit, provided cost and price use the same unit. For example, compare the cost per cubic yard of installed mulch with the selling price per cubic yard, rather than with a total-job quote.</p>
+      <h2>Margin and markup use different denominators</h2>
+      <ul><li>Profit = selling price − total cost.</li><li>Margin percentage = profit ÷ selling price × 100.</li><li>Markup percentage = profit ÷ total cost × 100.</li><li>Required selling price = total cost ÷ (1 − target margin ÷ 100).</li></ul>
+      <p>The required price rounds upward to a cent so rounding does not push it below the target. If revenue is zero, margin is undefined. If cost is zero, markup is undefined. The tool labels those cases instead of presenting a misleading percentage.</p>
+      <h2>Worked example: $3,000 cost and a $4,500 price</h2>
+      <p>Profit is $1,500. Dividing it by the $4,500 selling price gives a 33.33% margin. Dividing the same $1,500 by the $3,000 cost gives a 50.00% markup. Neither percentage changes the dollars earned; they describe those dollars against different bases.</p>
+      <p>To achieve a 35% margin, divide $3,000 by 0.65. The required price is $4,615.39 after rounding upward, or $115.39 above the current quote. Conversely, adding a 35% markup gives $4,050 and only 25.93% margin. This is why a markup percentage cannot be substituted directly for a margin target.</p>
+      <h2>Use the result in your price book</h2>
+      <p>A negative price change means your current quote is already above the entered target; it is not a recommendation to reduce your price. Consider site conditions, scope, warranty work, and capacity before changing a customer quote. The result measures the entered job costs, not company net profit after every possible business expense.</p>
+      <p>Record reviewed rates in your <a href="/landscaping-price-list/">landscaping price list</a>, and read the <a href="/landscape-pricing-guide/">landscape pricing guide</a> for overhead and minimum-job considerations. After delivery, replace predicted costs with real results in the <a href="/landscape-job-cost-calculator/">estimate-versus-actual job cost calculator</a>. <a href="/landscaping-estimating-software/#service-rate-health">Pro's Rate Health dashboard</a> makes this review repeatable across saved services.</p>
+    </article>
+  </Fragment>
+</ToolPageLayout>
