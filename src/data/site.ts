@@ -85,4 +85,5 @@ export const TOOL_LINKS: ToolLink[] = [
   { category: "calculators", eyebrow: "Material calculator", label: "Mulch Cost Calculator", href: "/mulch-cost-calculator/", description: "Calculate cubic yards, whole bags, bulk delivery, and installation pricing." },
   { category: "calculators", eyebrow: "Material calculator", label: "Topsoil Cost Calculator", href: "/topsoil-cost-calculator/", description: "Compare soil volume and supplier-density weight, with delivery and spreading costs." },
   { category: "calculators", eyebrow: "Crew calculator", label: "Landscape Labor Cost Calculator", href: "/landscape-labor-cost-calculator/", description: "Calculate loaded wages, paid person-hours, and crew cost including travel." },
+  { category: "guides", eyebrow: "Guide", label: "Calculation Methods & Examples", href: "/calculation-methodology/", description: "Check formulas, units, and rounding rules, and reproduce an illustrative job-cost review." },
 ];

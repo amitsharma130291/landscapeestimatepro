@@ -23,6 +23,8 @@ export interface FreeCustomerDocument {
   customerName: string;
   projectName: string;
   dateLabel: string;
+  reference?: string;
+  validUntilLabel?: string;
   notes?: string;
   /** false in "summary" mode (Free Quote Template only) — shows just the
    * total, no line-item breakdown at all. */
@@ -49,9 +51,11 @@ export default function FreeCustomerDocumentView({ doc }: { doc: FreeCustomerDoc
         <div className="min-w-0">
           <p className="break-words text-lg font-extrabold text-ink">{doc.businessName || "Your Business Name"}</p>
         </div>
-        <div className="shrink-0 text-right">
+        <div className="min-w-0 max-w-full text-right sm:max-w-xs">
           <p className="text-xs font-bold uppercase tracking-wider text-muted">{doc.docLabel}</p>
           <p className="mt-1 text-sm text-muted">{doc.dateLabel}</p>
+          {doc.reference && <p className="mt-1 break-words text-sm text-muted">Reference: {doc.reference}</p>}
+          {doc.validUntilLabel && <p className="mt-1 text-sm text-muted">Valid until: {doc.validUntilLabel}</p>}
         </div>
       </div>
 

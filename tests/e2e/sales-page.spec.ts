@@ -99,7 +99,7 @@ test("margin-vs-markup proof: the exact reconciling numbers render on the page (
 
 test("a contextual purchase CTA follows the financial proof", async ({ page }) => {
   await page.goto(URL);
-  const proof = page.locator("text=A familiar pricing shortcut can leave hundreds of dollars on the table.");
+  const proof = page.getByRole("heading", { name: "Compare a 35% markup with a 35% margin.", exact: true });
   const cta = SALES_CONFIG.salesEnabled ? page.getByRole("button", { name: "Protect My Margin for $79" }) : page.getByRole("link", { name: "Explore the Free Tools" });
   const proofBox = await proof.boundingBox();
   const ctaBox = await cta.first().boundingBox();

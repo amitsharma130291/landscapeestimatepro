@@ -57,6 +57,11 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
   const [projectName, setProjectName] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
+  const [quoteReference, setQuoteReference] = useState("");
+  const [validUntil, setValidUntil] = useState("");
+  const validityError = variant === "quote" && validUntil && docDate && validUntil < docDate
+    ? "Choose a validity date on or after the quote date."
+    : undefined;
   // Quote-only (DEF-13/LEP-045): a purely presentational toggle — it can
   // never change `totalCents` below, only how many columns of the same
   // already-computed line amounts are shown.
@@ -118,6 +123,8 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
     customerName,
     projectName,
     dateLabel: formatDocDateLabel(docDate),
+    ...(variant === "quote" && quoteReference.trim() ? { reference: quoteReference.trim() } : {}),
+    ...(variant === "quote" && validUntil ? { validUntilLabel: formatDocDateLabel(validUntil) } : {}),
     notes: notes.trim() ? notes : undefined,
     showBreakdown: true,
     lines: printDocumentLines,
@@ -148,6 +155,14 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
             <Field label={`${docLabel} date`} htmlFor={`${idPrefix}-date`}>
               <TextInput id={`${idPrefix}-date`} type="date" value={docDate} onChange={(e) => setDocDate(e.target.value)} />
             </Field>
+            {variant === "quote" && <>
+              <Field label="Quote reference" htmlFor={`${idPrefix}-reference`} hint="Optional identifier printed on the quote">
+                <TextInput id={`${idPrefix}-reference`} value={quoteReference} onChange={(e) => setQuoteReference(e.target.value)} maxLength={80} aria-describedby={`${idPrefix}-reference-hint`} />
+              </Field>
+              <Field label="Valid until" htmlFor={`${idPrefix}-valid-until`} hint="Optional date printed on the quote; no automatic expiry or reminders" error={validityError}>
+                <TextInput id={`${idPrefix}-valid-until`} type="date" min={docDate || undefined} value={validUntil} onChange={(e) => setValidUntil(e.target.value)} invalid={!!validityError} aria-describedby={`${idPrefix}-valid-until-${validityError ? "error" : "hint"}`} />
+              </Field>
+            </>}
           </div>
         </Card>
       </div>
@@ -274,7 +289,7 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               className="block w-full rounded-lg border border-border px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-lime-surface"
-              placeholder={variant === "quote" ? "Valid for 30 days. 50% deposit to schedule." : "Optional notes for the customer."}
+              placeholder={variant === "quote" ? "Scope exclusions, payment terms, and scheduling conditions." : "Quantities to confirm, site assumptions, and exclusions."}
             />
           </div>
           <div className="text-right">
@@ -285,7 +300,7 @@ export default function EstimateBuilderIsland({ variant = "estimate" }: { varian
       </Card>
 
       <div className="no-print mt-6 flex justify-end">
-        <Button type="button" onClick={() => setPrintingDocument(true)}>
+        <Button type="button" disabled={!!validityError} onClick={() => setPrintingDocument(true)}>
           <Printer size={18} aria-hidden="true" /> Print / Save as PDF
         </Button>
       </div>

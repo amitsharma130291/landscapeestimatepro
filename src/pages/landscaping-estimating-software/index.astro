@@ -192,14 +192,14 @@ const faqs = [
   <!-- 2. Problem recognition -->
   <section class="border-t border-border bg-white py-16">
     <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
-      <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">A busy schedule does not guarantee a profitable season.</h2>
+      <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">Include the costs that are easy to leave out.</h2>
       <p class="mt-4 text-base leading-relaxed text-muted">
-        Material invoices arrive. Payroll clears. Equipment costs climb. The job looked profitable when you
-        quoted it—but the margin disappeared somewhere between the estimate and the final day on site.
+        Materials and on-site wages are only part of a job cost. Check whether the estimate also covers paid
+        preparation time, equipment use, delivery, and a share of business overhead.
       </p>
       <p class="mt-4 text-base leading-relaxed text-muted">
-        Good crews finish good work and still fall short of the profit they expected, because the quote never
-        accounted for everything the job actually costs:
+        Use this list when reviewing the scope. Include each applicable expense once, either as a direct job cost
+        or in the overhead allocation:
       </p>
       <ul class="mt-5 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
         {omittedCosts.map((item) => (
@@ -212,7 +212,7 @@ const faqs = [
         ))}
       </ul>
       <p class="mt-6 text-lg font-semibold text-ink">
-        The problem is rarely the quality of the work. It is the cost that never made it into the quote.
+        The calculation can only include the costs you enter. Review quantities, rates, and site conditions before sending a quote.
       </p>
     </div>
   </section>
@@ -222,7 +222,7 @@ const faqs = [
   <section class="border-t-2 border-forest bg-paper py-16 sm:py-20">
     <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
       <h2 class="text-center text-3xl font-extrabold text-ink sm:text-4xl">
-        A familiar pricing shortcut can leave hundreds of dollars on the table.
+        Compare a 35% markup with a 35% margin.
       </h2>
       <div class="mt-10">
         <MarginVsMarkupProof />
@@ -267,7 +267,7 @@ const faqs = [
   <!-- 6. Service Rate Health -->
   <section id="service-rate-health" class="scroll-mt-24 border-t border-border bg-paper py-16">
     <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
-      <h2 class="text-center text-2xl font-extrabold text-ink sm:text-3xl">Find the services quietly weakening your margin.</h2>
+      <h2 class="text-center text-2xl font-extrabold text-ink sm:text-3xl">Compare service prices with your target margin.</h2>
       <div class="mt-8">
         <RateHealthDemo />
       </div>
@@ -277,7 +277,7 @@ const faqs = [
   <!-- 7. Cost-change scenario -->
   <section class="border-t border-border bg-white py-12">
     <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
-      <h2 class="text-center text-xl font-extrabold text-ink sm:text-2xl">See what a price increase changes before it reaches your profit.</h2>
+      <h2 class="text-center text-xl font-extrabold text-ink sm:text-2xl">Recalculate costs when supplier or labor rates change.</h2>
       <div class="mt-6">
         <CostScenarioCards />
       </div>
@@ -288,7 +288,7 @@ const faqs = [
   <section class="border-t border-border bg-paper py-16">
     <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
       <h2 class="text-center text-2xl font-extrabold text-ink sm:text-3xl">
-        The estimate is a prediction. The completed job tells you what to improve.
+        Compare the accepted estimate with actual job costs.
       </h2>
       <p class="mx-auto mt-3 max-w-xl text-center text-base text-muted">
         Quote assumptions → completed-job actuals → variance → better production rates and pricing on the next job.
@@ -325,7 +325,7 @@ const faqs = [
   <!-- 10. Who it is for / what it is not (combined) -->
   <section class="border-t border-border bg-white py-14">
     <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl font-extrabold text-ink sm:text-2xl">Built for contractors who know the work—but want more certainty in the price.</h2>
+      <h2 class="text-xl font-extrabold text-ink sm:text-2xl">Check whether Pro fits the work you estimate.</h2>
       <div class="mt-7 grid gap-6 sm:grid-cols-2">
         <div class="rounded-2xl border border-lime-surface/30 bg-mint/40 p-5">
           <p class="text-xs font-bold uppercase tracking-wider text-mint-ink">For you if</p>
@@ -449,7 +449,7 @@ const faqs = [
   <!-- 13. Evidence and trust -->
   <section class="border-t border-border bg-white py-16">
     <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
-      <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">Built to keep your estimates consistent—and your internal numbers private.</h2>
+      <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">Keep project data in your browser and export backups.</h2>
       <p class="mt-3 max-w-2xl text-base leading-relaxed text-muted">
         Everything you enter — materials, labor rates, assemblies, estimates — runs and stays in your browser, on
         your device. Export a JSON backup before clearing browser storage or switching computers; there's no cloud
@@ -464,7 +464,8 @@ const faqs = [
         ))}
       </ul>
       <p class="mt-6 max-w-2xl text-sm text-muted">
-        Every screenshot on this page is from the real application, not a mockup.
+        The product demonstrations use illustrative sample data. They are not customer results or evidence of typical profit.
+        <a href="/calculation-methodology/" class="font-semibold underline">Check the calculation methods and reproduce a worked example.</a>
       </p>
     </div>
   </section>
@@ -479,9 +480,9 @@ const faqs = [
   <!-- 15. Final CTA -->
   <section class="border-t border-border bg-forest py-16 text-white">
     <div class="mx-auto max-w-narrow px-4 text-center sm:px-6 lg:px-8">
-      <h2 class="text-2xl font-extrabold sm:text-3xl">The next job should not depend on a guess.</h2>
+      <h2 class="text-2xl font-extrabold sm:text-3xl">Build an estimate from your own costs.</h2>
       <p class="mt-3 text-white/75">
-        Build the price from your real costs, overhead and target margin—before the work begins.
+        Save your service costs, enter the job quantities, and review the calculated price before sharing the estimate.
       </p>
       <div class="mx-auto mt-7 max-w-sm">
         <BuyCtaButton fallbackCtaLabel="final_cta_explore_free_tools" />

@@ -194,16 +194,16 @@ const faqs = [
       <div class="max-w-2xl">
         <p class="text-xs font-bold uppercase tracking-wider text-lime-surface">Free vs. Pro</p>
         <h2 class="mt-2 text-[clamp(1.75rem,4vw,2.5rem)] font-extrabold leading-tight text-ink">
-          The free calculator handles one job. Pro remembers everything.
+          Use the free calculator for one scenario. Save projects in Pro.
         </h2>
         <p class="mt-3 text-muted">
-          The calculator above is great for a single project. Landscape Estimate Pro saves your business assumptions once and reuses them on every estimate from then on.
+          The free calculator does not save entries. Pro stores your catalogs, business settings, service assemblies, and projects in this browser. Review those inputs when preparing each new estimate and export a backup to keep a copy.
         </p>
       </div>
 
       <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Saved catalogs", desc: "Reusable material and equipment costs — set a price once." },
+          { title: "Saved catalogs", desc: "Store supplier and equipment rates; update them when costs change." },
           { title: "Service assemblies", desc: "Bundle materials, labor and equipment into one reusable service." },
           { title: "Production-rate labor", desc: "Estimate crew hours from your own production rates, not guesses." },
           { title: "Saved projects & estimates", desc: "Duplicate, rename, and archive past jobs instead of starting over." },
@@ -226,12 +226,12 @@ const faqs = [
     <div class="mx-auto grid max-w-content gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8">
       <div>
         <p class="text-xs font-bold uppercase tracking-wider text-lime">Profitability starts before the job</p>
-        <h2 class="mt-2 text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold leading-[1.1]">Stop guessing what to charge.</h2>
+        <h2 class="mt-2 text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold leading-[1.1]">Compare your quote with the price your margin requires.</h2>
         <p class="mt-4 max-w-md text-white/75">
-          See exactly what a landscape project costs your business — and the price required to hit your margin.
+          Add the costs you expect to incur and compare your proposed quote with the price required by your target margin.
         </p>
         <p class="mt-4 max-w-md text-sm font-semibold text-lime">
-          One underpriced $4,000 job can cost more than the software.
+          The example below shows the price difference for the displayed costs and margin.
         </p>
         <a
           href="#calculator"
@@ -244,7 +244,7 @@ const faqs = [
       <div class="rounded-2xl border border-white/15 bg-white/5 p-5 sm:p-6">
         <div class="flex items-center justify-between border-b border-white/10 pb-3">
           <p class="text-xs font-bold uppercase tracking-wider text-white/60">Profit check</p>
-          <p class="text-xs text-white/50">Smith Residence</p>
+          <p class="text-xs text-white/50">Smith Residence — illustrative example</p>
         </div>
         <div class="mt-4 grid grid-cols-2 gap-4">
           <div>
@@ -373,8 +373,8 @@ const faqs = [
   <section class="border-t border-border bg-white py-16 sm:py-20">
     <div class="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
       <ToolCardGrid
-        heading="Useful free tools. A natural path to Pro."
-        intro="Every tool below runs the same estimating math Pro is built on."
+        heading="Free calculators and document builders"
+        intro="Choose a tool to measure materials, cost a crew, review a price, or prepare a customer document."
         seeAllHref="/resources/"
       />
     </div>
@@ -395,7 +395,7 @@ const faqs = [
           "Unlimited estimates and projects",
           "All Pro estimating and job-costing features",
           "Service Rate Health and cost-impact analysis",
-          "Local-first storage — nothing leaves your device",
+          "Project data stored in this browser — export a backup",
         ].map((item) => (
           <li class="flex items-start gap-2.5">
             <svg class="mt-0.5 h-4 w-4 shrink-0 text-lime" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

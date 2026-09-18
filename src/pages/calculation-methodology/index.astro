@@ -1,0 +1,73 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import { calculateExpansion, calculatorFields } from "../../lib/expansionCalculators";
+const title = "Calculation Methods & Worked Example | Landscape Estimate Pro";
+const description = "Check the formulas, units, rounding rules, and sample inputs used in Landscape Estimate Pro's calculators, with a reproducible estimate-versus-actual example.";
+const jobInputs = Object.fromEntries(calculatorFields.job.map(f => [f.key, f.value]));
+const jobResults = Object.fromEntries(calculateExpansion("job", jobInputs).map(r => [r.label, r.value]));
+const methods = [
+  { name: "Project cost", href: "/landscaping-cost-calculator/", formula: "Direct cost = materials + loaded labor + equipment + delivery + other costs. True cost = direct cost × (1 + overhead ÷ 100).", rounding: "The required-price calculation uses unrounded true cost. Reporting figures round to cents; the recommended display price rounds up to the next dollar." },
+  { name: "Multi-service estimate", href: "/landscaping-estimate-calculator/", formula: "Direct cost = sum of each quantity × direct unit cost, plus shared delivery and other expenses. Apply project overhead once.", rounding: "Unit costs and quantities retain their entered precision during calculation. Required price uses unrounded true cost and rounds up to the next cent." },
+  { name: "Margin and markup", href: "/landscape-profit-margin-calculator/", formula: "Profit = price − cost. Margin = profit ÷ price. Markup = profit ÷ cost. Required price = cost ÷ (1 − target margin ÷ 100).", rounding: "Displayed percentages round to two decimals. A zero denominator is labelled undefined. Required price rounds upward to cents; target margin must be below 100%." },
+  { name: "Mulch volume and bags", href: "/mulch-cost-calculator/", formula: "Cubic yards = square feet × depth in inches ÷ 324. Multiply by (1 + allowance ÷ 100). Bags = volume × 27 ÷ bag size in cubic feet.", rounding: "Bag count rounds up to a whole bag. Costs use the unrounded volume. Bagged material is a pickup comparison; contractor pricing uses the bulk material quote." },
+  { name: "Topsoil volume and weight", href: "/topsoil-cost-calculator/", formula: "Use the same dimensional conversion for volume. US short tons = cubic yards × supplier density in short tons per cubic yard.", rounding: "Volume and weight display to two decimals. They are not rounded before material pricing. Per-ton cost is an alternative comparison, not an extra charge added to the per-yard quote." },
+  { name: "Crew labor", href: "/landscape-labor-cost-calculator/", formula: "Loaded hourly cost = wage × (1 + payroll burden ÷ 100) + hourly benefits. Paid person-hours = crew size × (on-site hours + paid travel/loading hours).", rounding: "Paid hours are per person. The tool multiplies the loaded rate by total person-hours without intermediate rounding. It assumes one rate and equal hours for all crew members." },
+];
+---
+<Layout title={title} description={description}>
+  <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Free tools", href: "/resources/" }, { label: "Calculation methods", href: "/calculation-methodology/" }]} />
+  <section class="mx-auto max-w-content px-4 py-10 sm:px-6 lg:px-8">
+    <article class="tool-editorial">
+      <p class="text-sm font-semibold text-muted">Published by Landscape Estimate Pro</p>
+      <h1 class="mt-3 text-3xl font-extrabold leading-tight sm:text-4xl">How the calculators turn inputs into results</h1>
+      <p>Use this page to check a result, understand which costs belong in an input, or reproduce the example below. The tools calculate from your entries. They do not obtain local supplier quotes, determine tax rules, or measure a site.</p>
+      <p>The formulas are implemented with decimal arithmetic and checked against fixed expected results in automated tests. That checks the arithmetic; it does not establish that a sample wage, depth, production rate, or margin is appropriate for your job.</p>
+
+      <h2 id="formulas">Formulas and rounding by tool</h2>
+      <p>Dollar fields use USD. Material dimensions use square feet, inches, cubic feet, and cubic yards. A cubic yard is 27 cubic feet; 12 inches make one foot, so the area-and-depth conversion divides by 324. A US short ton is 2,000 pounds. Soil density must come from your supplier; there is no fixed weight for every cubic yard of soil.</p>
+      <div class="space-y-6">
+        {methods.map(method => <section class="rounded-xl border border-border bg-white p-5">
+          <h3 class="text-lg font-bold"><a href={method.href}>{method.name}</a></h3>
+          <p>{method.formula}</p>
+          <p class="text-sm text-muted">{method.rounding}</p>
+        </section>)}
+      </div>
+      <p>The job-cost, material, margin, and labor tools show monetary outputs to cents. A rounded subtotal may not reproduce the last cent of a result calculated from unrounded values. When moving a cost into another tool, transfer the direct cost and apply overhead only once.</p>
+
+      <h2 id="worked-example">Reproduce a completed-job cost review</h2>
+      <p><strong>This is an illustrative calculation, not a customer case study.</strong> It uses the reset values in the <a href="/landscape-job-cost-calculator/">job cost calculator</a>. No customer outcome or typical profit is implied.</p>
+      <p>Keep pre-tax quoted revenue at $5,000 and overhead at 15%. Enter these direct costs:</p>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-left text-sm">
+          <caption class="mb-3 text-left font-semibold">Sample inputs — USD</caption>
+          <thead><tr class="border-b border-border"><th scope="col" class="p-2">Category</th><th scope="col" class="p-2">Estimated</th><th scope="col" class="p-2">Actual</th></tr></thead>
+          <tbody>{["Materials", "Labor", "Equipment", "Delivery", "Other"].map(category => <tr class="border-b border-border"><th scope="row" class="p-2 font-medium">{category}</th><td class="p-2">${jobInputs[`estimated${category}`]}</td><td class="p-2">${jobInputs[`actual${category}`]}</td></tr>)}</tbody>
+        </table>
+      </div>
+      <p>Estimated direct cost is $2,400; actual direct cost is $2,900. Multiplying each by 1.15 gives the corresponding true cost. Subtract true cost from the unchanged $5,000 revenue to calculate the expected and actual profit.</p>
+      <dl class="rounded-xl border border-border bg-white p-5">
+        {["Estimated true cost", "Actual true cost", "Cost variance (positive = over budget)", "Expected job profit", "Actual job profit", "Actual margin"].map(label => <div class="flex flex-wrap justify-between gap-2 border-b border-border py-3 last:border-0"><dt>{label}</dt><dd class="font-bold">{jobResults[label]}</dd></div>)}
+      </dl>
+      <p>The extra direct costs are $300 labor, $150 materials, and $50 equipment. The remaining $75 of the true-cost difference is the added overhead allocation. These numbers identify where to investigate; they do not reveal whether the cause was site access, rework, incorrect quantities, or a change in scope.</p>
+      <p>For a new job with the same $3,335 true cost, enter that cost into the <a href="/landscape-profit-margin-calculator/">margin calculator</a>. A 35% target requires $5,130.77 before tax. This is a price calculation for a future estimate, not an instruction to change an already accepted customer quote.</p>
+
+      <h2 id="documents">What the document builders calculate</h2>
+      <p>The <a href="/landscaping-estimate-template/">estimate builder</a> multiplies the entered selling rate by quantity, rounds each line to cents, and sums the lines. It is a customer document, not an internal material-cost calculation. Use its notes to explain provisional quantities and exclusions.</p>
+      <p>The <a href="/landscaping-quote-template/">quote builder</a> adds a reference, a printed validity date, and detailed or summary presentation. These fields do not change the total, collect a signature, or enforce a deadline. The <a href="/landscaping-invoice-template/">invoice builder</a> applies one entered tax percentage to the entire subtotal; it does not support mixed tax treatment per line.</p>
+
+      <h2 id="assumptions">Check the assumptions before using a price</h2>
+      <ul>
+        <li>Keep selling prices separate from costs. Entering a selling rate as a cost adds overhead and margin again.</li>
+        <li>Include paid preparation, travel, and owner field labor where applicable. Do not count an expense in both payroll burden and overhead.</li>
+        <li>Use the same scope and units on both sides of an estimate-versus-actual comparison. Include approved extra revenue with its corresponding costs.</li>
+        <li>Replace sample inputs with measured quantities and current quotes. The default rates and percentages are not researched market averages or installation recommendations.</li>
+      </ul>
+
+      <h2 id="accountability">Example data and corrections</h2>
+      <p>Landscape Estimate Pro publishes these tools and explanations. The worked examples are constructed to demonstrate the calculations. We do not present them as field-verified customer projects or independently reviewed professional advice. Where a named expert review or real project record is unavailable, we do not imply one.</p>
+      <p>If a result differs from your calculation, <a href="/contact/">report the tool, input values, and expected result</a>. Use example values and omit customer details. Describe the unit and whether your number includes overhead or tax so the comparison can be reproduced.</p>
+      <p>For saved catalogs, service assemblies, and project records, see <a href="/landscaping-estimating-software/">Landscape Estimate Pro</a>. Free calculator entries do not carry between pages or persist after leaving. Pro stores its workspace in your browser; export a backup before changing devices or clearing site data.</p>
+    </article>
+  </section>
+</Layout>
