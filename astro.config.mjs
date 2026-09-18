@@ -8,6 +8,7 @@ const SITE_URL = 'https://landscapeestimatepro.com';
 
 export default defineConfig({
   site: SITE_URL,
+  trailingSlash: 'always',
   // Fully static — no server runtime, no adapter. Every page (marketing,
   // free tools, and the /app Pro workspace) is prerendered at build time;
   // the Pro app is a client-only React island that reads/writes localStorage
@@ -27,10 +28,7 @@ export default defineConfig({
     sitemap({
       // /app/* is the local-first Pro application, not indexable content — keep it out of the sitemap.
       filter: (page) => !page.includes('/app/'),
-      // Every page is statically prerendered at build time, so "last
-      // modified" honestly means "as of this build" for all of them —
-      // there's no per-page content-management timestamp to draw from.
-      serialize: (item) => ({ ...item, lastmod: new Date().toISOString() }),
+      // Omit lastmod: a rebuild is not evidence that editorial content changed.
     }),
   ],
   vite: {

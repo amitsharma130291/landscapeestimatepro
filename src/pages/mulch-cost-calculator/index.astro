@@ -1,0 +1,29 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import ExpansionCalculator from "../../components/calculator/ExpansionCalculator";
+const faqs = [
+  { question: "How many cubic yards of mulch do I need?", answer: "Multiply bed area in square feet by depth in inches, then divide by 324. A 1,000-square-foot bed at 3 inches needs 9.26 cubic yards before any allowance. The calculator adds your chosen waste percentage separately." },
+  { question: "How many bags are in one cubic yard?", answer: "A cubic yard contains 27 cubic feet. Divide 27 by the bag size in cubic feet: 13.5 two-cubic-foot bags equal one cubic yard. For an order, round the total bag count up to a whole bag, as this calculator does." },
+  { question: "Is bulk mulch always cheaper?", answer: "No. Compare bulk material plus delivery with bagged material plus any pickup or delivery expense. This tool shows bulk delivery and bagged pickup separately. Existing storage, access, bag disposal, and handling time can change the practical choice." },
+  { question: "Does the starting depth tell me how much mulch to apply?", answer: "No. Three inches is an arithmetic example, not a planting recommendation. Measure existing mulch and choose an appropriate added depth for your planting and site. This calculator estimates volume and cost; it does not diagnose plant needs." },
+];
+---
+<ToolPageLayout title="Mulch Cost Calculator — Cubic Yards, Bags & Installation" description="Estimate mulch cubic yards, whole bags, bulk delivery, and installation costs from bed area and depth. Compare buying options and calculate a contractor price." eyebrow="Free material and installation tool" h1="Mulch Cost Calculator" intro="Turn bed measurements into mulch volume, compare bulk delivery with bagged pickup, and add the cost of installing it. Contractors can include overhead and their own target margin." breadcrumbLabel="Mulch Cost Calculator" currentHref="/mulch-cost-calculator/" faqs={faqs} relatedHrefs={["/topsoil-cost-calculator/", "/landscape-labor-cost-calculator/", "/landscaping-quote-template/"]} proHeading="Save your mulch installation service for the next job" proDescription="With Landscape Estimate Pro, combine mulch, crew labor, and equipment into a reusable service assembly. Save your own production rate and supplier cost, then price different quantities without rebuilding the estimate.">
+  <ExpansionCalculator kind="mulch" client:load />
+  <Fragment slot="extra">
+    <article class="tool-editorial">
+      <h2>Measure the area that will actually receive mulch</h2>
+      <p>For a rectangular bed, multiply length by width in feet. Divide an irregular bed into smaller shapes, calculate each area, and add them. Subtract paths and other areas that will not receive mulch. The depth input is the additional layer you intend to buy, not necessarily the total depth already present after installation.</p>
+      <p>Area × depth in inches ÷ 324 gives cubic yards: 12 inches convert to one foot and 27 cubic feet convert to one cubic yard. The waste input increases the calculated volume by your chosen percentage. This allowance is separate from rounding a supplier order; ask whether your supplier sells fractional yards or only fixed increments.</p>
+      <h2>Worked example: 1,000 square feet at 3 inches</h2>
+      <p>The measured volume is 9.2593 cubic yards. A 10% allowance increases it to 10.1852 cubic yards, shown as 10.19. At $42 per cubic yard, bulk material costs $427.78; adding $75 delivery gives $502.78. The calculator carries the unrounded volume into its cost calculation.</p>
+      <p>The same volume is 275 cubic feet. At two cubic feet per bag, round 137.5 up to 138 bags. At $4 per bag, the pickup material cost is $552.00. Bulk is $49.22 lower in this example before any differences in handling, pickup time, or storage. These prices demonstrate the formula and are not local supplier quotes.</p>
+      <h2>From delivered mulch to an installed price</h2>
+      <p>The contractor calculation uses the bulk material option. With $240 labor and no equipment cost, direct cost is $742.78. Adding 15% overhead gives a true cost of $854.19. A 35% target margin requires $1,314.15 before tax, rounded up to the next cent. Displayed subtotals are rounded; the final calculation uses full precision.</p>
+      <p>Include loading, wheelbarrow travel, spreading, edging preparation, and cleanup in your labor estimate. A wide-open bed next to the delivery pile can take different time from a rear garden reached through a narrow gate. Use the <a href="/landscape-labor-cost-calculator/">crew labor cost calculator</a> to turn paid time into a cost rather than assuming a universal installation rate.</p>
+      <h2>Keep soil work and mulch work separate</h2>
+      <p>If the scope also adds soil, calculate that material separately with the <a href="/topsoil-cost-calculator/">topsoil cost calculator</a>. Combine the direct costs in the <a href="/landscaping-cost-calculator/">full landscaping cost calculator</a>, applying project overhead only once. When ready, write the scope and price into a <a href="/landscaping-quote-template/">customer quote</a>.</p>
+      <p>For recurring mulch work, <a href="/landscaping-estimating-software/">Landscape Estimate Pro</a> saves your material catalog and service assemblies. You still supply the real costs and production assumptions; Pro reuses them across saved estimates.</p>
+    </article>
+  </Fragment>
+</ToolPageLayout>

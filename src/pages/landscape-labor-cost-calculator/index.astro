@@ -1,0 +1,29 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import ExpansionCalculator from "../../components/calculator/ExpansionCalculator";
+const faqs = [
+  { question: "What is loaded labor cost?", answer: "It is the employer's cost of labor beyond base wages. This tool adds your entered percentage for payroll burden and a separate hourly benefit amount. Put each expense in only one of those inputs to avoid double counting." },
+  { question: "What is the difference between crew-hours and person-hours?", answer: "A three-person crew working eight hours uses eight elapsed crew-hours and 24 person-hours. Wage cost is based on person-hours. The calculator also includes paid travel and loading hours for each crew member." },
+  { question: "What if crew members have different wages?", answer: "Use an hours-weighted average wage and burden for a blended estimate, or calculate each worker or wage group separately and add the direct labor costs. This simple calculator assumes the same rate and paid hours for every person entered." },
+  { question: "Is the required price a complete project quote?", answer: "No. It covers the entered labor with overhead and target margin. Materials, equipment, delivery, and other project costs must be added separately. When transferring labor to a full project estimate, use direct labor cost so overhead is not applied twice." },
+];
+---
+<ToolPageLayout title="Landscape Labor Cost Calculator — Loaded Crew Rates" description="Calculate loaded landscaping labor rates, crew cost, paid person-hours, travel time, and a labor selling price from your wages, burden, and target margin." eyebrow="Free crew-cost worksheet" h1="Landscape Labor Cost Calculator" intro="Turn hourly wages into the cost of a whole crew. Include payroll burden, benefits, and paid travel or loading time, then see the labor price needed to cover overhead and your target margin." breadcrumbLabel="Labor Cost Calculator" currentHref="/landscape-labor-cost-calculator/" faqs={faqs} relatedHrefs={["/landscaping-cost-calculator/", "/landscape-job-cost-calculator/", "/landscape-profit-margin-calculator/"]} proHeading="Reuse your loaded labor rate across every estimate" proDescription="Landscape Estimate Pro saves your labor rate and pricing assumptions. Estimate with crew hours or your own service production rates, then compare actual labor with the saved estimate when the job is finished.">
+  <ExpansionCalculator kind="labor" client:load />
+  <Fragment slot="extra">
+    <article class="tool-editorial">
+      <h2>Build the rate from your own employment costs</h2>
+      <p>Start with the base hourly wage. Add your payroll burden as a percentage of that wage, then add any benefit costs you allocate as a fixed amount per paid hour. Use figures from your own payroll and insurance records. The sample 25% burden is not a legal rate or a claim about what every landscape business pays.</p>
+      <p>Keep general business overhead separate from payroll burden. If insurance or another expense is already included in your overhead allocation, do not add it again in labor burden. Owner field work also consumes time: enter a reasonable labor cost for that work rather than treating every unpaid owner hour as free.</p>
+      <h2>Person-hours are what the wages multiply</h2>
+      <ul><li>Loaded person-hour rate = base wage × (1 + burden ÷ 100) + hourly benefits.</li><li>Paid person-hours = crew size × (on-site hours + paid travel and loading hours).</li><li>Direct labor cost = loaded person-hour rate × paid person-hours.</li><li>Labor price = direct labor cost × (1 + overhead ÷ 100) ÷ (1 − margin ÷ 100).</li></ul>
+      <p>Travel and loading inputs are hours per person for this job, not a total for the whole crew. Include them only once. Adding more workers while keeping the same duration increases cost; this tool does not assume that doubling the crew automatically halves job time. Plan duration separately based on access, equipment, and work sequence.</p>
+      <h2>Worked example: a three-person crew</h2>
+      <p>A $24 wage with 25% burden and $2 per hour in benefits produces a $32 loaded person-hour rate. Three workers cost $96 per elapsed hour. Eight hours on site plus one paid hour of travel and loading for each worker gives 27 person-hours, costing $864.</p>
+      <p>With 15% overhead, the labor true cost is $993.60. A 35% target margin requires a labor-only price of $1,528.62 before tax. Leaving out the paid travel hour would omit $96 in direct cost before overhead and margin. All example figures are editable assumptions.</p>
+      <h2>Carry direct labor into the complete estimate</h2>
+      <p>Transfer the $864 direct labor cost, rather than the marked-up selling price, into a <a href="/landscaping-cost-calculator/">full landscaping cost calculation</a>. For service-specific work, use that labor total in the <a href="/mulch-cost-calculator/">mulch installation calculator</a> or <a href="/topsoil-cost-calculator/">topsoil spreading calculator</a>. Apply overhead at the final project level only once.</p>
+      <p>After completion, compare planned and paid labor in the <a href="/landscape-job-cost-calculator/">job cost review</a>. If you repeatedly exceed estimated hours, revise your duration or production assumptions. <a href="/landscaping-estimating-software/">Landscape Estimate Pro</a> keeps saved labor assumptions and actual job history together so those corrections can inform future estimates.</p>
+    </article>
+  </Fragment>
+</ToolPageLayout>

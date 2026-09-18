@@ -12,6 +12,7 @@
     "astro": "astro",
     "test": "vitest run",
     "test:watch": "vitest",
+    "audit:seo": "node scripts/seo-audit.mjs",
     "test:e2e": "playwright test",
     "test:fixtures:regen": "tsx tests/oracle/generateGoldenFixtures.ts"
   },

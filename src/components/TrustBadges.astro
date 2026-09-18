@@ -8,7 +8,7 @@ const { variant = "light" } = Astro.props;
 const items = [
   "No account required",
   "Data stays on your device",
-  LAUNCH_PRICE_ACTIVE ? `${PRICE_DISPLAY} lifetime (launch price) — no subscription` : `${PRICE_DISPLAY} lifetime — no subscription`,
+  LAUNCH_PRICE_ACTIVE ? `Pro: ${PRICE_DISPLAY} lifetime (launch price) — no subscription` : `Pro: ${PRICE_DISPLAY} lifetime — no subscription`,
 ];
 const textClass = variant === "dark" ? "text-white/85" : "text-muted";
 const iconClass = variant === "dark" ? "text-lime" : "text-lime-surface";

@@ -1,8 +1,8 @@
 /**
- * DEF-12 fix — Reset/Clear control on the two free calculators (Free
- * Estimate Calculator and Free Cost Calculator, both driven by the shared
- * ProjectCalculatorIsland component). Real browser evidence for all 7
- * required scenarios, run against both pages.
+ * DEF-12 fix — Reset/Clear control on the category-based cost calculator.
+ * The multi-service estimate worksheet is covered in expansion-calculators
+ * and free-templates-workflows. Real browser evidence for all 7
+ * required scenarios, run against the cost page.
  *
  * Note on "contractor mode": no such toggle exists anywhere in this
  * component or either page (confirmed by source read — ProjectCalculatorIsland
@@ -14,7 +14,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
 const PAGES = [
-  { url: "/landscaping-estimate-calculator/", name: "Free Estimate Calculator" },
   { url: "/landscaping-cost-calculator/", name: "Free Cost Calculator" },
 ];
 
